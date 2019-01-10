@@ -1,0 +1,11 @@
+**.idea/
+**.ipynb_checkpoints/
+data/
+env/
+images/
+grid/logs/
+grid/scripts/
+logs/
+models/
+
+**.pyc
