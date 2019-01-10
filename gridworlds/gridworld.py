@@ -1,10 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from .grid import basicgrid, taxigrid, testgrid
+from .utils import pos2xy
+from .objects.agent import Agent
 
 class GridWorld(basicgrid.BasicGrid):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.agent = Agent()
         self.action_map = {
             0: basicgrid.LEFT,
             1: basicgrid.RIGHT,
@@ -15,23 +18,18 @@ class GridWorld(basicgrid.BasicGrid):
         self.reset()
 
     def reset(self):
-        self.agent_pos = np.asarray((0,0), dtype=int)
+        self.agent.position = np.asarray((0,0), dtype=int)
 
     def step(self, action):
         assert(action in range(self.n_actions))
         direction = self.action_map[action]
-        if not self.has_wall(self.agent_pos, direction):
-            self.agent_pos += direction
+        if not self.has_wall(self.agent.position, direction):
+            self.agent.position += direction
 
     def plot(self):
         ax = super().plot()
-        xy = self.pos2xy(self.agent_pos)
-        c = plt.Circle(xy, 0.2, color='k', fill=False, linewidth=1)
-        ax.add_patch(c)
-
-    def pos2xy(self, pos):
-        pos = np.asarray(pos)
-        return (pos+(0.5,0.5))[::-1]
+        self.agent.plot(ax)
+        return ax
 
 class TestWorld(testgrid.TestGrid, GridWorld):
     pass
