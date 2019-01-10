@@ -3,6 +3,12 @@ import matplotlib.pyplot as plt
 
 grid_type = int
 
+# Offsets:
+LEFT  = np.asarray(( 0, -1))
+RIGHT = np.asarray(( 0,  1))
+UP    = np.asarray((-1,  0))
+DOWN  = np.asarray(( 1,  0))
+
 class BasicGrid:
     def __init__(self, rows, cols):
         self._rows = rows
@@ -34,13 +40,9 @@ class BasicGrid:
             plt.vlines(col_range[v_walls[row]==1], self._rows-row, self._rows-row-1)
         for col in range(self._cols):
             plt.hlines(row_range[h_walls[col]==1], col, col+1)
+        return ax
 
     def has_wall(self, position, offset):
-        # Offsets:
-        # LEFT  = ( 0, -1)
-        # RIGHT = ( 0,  1)
-        # UP    = (-1,  0)
-        # DOWN  = ( 1,  0)
         row, col = position
         d_row, d_col = offset
         wall_row = 2*row+1+d_row
@@ -50,11 +52,10 @@ class BasicGrid:
     def save(self, filename):
         np.savetxt(filename, self._grid.astype(int), fmt='%1d')
 
-    def load(filename):
+    def load(self, filename):
         grid = np.loadtxt(filename, dtype=grid_type)
         r, c = grid.shape
-        rows = r // 2
-        cols = c // 2
-        g = __class__(rows, cols)
-        g._grid = grid
-        return g
+        self._rows = r // 2
+        self._cols = c // 2
+        self._grid = grid
+        self._contents = np.empty_like(self._grid, dtype=np.object)

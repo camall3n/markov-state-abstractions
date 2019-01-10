@@ -9,7 +9,7 @@ class TestGrid(basicgrid.BasicGrid):
         self._grid[5,4] = 1
         self._grid[4,7] = 1
 
-# TestWorld.plot() should look roughly like this:
+# Should look roughly like this:
 # _______
 #|  _|   |
 #| |    _|
