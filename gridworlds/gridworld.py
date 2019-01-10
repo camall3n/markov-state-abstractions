@@ -31,10 +31,7 @@ class GridWorld(basicgrid.BasicGrid):
 
     def pos2xy(self, pos):
         pos = np.asarray(pos)
-        return (pos*(-1,1)+(self._rows,0)+(-0.5,0.5))[::-1]
-
-class TaxiWorld(taxigrid.TaxiGrid, GridWorld):
-    pass
+        return (pos+(0.5,0.5))[::-1]
 
 class TestWorld(testgrid.TestGrid, GridWorld):
     pass

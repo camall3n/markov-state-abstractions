@@ -31,13 +31,14 @@ class BasicGrid:
         ax.axis('off')
         plt.xlim([-0.1,self._cols+0.1]), plt.ylim([-0.1,self._rows+0.1])
         plt.xticks([]), plt.yticks([])
+        plt.gca().invert_yaxis()
         # Get lists of vertical and horizontal wall locations
         v_walls = self._grid[:,::2][1::2,:]
         h_walls = self._grid[::2,:][:,1::2].transpose()
-        row_range = np.linspace(self._rows,0,self._rows+1)
+        row_range = np.linspace(0,self._rows,self._rows+1)
         col_range = np.linspace(0,self._cols,self._cols+1)
         for row in range(self._rows):
-            plt.vlines(col_range[v_walls[row]==1], self._rows-row, self._rows-row-1)
+            plt.vlines(col_range[v_walls[row]==1], row, row+1)
         for col in range(self._cols):
             plt.hlines(row_range[h_walls[col]==1], col, col+1)
         return ax
