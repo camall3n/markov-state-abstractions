@@ -1,6 +1,6 @@
-from . import gridworld
+from . import basicgrid
 
-class TestWorld(gridworld.GridWorld):
+class TestGrid(basicgrid.BasicGrid):
     def __init__(self):
         super().__init__(rows=3, cols=4)
         self._grid[1,4] = 1

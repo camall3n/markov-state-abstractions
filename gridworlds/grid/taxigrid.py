@@ -1,6 +1,6 @@
-from . import gridworld
+from . import basicgrid
 
-class TaxiWorld(gridworld.GridWorld):
+class TaxiGrid(basicgrid.BasicGrid):
     def __init__(self):
         super().__init__(rows=5, cols=5)
 
