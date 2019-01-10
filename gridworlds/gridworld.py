@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from .grid import basicgrid
+from .grid import basicgrid, taxigrid, testgrid
 
 class GridWorld(basicgrid.BasicGrid):
     def __init__(self, *args, **kwargs):
@@ -12,10 +12,10 @@ class GridWorld(basicgrid.BasicGrid):
             3: basicgrid.DOWN
         }
         self.n_actions = len(self.action_map.keys())
-        self.agent_pos = np.asarray((1,0), dtype=int)
+        self.reset()
 
     def reset(self):
-        pass
+        self.agent_pos = np.asarray((0,0), dtype=int)
 
     def step(self, action):
         assert(action in range(self.n_actions))
@@ -26,9 +26,15 @@ class GridWorld(basicgrid.BasicGrid):
     def plot(self):
         ax = super().plot()
         xy = self.pos2xy(self.agent_pos)
-        c = plt.Circle(xy, 0.3, color='black')
+        c = plt.Circle(xy, 0.2, color='k', fill=False, linewidth=1)
         ax.add_patch(c)
 
     def pos2xy(self, pos):
         pos = np.asarray(pos)
         return (pos*(-1,1)+(self._rows,0)+(-0.5,0.5))[::-1]
+
+class TaxiWorld(taxigrid.TaxiGrid, GridWorld):
+    pass
+
+class TestWorld(testgrid.TestGrid, GridWorld):
+    pass
