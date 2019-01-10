@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 import matplotlib.pyplot as plt
 from ..utils import pos2xy
@@ -8,7 +9,7 @@ class BasicSprite:
 
     def __setattr__(self, name, value):
         if name=='position':
-            value = np.asarray(value, dtype=int)
+            value = copy.deepcopy(np.asarray(value, dtype=int))
         super().__setattr__(name, value)
 
     def plot(self, ax):
