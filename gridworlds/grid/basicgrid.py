@@ -26,7 +26,9 @@ class BasicGrid:
         return self._contents[row//2, col//2]
 
     def plot(self):
-        plt.figure(figsize=(3*self._cols/self._rows,3))
+        xscale = 3/5 * self._cols
+        yscale = xscale * self._cols/self._rows
+        plt.figure(figsize=(xscale,yscale))
         ax = plt.axes()
         ax.axis('off')
         plt.xlim([-0.1,self._cols+0.1]), plt.ylim([-0.1,self._rows+0.1])
