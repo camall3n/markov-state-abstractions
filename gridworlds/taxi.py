@@ -7,7 +7,7 @@ from .objects.depot import Depot
 
 class TaxiWorld(taxigrid.TaxiGrid, GridWorld):
     def __init__(self, *args, **kwargs):
-        self.passenger = Passenger()
+        self.passenger = Passenger(name='Passenger')
         self.depots = dict([(color, Depot(color=color)) for color in ['red', 'blue', 'green', 'yellow']])
         self.depots['red'].position = (0,0)
         self.depots['yellow'].position = (4,0)
@@ -32,6 +32,6 @@ class TaxiWorld(taxigrid.TaxiGrid, GridWorld):
 
     def plot(self):
         ax = super().plot()
-        self.passenger.plot(ax)
         for _, depot in self.depots.items():
             depot.plot(ax)
+        self.passenger.plot(ax)
