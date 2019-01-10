@@ -14,8 +14,8 @@ class TaxiWorld(taxigrid.TaxiGrid, GridWorld):
         self.depots['blue'].position = (4,3)
         self.depots['green'].position = (0,4)
 
-        super().__init__(*args, **kwargs)
-        self.n_actions = len(self.action_map.keys())+2
+        super().__init__()
+        self.n_actions = len(self.action_map.keys())+1
         self.reset()
 
     def reset(self):
@@ -25,10 +25,11 @@ class TaxiWorld(taxigrid.TaxiGrid, GridWorld):
     def step(self, action):
         if action < 4:
             super().step(action)
-        elif action == 4:
-            pass
-        else:
-            pass
+            if self.passenger.incab:
+                self.passenger.position = self.agent.position
+        elif action == 4:# Interact
+            if (self.agent.position == self.passenger.position).all():
+                self.passenger.incab = not self.passenger.incab
 
     def plot(self):
         ax = super().plot()
