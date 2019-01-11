@@ -14,8 +14,8 @@ class Passenger(BasicSprite):
         if self.intaxi:
             c = plt.Circle((x,y), 0.2, color='k', fill=True, linewidth=1)
             ax.add_patch(c)
-            plt.text(x, y, self.name[0], fontsize=12, color='white',
-                horizontalalignment='center', verticalalignment='center')
+            textcolor = 'white'
         else:
-            plt.text(x, y, self.name[0], fontsize=14,
-                horizontalalignment='center', verticalalignment='center')
+            textcolor = 'black'
+        plt.text(x, y, self.name[0], fontsize=12, color=textcolor,
+            horizontalalignment='center', verticalalignment='center')
