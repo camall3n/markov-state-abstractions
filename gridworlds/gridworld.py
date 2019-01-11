@@ -15,9 +15,6 @@ class GridWorld(basicgrid.BasicGrid):
             3: basicgrid.DOWN
         }
         self.n_actions = len(self.action_map.keys())
-        self.reset()
-
-    def reset(self):
         self.agent.position = np.asarray((0,0), dtype=int)
 
     def step(self, action):
