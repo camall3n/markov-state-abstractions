@@ -25,7 +25,8 @@ class GridWorld(basicgrid.BasicGrid):
 
     def plot(self):
         ax = super().plot()
-        self.agent.plot(ax)
+        if self.agent:
+            self.agent.plot(ax)
         return ax
 
 class TestWorld(GridWorld):
