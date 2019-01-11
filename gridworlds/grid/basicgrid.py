@@ -26,14 +26,16 @@ class BasicGrid:
         return self._contents[row//2, col//2]
 
     def plot(self):
-        xscale = 3/5 * self._cols
-        yscale = xscale * self._cols/self._rows
-        plt.figure(figsize=(xscale,yscale))
+        scale = 3/5
+        rowscale = scale * self._rows
+        colscale = scale * self._cols
+        plt.figure(figsize=(colscale,rowscale))
         ax = plt.axes()
         ax.axis('off')
         plt.xlim([-0.1,self._cols+0.1]), plt.ylim([-0.1,self._rows+0.1])
         plt.xticks([]), plt.yticks([])
         plt.gca().invert_yaxis()
+
         # Get lists of vertical and horizontal wall locations
         v_walls = self._grid[:,::2][1::2,:]
         h_walls = self._grid[::2,:][:,1::2].transpose()

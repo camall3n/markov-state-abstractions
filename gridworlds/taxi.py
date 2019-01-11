@@ -1,13 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import random
 from .grid.taxigrid import TaxiGrid
 from .gridworld import GridWorld
 from .objects.passenger import Passenger
 from .objects.depot import Depot
 
 class TaxiWorld(TaxiGrid, GridWorld):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.passenger = Passenger(name='Passenger')
         self.depots = dict([(color, Depot(color=color)) for color in ['red', 'blue', 'green', 'yellow']])
         self.depots['red'].position = (0,0)
@@ -21,6 +22,12 @@ class TaxiWorld(TaxiGrid, GridWorld):
         self.agent.position = self.depots[depotnames.pop()].position
         self.passenger.position = self.depots[depotnames.pop()].position
 
+    def plot(self):
+        ax = super().plot()
+        for _, depot in self.depots.items():
+            depot.plot(ax)
+        self.passenger.plot(ax)
+
     def step(self, action):
         if action < 4:
             super().step(action)
@@ -30,19 +37,24 @@ class TaxiWorld(TaxiGrid, GridWorld):
             if (self.agent.position == self.passenger.position).all():
                 self.passenger.intaxi = not self.passenger.intaxi
 
-    def plot(self):
-        ax = super().plot()
-        for _, depot in self.depots.items():
-            depot.plot(ax)
-        self.passenger.plot(ax)
-
 class TaxiOfHanoi(TaxiWorld):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.passenger = None
         self.passengers = [Passenger(name=name) for name in ['Alice', 'Bob', 'Carol']]
+
+        seed = kwargs.get('seed', None)
+        self.reset(seed)
+
+    def reset(self, seed=None):
         depotnames = list(self.depots.keys())
-        # TODO: randomize
+        if seed is not None:
+            rng_state = random.getstate()
+            random.seed(seed)
+            random.shuffle(depotnames)
+            random.setstate(rng_state)
+        else:
+            random.shuffle(depotnames)
         for p in self.passengers:
             p.position = self.depots[depotnames.pop()].position
         self.agent.position = self.depots[depotnames.pop()].position
@@ -62,13 +74,14 @@ class TaxiOfHanoi(TaxiWorld):
             for p in self.passengers:
                 if p.intaxi:
                     p.position = self.agent.position
+                    break # max one passenger per taxi
         elif action == 4:# Interact
             if self.passenger is None:
                 for p in self.passengers:
                     if (self.agent.position == p.position).all():
                         p.intaxi = True
                         self.passenger = p
-                        break
+                        break # max one passenger per taxi
             else:
                 dropoff_clear = True
                 for p in (p for p in self.passengers if p is not self.passenger):

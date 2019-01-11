@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from .grid import basicgrid, taxigrid, testgrid
+from .grid import basicgrid
 from .utils import pos2xy
 from .objects.agent import Agent
 
@@ -28,5 +28,20 @@ class GridWorld(basicgrid.BasicGrid):
         self.agent.plot(ax)
         return ax
 
-class TestWorld(testgrid.TestGrid, GridWorld):
-    pass
+class TestWorld(GridWorld):
+    def __init__(self):
+        super().__init__(rows=3, cols=4)
+        self._grid[1,4] = 1
+        self._grid[2,3] = 1
+        self._grid[3,2] = 1
+        self._grid[5,4] = 1
+        # self._grid[4,7] = 1
+
+        # Should look roughly like this:
+        # _______
+        #|  _|   |
+        #| |    _|
+        #|___|___|
+
+    def plot(self):
+        super().plot()
