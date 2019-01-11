@@ -25,11 +25,11 @@ class TaxiWorld(taxigrid.TaxiGrid, GridWorld):
     def step(self, action):
         if action < 4:
             super().step(action)
-            if self.passenger.incab:
+            if self.passenger.intaxi:
                 self.passenger.position = self.agent.position
         elif action == 4:# Interact
             if (self.agent.position == self.passenger.position).all():
-                self.passenger.incab = not self.passenger.incab
+                self.passenger.intaxi = not self.passenger.intaxi
 
     def plot(self):
         ax = super().plot()
