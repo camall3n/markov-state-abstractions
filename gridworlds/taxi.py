@@ -18,7 +18,7 @@ class TaxiWorld(TaxiGrid, GridWorld):
 
         self.n_actions = len(self.action_map.keys())+1
         depotnames = list(self.depots.keys())
-        # TODO: randomize
+        random.shuffle(depotnames)
         self.agent.position = self.depots[depotnames.pop()].position
         self.passenger.position = self.depots[depotnames.pop()].position
 
@@ -42,19 +42,11 @@ class TaxiOfHanoi(TaxiWorld):
         super().__init__(*args, **kwargs)
         self.passenger = None
         self.passengers = [Passenger(name=name) for name in ['Alice', 'Bob', 'Carol']]
-
-        seed = kwargs.get('seed', None)
         self.reset(seed)
 
-    def reset(self, seed=None):
+    def reset(self):
         depotnames = list(self.depots.keys())
-        if seed is not None:
-            rng_state = random.getstate()
-            random.seed(seed)
-            random.shuffle(depotnames)
-            random.setstate(rng_state)
-        else:
-            random.shuffle(depotnames)
+        random.shuffle(depotnames)
         for p in self.passengers:
             p.position = self.depots[depotnames.pop()].position
         self.agent.position = self.depots[depotnames.pop()].position
