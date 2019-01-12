@@ -136,28 +136,29 @@ class TaxiGoal(BasicGrid):
 
 
 class TaxiDomain5x5(BaseTaxi, TaxiGrid5x5):
+    depot_locs = {
+        'red':     (0,0),
+        'yellow':  (4,0),
+        'blue':    (4,3),
+        'green':   (0,4),
+    }
     def __init__(self):
         super().__init__()
-        self.depot_locs = {
-            'red':     (0,0),
-            'yellow':  (4,0),
-            'blue':    (4,3),
-            'green':   (0,4),
-        }
 
 class TaxiDomain10x10(BaseTaxi, TaxiGrid10x10):
+    depot_locs = {
+        'red':     (0,0),
+        'blue':    (8,0),
+        'green':   (9,4),
+        'yellow':  (0,5),
+        'gray':    (3,3),
+        'magenta': (4,6),
+        'cyan':    (0,8),
+        'orange':  (9,9),
+    }
     def __init__(self):
         super().__init__()
-        self.depot_locs = {
-            'red':     (0,0),
-            'blue':    (8,0),
-            'green':   (9,4),
-            'yellow':  (0,5),
-            'gray':    (3,3),
-            'magenta': (4,6),
-            'cyan':    (0,8),
-            'orange':  (9,9),
-        }
+
 
 class TaxiClassic(TaxiDomain5x5):
     def __init__(self):

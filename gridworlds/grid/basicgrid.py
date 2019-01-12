@@ -8,6 +8,18 @@ LEFT  = np.asarray(( 0, -1))
 RIGHT = np.asarray(( 0,  1))
 UP    = np.asarray((-1,  0))
 DOWN  = np.asarray(( 1,  0))
+directions = {
+    0: LEFT,
+    1: RIGHT,
+    2: UP,
+    3: DOWN,
+}
+actions = {
+    tuple(LEFT ): 0,
+    tuple(RIGHT): 1,
+    tuple(UP   ): 2,
+    tuple(DOWN ): 3,
+}
 
 class BasicGrid:
     def __init__(self, rows, cols):
@@ -17,6 +29,7 @@ class BasicGrid:
         # Add rows and columns for walls between cells
         self._grid = np.ones([rows*2+1, cols*2+1], dtype=grid_type)
         self._contents = np.empty([rows*2+1, cols*2+1], dtype=np.object)
+        self.saved_directions = {}
 
         # Reset valid positions and walls
         self._grid[1:-1:2,1:-1] = 0
