@@ -3,7 +3,11 @@ from ..domain.taxi import TaxiDomain5x5, TaxiDomain10x10
 from ..utils import manhattan_dist
 from ..grid.basicgrid import directions, actions
 
-def run_skill(w, skill):
+def run_skill(w, name):
+    if name in w.depot_locs.keys():
+        skill = lambda w, x: GoToDepot(w, x, name)
+    else:
+        skill = lambda w, x: Interact(w)
     while True:
         can_run, a, term = skill(w, w.agent.position)
         print(can_run, a, term)
@@ -12,11 +16,6 @@ def run_skill(w, skill):
             w.step(a)
         if term:
             break
-red = lambda w, x: GoToDepot(w, x, 'red')
-blue = lambda w, x: GoToDepot(w, x, 'blue')
-yellow = lambda w, x: GoToDepot(w, x, 'yellow')
-green = lambda w, x: GoToDepot(w, x, 'green')
-interact = lambda w, x: Interact(w)
 
 def GoToDepot(gridworld, start, depotname):
     depot = gridworld.depot_locs[depotname]
