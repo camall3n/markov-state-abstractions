@@ -1,3 +1,4 @@
+from collections import defaultdict
 import numpy as np
 from ..domain.taxi import TaxiDomain5x5, TaxiDomain10x10
 from ..utils import manhattan_dist
@@ -30,6 +31,7 @@ def Interact(gridworld):
     s1 = gridworld.get_state()
     gridworld.step(4)# undo
 
+    # Can only run if it would have an effect
     can_run = False if all(s0 == s1) else True
     action = 4
     term = True
@@ -54,13 +56,15 @@ def GridAStar(grid, start, target):
     closed_set = set()
     open_set = set()
     came_from = dict()
+    gScore = defaultdict(lambda x: np.inf)
+    fScore = defaultdict(lambda x: np.inf)
 
     open_set.add(tuple(start))
-    gScore = {tuple(start): 0}
-    fScore = {tuple(start): manhattan_dist(start, target)}
+    gScore[start] = 0
+    fScore[start] = manhattan_dist(start, target)
 
     while open_set:
-        current = min(open_set, key=lambda x: fScore.get(x, np.inf))
+        current = min(open_set, key=lambda x: fScore[x])
         if all(np.asarray(current) == target):
             return _reconstruct_path(came_from, current)
 
@@ -71,11 +75,11 @@ def GridAStar(grid, start, target):
             if neighbor in closed_set:
                 continue
 
-            tentative_gScore = gScore.get(current, np.inf) + 1
+            tentative_gScore = gScore[current] + 1
 
             if neighbor not in open_set:
                 open_set.add(neighbor)
-            elif tentative_gScore >= gScore.get(neighbor, np.inf):
+            elif tentative_gScore >= gScore[neighbor]:
                 continue
 
             came_from[neighbor] = current
