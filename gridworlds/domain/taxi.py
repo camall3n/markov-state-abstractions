@@ -96,7 +96,7 @@ class BaseTaxi(GridWorld):
             state.extend([x, y, intaxi])
         return state
 
-    def goal_oracle(self, state):
+    def check_goal(self, state):
         goal = self.get_goal_state()
         if all([s == g for s, g in zip(state[2:], goal)]):# ignore taxi, check passenger positions
             return True
