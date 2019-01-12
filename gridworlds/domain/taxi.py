@@ -34,8 +34,8 @@ class BaseTaxi(GridWorld):
             N = len(self.passengers)
             while all([g == s for g, s in zip(goal_depots[:N], start_depots[:N])]):
                 random.shuffle(goal_depots)
-            self.goal_dict = dict([(p.name, g) for p, g in zip(self.passengers, goal_depots[:N])])
-            self.goal = TaxiGoal(self.goal_dict)
+            self.passenger_goals = dict([(p.name, g) for p, g in zip(self.passengers, goal_depots[:N])])
+            self.goal = TaxiGoal(self.passenger_goals)
         else:
             self.goal = None
 
@@ -90,8 +90,8 @@ class BaseTaxi(GridWorld):
     def get_goal_state(self):
         state = []
         for p in self.passengers:
-            goal_depotname = self.goal_dict[p.name]
-            x, y = self.depots[goal_depotname].position
+            goal_name = self.passenger_goals[p.name]
+            x, y = self.depots[goal_name].position
             intaxi = False
             state.extend([x, y, intaxi])
         return state
@@ -104,19 +104,19 @@ class BaseTaxi(GridWorld):
             return False
 
 class TaxiGoal(BasicGrid):
-    def __init__(self, goal_dict):
-        super().__init__(rows=1, cols=1+len(goal_dict))
+    def __init__(self, passenger_goals):
+        super().__init__(rows=1, cols=1+len(passenger_goals))
         self._grid[:,:] = 0 # Clear walls
 
-        colors = [color for passenger, color in goal_dict.items()]
+        colors = [color for passenger, color in passenger_goals.items()]
 
         self.depots = dict([(color, Depot(color=color)) for color in colors])
         for i, color in enumerate(colors):
             self.depots[color].position = (0,1+i)
 
-        self.passengers = [Passenger(name=name) for name in list(goal_dict.keys())]
+        self.passengers = [Passenger(name=name) for name in list(passenger_goals.keys())]
         for p in self.passengers:
-            p.position = self.depots[goal_dict[p.name]].position
+            p.position = self.depots[passenger_goals[p.name]].position
 
     def plot(self):
         ax = super().plot()
