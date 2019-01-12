@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from .grid import basicgrid
-from .utils import pos2xy
-from .objects.agent import Agent
+from ..grid import basicgrid
+from ..utils import pos2xy
+from ..objects.agent import Agent
 
 class GridWorld(basicgrid.BasicGrid):
     def __init__(self, *args, **kwargs):

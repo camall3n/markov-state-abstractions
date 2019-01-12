@@ -1,11 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import random
-from .grid.basicgrid import BasicGrid
-from .grid.taxigrid import TaxiGrid5x5, TaxiGrid10x10
+from ..grid.basicgrid import BasicGrid
+from ..grid.taxigrid import TaxiGrid5x5, TaxiGrid10x10
 from .gridworld import GridWorld
-from .objects.passenger import Passenger
-from .objects.depot import Depot
+from ..objects.passenger import Passenger
+from ..objects.depot import Depot
 
 class BaseTaxi(GridWorld):
     def __init__(self):
@@ -77,6 +77,57 @@ class BaseTaxi(GridWorld):
                     self.passenger.intaxi = False
                     self.passenger = None
 
+    def get_state(self):
+        state = []
+        x, y = self.agent.position
+        state.extend([x, y])
+        for p in self.passengers:
+            x, y = p.position
+            intaxi = p.intaxi
+            state.extend([x, y, intaxi])
+        return state
+
+    def get_goal_state(self):
+        state = []
+        for p in self.passengers:
+            goal_depotname = self.goal_dict[p.name]
+            x, y = self.depots[goal_depotname].position
+            intaxi = False
+            state.extend([x, y, intaxi])
+        return state
+
+    def goal_oracle(self, state):
+        goal = self.get_goal_state()
+        if all([s == g for s, g in zip(state[2:], goal)]):# ignore taxi, check passenger positions
+            return True
+        else:
+            return False
+
+class TaxiGoal(BasicGrid):
+    def __init__(self, goal_dict):
+        super().__init__(rows=1, cols=1+len(goal_dict))
+        self._grid[:,:] = 0 # Clear walls
+
+        colors = [color for passenger, color in goal_dict.items()]
+
+        self.depots = dict([(color, Depot(color=color)) for color in colors])
+        for i, color in enumerate(colors):
+            self.depots[color].position = (0,1+i)
+
+        self.passengers = [Passenger(name=name) for name in list(goal_dict.keys())]
+        for p in self.passengers:
+            p.position = self.depots[goal_dict[p.name]].position
+
+    def plot(self):
+        ax = super().plot()
+        for _, depot in self.depots.items():
+            depot.plot(ax)
+        for p in self.passengers:
+            p.plot(ax)
+        plt.text(0.5,0.5, 'Goal:', fontsize=12, color='k',
+            horizontalalignment='center', verticalalignment='center')
+
+
 class TaxiDomain5x5(BaseTaxi, TaxiGrid5x5):
     def __init__(self):
         super().__init__()
@@ -107,7 +158,7 @@ class TaxiClassic(TaxiDomain5x5):
         self.passengers = [Passenger(name='Passenger')]
         self.reset()
 
-class TaxiOfHanoi(TaxiDomain5x5):
+class BusyTaxi(TaxiDomain5x5):
     def __init__(self):
         super().__init__()
         self.passengers = [Passenger(name=name) for name in ['Alice', 'Bob', 'Carol']]
@@ -119,33 +170,9 @@ class Taxi10x10(TaxiDomain10x10):
         self.passengers = [Passenger(name='Passenger')]
         self.reset()
 
-class TaxiOfHanoi10x10(TaxiDomain10x10):
+class BusyTaxi10x10(TaxiDomain10x10):
     def __init__(self):
         super().__init__()
         names = ['Alice', 'Bob', 'Carol', 'David', 'Eve', 'Frank', 'George']
         self.passengers = [Passenger(name=name) for name in names]
         self.reset()
-
-class TaxiGoal(BasicGrid):
-    def __init__(self, goal_dict):
-        super().__init__(rows=1, cols=1+len(goal_dict))
-        self._grid[:,:] = 0 # Clear walls
-
-        colors = [color for passenger, color in goal_dict.items()]
-
-        self.depots = dict([(color, Depot(color=color)) for color in colors])
-        for i, color in enumerate(colors):
-            self.depots[color].position = (0,1+i)
-
-        self.passengers = [Passenger(name=name) for name in list(goal_dict.keys())]
-        for p in self.passengers:
-            p.position = self.depots[goal_dict[p.name]].position
-
-    def plot(self):
-        ax = super().plot()
-        for _, depot in self.depots.items():
-            depot.plot(ax)
-        for p in self.passengers:
-            p.plot(ax)
-        plt.text(0.5,0.5, 'Goal:', fontsize=12, color='k',
-            horizontalalignment='center', verticalalignment='center')
