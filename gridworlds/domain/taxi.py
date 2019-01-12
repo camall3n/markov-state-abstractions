@@ -85,7 +85,7 @@ class BaseTaxi(GridWorld):
             x, y = p.position
             intaxi = p.intaxi
             state.extend([x, y, intaxi])
-        return state
+        return np.asarray(state, dtype=int)
 
     def get_goal_state(self):
         state = []
@@ -94,11 +94,11 @@ class BaseTaxi(GridWorld):
             x, y = self.depots[goal_name].position
             intaxi = False
             state.extend([x, y, intaxi])
-        return state
+        return np.asarray(state, dtype=int)
 
     def check_goal(self, state):
         goal = self.get_goal_state()
-        if all([s == g for s, g in zip(state[2:], goal)]):# ignore taxi, check passenger positions
+        if np.all(state[2:]==goal):# ignore taxi, check passenger positions
             return True
         else:
             return False
