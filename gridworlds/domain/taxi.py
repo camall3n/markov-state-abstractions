@@ -160,13 +160,13 @@ class TaxiDomain10x10(BaseTaxi, TaxiGrid10x10):
         super().__init__()
 
 
-class TaxiClassic(TaxiDomain5x5):
+class Taxi5x5(TaxiDomain5x5):
     def __init__(self):
         super().__init__()
         self.passengers = [Passenger(name='Passenger')]
         self.reset()
 
-class BusyTaxi(TaxiDomain5x5):
+class BusyTaxi5x5(TaxiDomain5x5):
     def __init__(self):
         super().__init__()
         self.passengers = [Passenger(name=name) for name in ['Alice', 'Bob', 'Carol']]
