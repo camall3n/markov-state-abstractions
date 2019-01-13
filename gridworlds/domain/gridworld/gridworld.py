@@ -1,19 +1,19 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from ..grid import basicgrid
-from ..utils import pos2xy
-from ..objects.agent import Agent
 
-class GridWorld(basicgrid.BasicGrid):
+from . import grid
+from .objects.agent import Agent
+
+class GridWorld(grid.BaseGrid):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.agent = Agent()
         self.actions = [i for i in range(4)]
         self.action_map = {
-            0: basicgrid.LEFT,
-            1: basicgrid.RIGHT,
-            2: basicgrid.UP,
-            3: basicgrid.DOWN
+            0: grid.LEFT,
+            1: grid.RIGHT,
+            2: grid.UP,
+            3: grid.DOWN
         }
         self.agent.position = np.asarray((0,0), dtype=int)
 

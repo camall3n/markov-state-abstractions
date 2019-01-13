@@ -1,9 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from .basicsprite import BasicSprite
-from ..utils import pos2xy
+from .basesprite import BaseSprite, pos2xy
 
-class Agent(BasicSprite):
+class Agent(BaseSprite):
     def __init__(self, position=(0,0), name='Alice'):
         self.position = np.asarray(position)
 

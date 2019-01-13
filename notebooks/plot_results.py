@@ -1,8 +1,13 @@
 %matplotlib inline
 import numpy as np
 import matplotlib.pyplot as plt
+from gridworlds.domain.taxi import Taxi5x5, BusyTaxi5x5
 
-envname = 'busytaxi5x5'
+env = Taxi5x5()
+envname = env.name
+env.plot()
+plt.show()
+#%%
 skilledq = np.loadtxt('results/'+envname+'/skilledqlearning/results.txt')
 random = np.loadtxt('results/'+envname+'/random/results.txt')
 t = np.arange(len(skilledq))

@@ -1,7 +1,7 @@
 %matplotlib inline
 import random
-from gridworlds.skills.taxi import *
-from gridworlds.domain.taxi import *
+from gridworlds.domain.taxi.skills import *
+from gridworlds.domain.taxi.taxi import *
 
 random.seed(0)
 w = Taxi10x10()

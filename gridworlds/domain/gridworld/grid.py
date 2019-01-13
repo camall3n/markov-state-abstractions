@@ -21,7 +21,7 @@ actions = {
     tuple(DOWN ): 3,
 }
 
-class BasicGrid:
+class BaseGrid:
     def __init__(self, rows, cols):
         self._rows = rows
         self._cols = cols

@@ -1,11 +1,45 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import random
-from ..grid.basicgrid import BasicGrid
-from ..grid.taxigrid import TaxiGrid5x5, TaxiGrid10x10
-from .gridworld import GridWorld
-from ..objects.passenger import Passenger
-from ..objects.depot import Depot
+from ..gridworld.grid import BaseGrid
+from ..gridworld.gridworld import GridWorld
+from ..gridworld.objects.passenger import Passenger
+from ..gridworld.objects.depot import Depot
+
+class TaxiGrid5x5(BaseGrid):
+    depot_locs = {
+        'red':     (0,0),
+        'yellow':  (4,0),
+        'blue':    (4,3),
+        'green':   (0,4),
+    }
+    depot_names = depot_locs.keys()
+    def __init__(self):
+        super().__init__(rows=5, cols=5)
+        self._grid[1:4,4] = 1
+        self._grid[7:10,2] = 1
+        self._grid[7:10,6] = 1
+
+class TaxiGrid10x10(BaseGrid):
+    depot_locs = {
+        'red':     (0,0),
+        'blue':    (8,0),
+        'green':   (9,4),
+        'yellow':  (0,5),
+        'gray':    (3,3),
+        'magenta': (4,6),
+        'cyan':    (0,8),
+        'orange':  (9,9),
+    }
+    depot_names = depot_locs.keys()
+    def __init__(self):
+        super().__init__(rows=10, cols=10)
+        self._grid[1:8,6] = 1
+        self._grid[13:20,2] = 1
+        self._grid[13:20,8] = 1
+        self._grid[5:12,12] = 1
+        self._grid[1:8,16] = 1
+        self._grid[13:20,16] = 1
 
 class BaseTaxi(GridWorld):
     def __init__(self):
@@ -110,13 +144,12 @@ class BaseTaxi(GridWorld):
         else:
             return False
 
-class TaxiGoal(BasicGrid):
+class TaxiGoal(BaseGrid):
     def __init__(self, passenger_goals):
         super().__init__(rows=1, cols=1+len(passenger_goals))
         self._grid[:,:] = 0 # Clear walls
 
         colors = [color for passenger, color in passenger_goals.items()]
-
         self.depots = dict([(color, Depot(color=color)) for color in colors])
         for i, color in enumerate(colors):
             self.depots[color].position = (0,1+i)
@@ -134,53 +167,29 @@ class TaxiGoal(BasicGrid):
         plt.text(0.5,0.5, 'Goal:', fontsize=12, color='k',
             horizontalalignment='center', verticalalignment='center')
 
-
-class TaxiDomain5x5(BaseTaxi, TaxiGrid5x5):
-    depot_locs = {
-        'red':     (0,0),
-        'yellow':  (4,0),
-        'blue':    (4,3),
-        'green':   (0,4),
-    }
-    depot_names = depot_locs.keys()
-    def __init__(self):
-        super().__init__()
-
-class TaxiDomain10x10(BaseTaxi, TaxiGrid10x10):
-    depot_locs = {
-        'red':     (0,0),
-        'blue':    (8,0),
-        'green':   (9,4),
-        'yellow':  (0,5),
-        'gray':    (3,3),
-        'magenta': (4,6),
-        'cyan':    (0,8),
-        'orange':  (9,9),
-    }
-    depot_names = depot_locs.keys()
-    def __init__(self):
-        super().__init__()
-
-
-class Taxi5x5(TaxiDomain5x5):
+class Taxi5x5(BaseTaxi, TaxiGrid5x5):
+    name = 'Taxi5x5'
     def __init__(self):
         super().__init__()
         self.passengers = [Passenger(name='Passenger')]
         self.reset()
 
-class BusyTaxi5x5(TaxiDomain5x5):
+class BusyTaxi5x5(BaseTaxi, TaxiGrid5x5):
+    name = 'BusyTaxi5x5'
     def __init__(self):
         super().__init__()
         self.passengers = [Passenger(name=name) for name in ['Alice', 'Bob', 'Carol']]
         self.reset()
 
-class Taxi10x10(TaxiDomain10x10):
+class Taxi10x10(BaseTaxi, TaxiGrid10x10):
+    name = 'Taxi10x10'
     def __init__(self):
         super().__init__()
         self.passengers = [Passenger(name='Passenger')]
         self.reset()
 
-class BusyTaxi10x10(TaxiDomain10x10):
+class BusyTaxi10x10(BaseTaxi, TaxiGrid10x10):
+    name = 'BusyTaxi10x10'
     def __init__(self):
         super().__init__()
         names = ['Alice', 'Bob', 'Carol', 'David', 'Eve', 'Frank', 'George']

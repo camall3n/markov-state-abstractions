@@ -1,7 +1,7 @@
 import random
-from gridworlds.domain.taxi import Taxi5x5, BusyTaxi5x5
-from gridworlds.agents import QLearningAgent
-from gridworlds.skills.taxi import skills5x5, skill_policy
+from gridworlds.domain.taxi.taxi import Taxi5x5, BusyTaxi5x5
+from gridworlds.agents.qlearningagent import QLearningAgent
+from gridworlds.domain.taxi.skills import skills5x5, skill_policy
 from gridworlds.sensors import IdentitySensor
 
 total_timesteps = 100000
