@@ -10,18 +10,18 @@ from ..objects.depot import Depot
 class BaseTaxi(GridWorld):
     def __init__(self):
         super().__init__()
-        self.n_actions = len(self.action_map.keys())+1
+        self.actions.append(4)# Add interact action
         self.passenger = None
 
     def reset(self, goal=True):
         # Place depots
         self.depots = dict()
-        for color, position in self.depot_locs.items():
-            self.depots[color] = Depot(color=color)
-            self.depots[color].position = position
+        for name in self.depot_names:
+            self.depots[name] = Depot(color=name)
+            self.depots[name].position = self.depot_locs[name]
 
         # Place passengers and taxi
-        start_depots = list(self.depots.keys())
+        start_depots = list(self.depot_names)
         random.shuffle(start_depots)
         for i,p in enumerate(self.passengers):
             p.position = self.depots[start_depots[i]].position
@@ -142,6 +142,7 @@ class TaxiDomain5x5(BaseTaxi, TaxiGrid5x5):
         'blue':    (4,3),
         'green':   (0,4),
     }
+    depot_names = depot_locs.keys()
     def __init__(self):
         super().__init__()
 
@@ -156,6 +157,7 @@ class TaxiDomain10x10(BaseTaxi, TaxiGrid10x10):
         'cyan':    (0,8),
         'orange':  (9,9),
     }
+    depot_names = depot_locs.keys()
     def __init__(self):
         super().__init__()
 

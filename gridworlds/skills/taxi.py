@@ -4,6 +4,8 @@ from ..domain.taxi import TaxiDomain5x5, TaxiDomain10x10
 from ..utils import manhattan_dist
 from ..grid.basicgrid import directions, actions
 
+skills5x5 = ['interact']+list(TaxiDomain5x5.depot_names)
+skills10x10 = ['interact']+list(TaxiDomain10x10.depot_names)
 def run_skill(w, name):
     if name in w.depot_locs.keys():
         skill = lambda w, x: GoToDepot(w, x, name)
@@ -17,13 +19,22 @@ def run_skill(w, name):
             w.step(a)
         if term:
             break
+def skill_policy(w, skill_name):
+    if skill_name in w.depot_locs.keys():
+        skill = lambda w, x: GoToDepot(w, x, skill_name)
+    elif skill_name == 'interact':
+        skill = lambda w, x: Interact(w)
+    else:
+        raise ValueError('Invalid skill name'+str(skill_name))
+    return skill(w, w.agent.position)
+
 
 def GoToDepot(gridworld, start, depotname):
     depot = gridworld.depot_locs[depotname]
     action = GoToGridPosition(gridworld, start=start, target=depot)
     can_run = True if action is not None else False
-    term = True if all(start == depot) else False
-    return (can_run, action, term)
+    terminate = True if all(start == depot) else False
+    return (can_run, action, terminate)
 
 def Interact(gridworld):
     s0 = gridworld.get_state()
@@ -34,13 +45,13 @@ def Interact(gridworld):
     # Can only run if it would have an effect
     can_run = False if all(s0 == s1) else True
     action = 4
-    term = True
-    return (can_run, action, term)
+    terminate = True
+    return (can_run, action, terminate)
 
 def GoToGridPosition(grid, start, target):
-    # Memoize results for each grid -- is this problematic??
     start = tuple(start)
     target = tuple(target)
+    # Cache results to save on repeated calls
     if (start, target) not in grid.saved_directions:
         path = GridAStar(grid, start, target)
         if path:
