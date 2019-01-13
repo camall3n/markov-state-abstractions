@@ -1,16 +1,15 @@
 import random
-from .domain.taxi import Taxi5x5, BusyTaxi5x5
-from .agents import QLearningAgent
-from .skills.taxi import skills5x5, skill_policy
-from .sensors import IdentitySensor
+from gridworlds.domain.taxi import Taxi5x5, BusyTaxi5x5
+from gridworlds.agents import QLearningAgent
+from gridworlds.skills.taxi import skills5x5, skill_policy
+from gridworlds.sensors import IdentitySensor
 
-#%%
 total_timesteps = 100000
 episode_timeout = 2000
 
 epsilon = 0.1
 
-# random.seed(0)
+random.seed(0)
 env = Taxi5x5()
 
 skill_names = list(skills5x5)
@@ -22,7 +21,6 @@ sensor = IdentitySensor
 
 timestep = 0
 total_reward = 0
-print(total_reward)
 
 state = env.get_state()
 observation = sensor.observe(state)
@@ -36,7 +34,7 @@ while timestep < total_timesteps:
         total_reward += reward
         print(total_reward)
 
-        action = agent.act(observation, reward, done)
+        action = agent.act(observation, reward)
 
         if done or timestep >= total_timesteps:
             break
