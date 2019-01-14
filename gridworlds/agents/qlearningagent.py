@@ -36,7 +36,7 @@ class QLearningAgent(BaseAgent):
                     self.prev_action = self.current_skill
                     self.current_skill = None
         else:
-            if learning:
+            if learning and self.prev_rep:
                 self.update(self.prev_rep, self.prev_action, reward, rep)
 
             if random.random() < self.epsilon:
