@@ -43,10 +43,10 @@ def Interact(gridworld):
     if at_depot and at_passenger and not crowded:
         can_run = True
         action = 4
-        terminate = True
     else:
         # Nothing to do
         can_run = False
         action = None
-        terminate = False
+
+    terminate = True # skill always terminates in one step
     return (can_run, action, terminate)
