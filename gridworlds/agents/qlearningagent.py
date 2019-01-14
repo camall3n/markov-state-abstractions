@@ -31,20 +31,18 @@ class QLearningAgent(BaseAgent):
 
         # Decide on next action
         if self.skills:
-            base_action = None
-            while base_action is None:
-                if not self.current_skill:
-                    # Choose a new skill using epsilon-greedy w.r.t. valid skills
-                    valid_skills = self.get_valid_skills()
-                    if random.random() < self.epsilon:
-                        skill_choice = random.choice(valid_skills)
-                    else:
-                        skill_choice = self.argmax_q(rep, valid_skills)
-                    self.current_skill = skill_choice
-                    self.prev_rep = rep
+            if not self.current_skill:
+                # Choose a new skill using epsilon-greedy w.r.t. valid skills
+                valid_skills = self.get_valid_skills()
+                if random.random() < self.epsilon:
+                    skill_choice = random.choice(valid_skills)
+                else:
+                    skill_choice = self.argmax_q(rep, valid_skills)
+                self.current_skill = skill_choice
+                self.prev_rep = rep
 
-                # Compute next base-level action for current skill
-                _, base_action, term = self.skills[self.current_skill]()
+            # Compute next base-level action for current skill
+            _, base_action, term = self.skills[self.current_skill]()
         else:
             if random.random() < self.epsilon:
                 action = random.choice(self.actions)
