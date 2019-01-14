@@ -14,43 +14,36 @@ class QLearningAgent(BaseAgent):
         self.skill_reward += reward
 
         # Check if current skill should terminate
-        if self.skills and self.current_skill:
-            _, _, term = self.skills[self.current_skill]()
+        if self.skills and self.running_skill:
+            _, _, term = self.skills[self.running_skill]()
             if term:
-                self.prev_action = self.current_skill
-                self.current_skill = None
+                self.prev_action = self.running_skill
+                self.running_skill = None
 
         # Learning update
         if learning and self.prev_rep:
-            if self.skills:
-                if not self.current_skill:
-                    self.update(self.prev_rep, self.prev_action, self.skill_reward, rep)
-                    self.skill_reward = 0
-            else:
-                self.update(self.prev_rep, self.prev_action, reward, rep)
+            if not self.running_skill:
+                self.update(self.prev_rep, self.prev_action, self.skill_reward, rep)
+                self.skill_reward = 0
 
-        # Decide on next action
-        if self.skills:
-            if not self.current_skill:
-                # Choose a new skill using epsilon-greedy w.r.t. valid skills
-                valid_skills = self.get_valid_skills()
-                if random.random() < self.epsilon:
-                    skill_choice = random.choice(valid_skills)
-                else:
-                    skill_choice = self.argmax_q(rep, valid_skills)
-                self.current_skill = skill_choice
-                self.prev_rep = rep
-
-            # Compute next base-level action for current skill
-            _, base_action, term = self.skills[self.current_skill]()
-        else:
+        # Action selection
+        if not self.running_skill:
+            # Epsilon-greedy selection w.r.t. valid actions/skills
+            valid_choices = self.get_valid_skills() if self.skills else self.actions
             if random.random() < self.epsilon:
-                action = random.choice(self.actions)
+                choice = random.choice(valid_choices)
             else:
-                action = self.argmax_q(rep, self.actions)
-            base_action = action
-            self.prev_action = base_action
+                choice = self.argmax_q(rep, valid_choices)
+            if self.skills:
+                self.running_skill = choice
             self.prev_rep = rep
+
+        # Compute next base-level action
+        if self.skills:
+            _, base_action, _ = self.skills[self.running_skill]()
+        else:
+            base_action = choice
+            self.prev_action = base_action
 
         return base_action
 

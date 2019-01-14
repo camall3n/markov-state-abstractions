@@ -9,13 +9,13 @@ class BaseAgent:
 
         self.prev_rep = None
         self.prev_action = None
-        self.current_skill = None
+        self.running_skill = None
         self.skill_reward = 0
 
     def end_of_episode(self):
         self.prev_rep = None
         self.prev_action = None
-        self.current_skill = None
+        self.running_skill = None
         self.skill_reward = 0
 
     def abstract(self, observation):
