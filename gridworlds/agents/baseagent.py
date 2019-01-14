@@ -17,3 +17,7 @@ class BaseAgent:
         self.prev_action = None
         self.current_skill = None
         self.skill_reward = 0
+
+    def abstract(self, observation):
+        rep = tuple(observation)
+        return rep

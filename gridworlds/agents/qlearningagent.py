@@ -60,10 +60,6 @@ class QLearningAgent(BaseAgent):
     def max_q(self, rep, actions):
         return max([self.Q(rep, skill) for skill in actions])
 
-    def abstract(self, observation):
-        rep = tuple(observation)
-        return rep
-
     def update(self, prev_rep, action, reward, rep):
         s = prev_rep
         a = action
