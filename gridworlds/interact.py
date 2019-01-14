@@ -1,10 +1,10 @@
 import random
 from gridworlds.domain.taxi.taxi import Taxi5x5, BusyTaxi5x5
-from gridworlds.agents.qlearningagent import QLearningAgent
+from gridworlds.agents.qlearningagent import SkilledQLearningAgent
 from gridworlds.domain.taxi.skills import skills5x5, skill_policy
 from gridworlds.sensors import IdentitySensor
 
-total_timesteps = 100000
+total_timesteps = 50000
 episode_timeout = 2000
 
 epsilon = 0.1
@@ -16,7 +16,7 @@ skill_names = list(skills5x5)
 skill_fns = [(lambda n: (lambda: skill_policy(env, n)))(n) for n in skill_names]
 skills = dict(zip(skill_names, skill_fns))
 
-agent = QLearningAgent(env.actions, epsilon=epsilon, skills=skills)
+agent = SkilledQLearningAgent(options=skills, epsilon=epsilon)
 sensor = IdentitySensor
 
 timestep = 0
