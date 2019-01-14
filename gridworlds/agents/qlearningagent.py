@@ -34,16 +34,17 @@ class QLearningAgent(BaseAgent):
                 choice = random.choice(valid_choices)
             else:
                 choice = self.argmax_q(rep, valid_choices)
+
             if self.skills:
                 self.running_skill = choice
+            else:
+                base_action = choice
+                self.prev_action = base_action
             self.prev_rep = rep
 
-        # Compute next base-level action
+        # Unpack base-level action if necessary
         if self.skills:
             _, base_action, _ = self.skills[self.running_skill]()
-        else:
-            base_action = choice
-            self.prev_action = base_action
 
         return base_action
 
