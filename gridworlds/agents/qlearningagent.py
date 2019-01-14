@@ -42,7 +42,7 @@ class QLearningAgent(BaseAgent):
                 self.prev_action = base_action
             self.prev_rep = rep
 
-        # Unpack base-level action if necessary
+        # Unpack base-level action if using skills
         if self.skills:
             _, base_action, _ = self.skills[self.running_skill]()
 
