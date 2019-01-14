@@ -1,3 +1,4 @@
+import numpy as np
 from .taxi import TaxiGrid5x5, TaxiGrid10x10
 from ..gridworld.skills import GoToGridPosition
 
@@ -32,14 +33,20 @@ def GoToDepot(gridworld, start, depotname):
     return GoToGridPosition(gridworld, start=start, target=depot)
 
 def Interact(gridworld):
-    base_action = 4
-    s0 = gridworld.get_state()
-    gridworld.step(base_action)# try interacting
-    s1 = gridworld.get_state()
-    gridworld.step(base_action)# undo
+    # Check relevant state variables to see if skill can run
+    agent_pos = gridworld.agent.position
+    at_depot = any(np.all(loc == agent_pos) for _, loc in gridworld.depot_locs.items())
+    at_passenger = any(np.all(p.position == agent_pos) for p in gridworld.passengers)
+    crowded = (gridworld.passenger is not None
+        and any(np.all(p.position == agent_pos) for p in gridworld.passengers if p != gridworld.passenger))
 
-    # Can only run if it would have an effect
-    can_run = False if all(s0 == s1) else True
-    action = base_action
-    terminate = True
+    if at_depot and at_passenger and not crowded:
+        can_run = True
+        action = 4
+        terminate = True
+    else:
+        # Nothing to do
+        can_run = False
+        action = None
+        terminate = False
     return (can_run, action, terminate)
