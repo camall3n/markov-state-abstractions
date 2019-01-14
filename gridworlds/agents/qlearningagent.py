@@ -13,26 +13,27 @@ class QLearningAgent(BaseAgent):
         rep = self.abstract(observation)
         self.skill_reward += reward
 
+        # Check if current skill should terminate
         if self.skills and self.current_skill:
             _, _, term = self.skills[self.current_skill]()
             if term:
                 self.prev_action = self.current_skill
                 self.current_skill = None
 
+        # Learning update
         if learning and self.prev_rep:
             if self.skills:
-                pass
+                if not self.current_skill:
+                    self.update(self.prev_rep, self.prev_action, self.skill_reward, rep)
+                    self.skill_reward = 0
             else:
                 self.update(self.prev_rep, self.prev_action, reward, rep)
 
+        # Decide on next action
         if self.skills:
             base_action = None
             while base_action is None:
                 if not self.current_skill:
-                    if learning and self.prev_rep:
-                        self.update(self.prev_rep, self.prev_action, self.skill_reward, rep)
-                        self.skill_reward = 0
-
                     # Choose a new skill using epsilon-greedy w.r.t. valid skills
                     valid_skills = self.get_valid_skills()
                     if random.random() < self.epsilon:
