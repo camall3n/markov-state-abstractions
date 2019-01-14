@@ -1,7 +1,7 @@
 %matplotlib inline
 import numpy as np
 import matplotlib.pyplot as plt
-from gridworlds.domain.taxi import Taxi5x5, BusyTaxi5x5
+from gridworlds.domain.taxi.taxi import Taxi5x5, BusyTaxi5x5
 
 env = Taxi5x5()
 envname = env.name
