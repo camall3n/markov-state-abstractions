@@ -13,6 +13,18 @@ class QLearningAgent(BaseAgent):
         rep = self.abstract(observation)
         self.skill_reward += reward
 
+        if self.skills and self.current_skill:
+            _, _, term = self.skills[self.current_skill]()
+            if term:
+                self.prev_action = self.current_skill
+                self.current_skill = None
+
+        if learning and self.prev_rep:
+            if self.skills:
+                pass
+            else:
+                self.update(self.prev_rep, self.prev_action, reward, rep)
+
         if self.skills:
             base_action = None
             while base_action is None:
@@ -32,13 +44,7 @@ class QLearningAgent(BaseAgent):
 
                 # Compute next base-level action for current skill
                 _, base_action, term = self.skills[self.current_skill]()
-                if term:
-                    self.prev_action = self.current_skill
-                    self.current_skill = None
         else:
-            if learning and self.prev_rep:
-                self.update(self.prev_rep, self.prev_action, reward, rep)
-
             if random.random() < self.epsilon:
                 action = random.choice(self.actions)
             else:
