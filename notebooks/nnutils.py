@@ -33,7 +33,7 @@ class Network(torch.nn.Module):
         print(s)
 
 class FeatureNet(Network):
-    def __init__(self, n_actions, n_input_dims=2, n_latent_dims=4, n_hidden_layers=1, n_units_per_layer=32, lr=0.01):
+    def __init__(self, n_actions, n_input_dims=2, n_latent_dims=4, n_hidden_layers=1, n_units_per_layer=32, lr=0.001):
         super().__init__()
         self.n_actions = n_actions
         self.n_input_dims = 2
@@ -47,6 +47,7 @@ class FeatureNet(Network):
 
         self.action_head_layers = []
         self.action_head_layers.extend([torch.nn.Linear(2 * n_latent_dims, n_units_per_layer), torch.nn.Tanh()])
+        self.action_head_layers.extend([torch.nn.Linear(n_units_per_layer, n_units_per_layer), torch.nn.Tanh()] * (n_hidden_layers-1))
         self.action_head_layers.extend([torch.nn.Linear(n_units_per_layer, self.n_actions)])
         self.action_head = torch.nn.Sequential(*self.action_head_layers)
 

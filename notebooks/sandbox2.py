@@ -132,13 +132,12 @@ def animate(i, steps_per_frame=5):
         t.set_text('accuracy = '+str(accuracy))
 
 # --- Watch live ---
-plt.waitforbuttonpress()
-ani = matplotlib.animation.FuncAnimation(fig, animate, frames=50, interval=33, repeat=False)
+# plt.waitforbuttonpress()
+# ani = matplotlib.animation.FuncAnimation(fig, animate, frames=50, interval=33, repeat=False)
+# plt.show()
 
 # --- Save video to file ---
-# ani = matplotlib.animation.FuncAnimation(fig, lambda i: animate(i, steps_per_frame=1), frames=150, interval=1, repeat=False)
-# Writer = matplotlib.animation.writers['ffmpeg']
-# writer = Writer(fps=15, metadata=dict(artist='Cam Allen'), bitrate=1800)
-# ani.save('representation.mp4', writer=writer)
-
-plt.show()
+ani = matplotlib.animation.FuncAnimation(fig, lambda i: animate(i, steps_per_frame=20), frames=30, interval=1, repeat=False)
+Writer = matplotlib.animation.writers['ffmpeg']
+writer = Writer(fps=30, metadata=dict(artist='Cam Allen'), bitrate=1024)
+ani.save('representation2.mp4', writer=writer)
