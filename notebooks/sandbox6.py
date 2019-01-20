@@ -9,7 +9,7 @@ import torch
 from tqdm import tqdm
 
 import notebooks.nnutils as nnutils
-from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld
+from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld
 
 #% Generate starting states
 env = TestWorld()
