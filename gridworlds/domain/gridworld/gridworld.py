@@ -22,6 +22,13 @@ class GridWorld(grid.BaseGrid):
         direction = self.action_map[action]
         if not self.has_wall(self.agent.position, direction):
             self.agent.position += direction
+        s = self.get_state()
+        r = 0
+        done = False
+        return s, r, done
+
+    def get_state(self):
+        return self.agent.position
 
     def plot(self):
         ax = super().plot()
