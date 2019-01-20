@@ -12,7 +12,7 @@ import notebooks.nnutils as nnutils
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld
 
 #% Generate starting states
-env = TestWorld()
+env = SnakeWorld()
 # env.add_random_walls(10)
 env.plot()
 #%%

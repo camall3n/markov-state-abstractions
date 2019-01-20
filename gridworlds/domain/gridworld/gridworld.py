@@ -65,7 +65,6 @@ class SnakeWorld(GridWorld):
         self._grid[3,2] = 1
         self._grid[3,6] = 1
         self._grid[5,4] = 1
-        # self._grid[4,7] = 1
 
         # Should look roughly like this:
         # _______
