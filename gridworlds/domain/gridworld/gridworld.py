@@ -27,8 +27,13 @@ class GridWorld(grid.BaseGrid):
         done = False
         return s, r, done
 
+    def can_run(self, action):
+        assert(action in range(4))
+        direction = self.action_map[action]
+        return False if self.has_wall(self.agent.position, direction) else True
+
     def get_state(self):
-        return self.agent.position
+        return np.copy(self.agent.position)
 
     def plot(self):
         ax = super().plot()
