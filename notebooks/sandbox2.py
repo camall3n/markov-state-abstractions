@@ -1,6 +1,7 @@
-%matplotlib inline
+# %matplotlib inline
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.animation
 import random
 import torch
 from tqdm import tqdm
@@ -20,13 +21,17 @@ positions = {
 s0 = np.random.choice(len(states),n_samples)
 x0 = sigma * np.random.randn(n_samples,2) + np.asarray([positions[states[i]] for i in s0])
 
-plt.scatter(x0[:,0],x0[:,1], c=s0)
+fig = plt.figure(figsize=(10,6))
+ax = fig.add_subplot(221)
+ax.scatter(x0[:,0],x0[:,1], c=s0)
 plt.xlim(-2,2)
 plt.ylim(-2,2)
 plt.xlabel('x')
 plt.ylabel('y')
-plt.title('states (t)')
-plt.show()
+plt.xticks([])
+plt.yticks([])
+ax.set_title('states (t)')
+# plt.show()
 
 #%% Generate actions and next states
 actions = ['cw','ccw']
@@ -37,13 +42,15 @@ direction = np.asarray([2*ac-1 for ac in a ^ slip])
 s1 = (s0 + direction) % 4
 x1 = x0 + np.asarray([positions[states[i1]] for i1 in s1]) - np.asarray([positions[states[i0]] for i0 in s0])
 
-plt.scatter(x1[:,0],x1[:,1], c=s0)
+ax = fig.add_subplot(222)
+ax.scatter(x1[:,0],x1[:,1], c=s0)
 plt.xlim(-2,2)
 plt.ylim(-2,2)
 plt.xlabel('x')
 plt.ylabel('y')
-plt.title('states (t+1)')
-plt.show()
+plt.xticks([])
+plt.yticks([])
+ax.set_title('states (t+1)')
 
 #%% Entangle variables
 def entangle(x):
@@ -57,25 +64,47 @@ def entangle(x):
 u0 = entangle(x0)
 u1 = entangle(x1)
 
-plt.scatter(u0[:,0], u0[:,1], c=s0)
+ax = fig.add_subplot(223)
+ax.scatter(u0[:,0], u0[:,1], c=s0)
 plt.xlim(-2,2)
 plt.ylim(-2,2)
 plt.xlabel('u')
 plt.ylabel('v')
-plt.title('observations (t)')
-plt.show()
+plt.xticks([])
+plt.yticks([])
+ax.set_title('observations (t)')
 
-plt.scatter(u1[:,0], u1[:,1], c=s0)
-plt.xlim(-2,2)
-plt.ylim(-2,2)
-plt.xlabel('u')
-plt.ylabel('v')
-plt.title('observations (t+1)')
-plt.show()
+# plt.scatter(u1[:,0], u1[:,1], c=s0)
+# plt.xlim(-2,2)
+# plt.ylim(-2,2)
+# plt.xlabel('u')
+# plt.ylabel('v')
+# plt.title('observations (t+1)')
+# plt.show()
 
 #%% Learn inv dynamics
 fnet = nnutils.FeatureNet(n_actions=2, n_latent_dims=2, n_hidden_layers=1, n_units_per_layer=128, lr=0.002)
 # fnet.print_summary()
+
+ax = fig.add_subplot(224)
+x, y = [], []
+with torch.no_grad():
+    tx0 = torch.as_tensor(u0, dtype=torch.float32)
+    tx1 = torch.as_tensor(u1, dtype=torch.float32)
+    a_hat = fnet.predict_a(tx0,tx1).numpy()
+    accuracy = np.sum(a_hat == a)/len(a)
+    z0 = fnet.phi(tx0).numpy()
+x = z0[:,0]
+y = z0[:,1]
+sc = ax.scatter(x,y,c=s0)
+t = ax.text(-0.25, .5, 'accuracy = '+str(accuracy))
+plt.xlim([-1.1,1.1])
+plt.ylim([-1.1,1.1])
+plt.xlabel(r'$z_0$')
+plt.ylabel(r'$z_1$')
+plt.xticks([])
+plt.yticks([])
+ax.set_title('representation (t)')
 
 def get_batch(x0, x1, a, batch_size):
     idx = np.random.choice(len(a), batch_size, replace=False)
@@ -85,36 +114,31 @@ def get_batch(x0, x1, a, batch_size):
     return tx0, tx1, ta
 
 batch_size = 128
-def train(fnet):
-    running_loss = 0.0
-    for i in tqdm(range(500)):
+
+def animate(i, steps_per_frame=5):
+    for i in range(steps_per_frame):
         tx0, tx1, ta = get_batch(u0[:n_samples//2,:], u1[:n_samples//2,:], a[:n_samples//2], batch_size=batch_size)
         loss = fnet.train_batch(tx0, tx1, ta)
-        running_loss += loss
-        if i % 50 == 49:
-            plot_rep(ax)
-            tqdm.write('[%d] loss: %.3f' %
-                  (i + 1, running_loss / 20))
-            running_loss = 0.0
-train(fnet)
 
-#%% Explain effects
-with torch.no_grad():
-    tx0 = torch.as_tensor(u0, dtype=torch.float32)
-    tx1 = torch.as_tensor(u1, dtype=torch.float32)
-    ta  = torch.as_tensor(a, dtype=torch.int)
-    a_hat = fnet.predict_a(tx0,tx1).numpy()
-    z0 = fnet.phi(tx0).numpy()
-    z1 = fnet.phi(tx1).numpy()
+    with torch.no_grad():
+        tx0 = torch.as_tensor(u0, dtype=torch.float32)
+        tx1 = torch.as_tensor(u1, dtype=torch.float32)
+        ta  = torch.as_tensor(a, dtype=torch.int)
+        a_hat = fnet.predict_a(tx0,tx1).numpy()
+        accuracy = np.sum(a_hat == a)/len(a)
+        z0 = fnet.phi(tx0).numpy()
+        z1 = fnet.phi(tx1).numpy()
+        sc.set_offsets(z0)
+        t.set_text('accuracy = '+str(accuracy))
 
-plt.scatter(z0[:,0], z0[:,1], c=s0)
-plt.xlabel('z1')
-plt.ylabel('z2')
-plt.title('sensor(s)')
-plt.show()
+# --- Watch live ---
+plt.waitforbuttonpress()
+ani = matplotlib.animation.FuncAnimation(fig, animate, frames=50, interval=100, repeat=False)
 
-plt.scatter(z1[:,0], z1[:,1], c=s0)
-plt.xlabel('z1')
-plt.ylabel('z2')
-plt.title('sensor(s)')
+# --- Save video to file ---
+# ani = matplotlib.animation.FuncAnimation(fig, lambda i: animate(i, steps_per_frame=1), frames=150, interval=1, repeat=False)
+# Writer = matplotlib.animation.writers['ffmpeg']
+# writer = Writer(fps=15, metadata=dict(artist='Cam Allen'), bitrate=1800)
+# ani.save('representation.mp4', writer=writer)
+
 plt.show()
