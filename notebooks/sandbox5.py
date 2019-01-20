@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation
 import random
 import scipy.stats
+import scipy.ndimage.filters
 import torch
 from tqdm import tqdm
 
@@ -66,6 +67,7 @@ def entangle(x):
     u = np.zeros([n_samples,bins,bins])
     for i in range(n_samples):
         u[i,digitized[i,0]-1,digitized[i,1]-1] = 1
+    u = scipy.ndimage.filters.gaussian_filter(u, sigma=.6, truncate=1., mode='nearest')
     return u
 
 u0 = entangle(x0)
@@ -142,7 +144,7 @@ ani = matplotlib.animation.FuncAnimation(fig, animate, frames=50, interval=33, r
 plt.show()
 
 # --- Save video to file ---
-# ani = matplotlib.animation.FuncAnimation(fig, lambda i: animate(i, steps_per_frame=20), frames=30, interval=1, repeat=False)
+# ani = matplotlib.animation.FuncAnimation(fig, lambda i: animate(i, steps_per_frame=20), frames=50, interval=1, repeat=False)
 # Writer = matplotlib.animation.writers['ffmpeg']
 # writer = Writer(fps=15, metadata=dict(artist='Cam Allen'), bitrate=1024)
-# ani.save('representation4.mp4', writer=writer)
+# ani.save('representation5.mp4', writer=writer)
