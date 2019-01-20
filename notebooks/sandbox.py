@@ -62,7 +62,7 @@ plt.title('sensor(s\')')
 plt.show()
 
 #%% Learn inv dynamics
-fnet = nnutils.FeatureNet(n_actions=2, n_latent_dims=2, lr=0.01)
+fnet = nnutils.FeatureNet(n_actions=2, n_latent_dims=2, lr=0.001)
 
 def get_batch(x0, x1, a, batch_size=32):
     idx = np.random.choice(len(a), batch_size, replace=False)
@@ -73,7 +73,7 @@ def get_batch(x0, x1, a, batch_size=32):
 def train(fnet):
     batch_size = 32
     running_loss = 0.0
-    for i in tqdm(range(50)):
+    for i in tqdm(range(500)):
         loss = fnet.train_batch(*get_batch(x0, x1, a))
         running_loss += loss
         if i % 20 == 19:    # print every 20 mini-batches
@@ -90,13 +90,13 @@ with torch.no_grad():
     z0 = fnet.phi(tx0).numpy()
     z1 = fnet.phi(tx1).numpy()
 
-plt.scatter(z0[:,0], z0[:,1])
+plt.scatter(z0[:,0], z0[:,1],c=a_hat)
 plt.xlabel('z1')
 plt.ylabel('z2')
 plt.title('sensor(s)')
 plt.show()
 
-plt.scatter(z1[:,0], z1[:,1],c=(a_hat==a))
+plt.scatter(z1[:,0], z1[:,1],c=a_hat)
 plt.xlabel('z1')
 plt.ylabel('z2')
 plt.title('sensor(s\')')
