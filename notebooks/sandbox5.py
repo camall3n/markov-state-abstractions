@@ -12,7 +12,7 @@ import notebooks.nnutils as nnutils
 from gridworlds.domain.gridworld.gridworld import GridWorld
 
 #% Generate starting states
-env = GridWorld(rows=2,cols=2)
+env = GridWorld(rows=3,cols=3)
 
 #%%
 n_samples = 20000
