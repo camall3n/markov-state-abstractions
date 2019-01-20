@@ -133,7 +133,7 @@ def animate(i, steps_per_frame=5):
 
 # --- Watch live ---
 plt.waitforbuttonpress()
-ani = matplotlib.animation.FuncAnimation(fig, animate, frames=50, interval=100, repeat=False)
+ani = matplotlib.animation.FuncAnimation(fig, animate, frames=50, interval=33, repeat=False)
 
 # --- Save video to file ---
 # ani = matplotlib.animation.FuncAnimation(fig, lambda i: animate(i, steps_per_frame=1), frames=150, interval=1, repeat=False)
