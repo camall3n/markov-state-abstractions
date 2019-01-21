@@ -5,7 +5,7 @@ import random
 import torch
 from tqdm import tqdm
 
-import notebooks.nnutils as nnutils
+from notebooks.featurenet import FeatureNet
 
 #%% Generate starting states
 sigma = 0.1
@@ -62,7 +62,7 @@ plt.title('sensor(s\')')
 plt.show()
 
 #%% Learn inv dynamics
-fnet = nnutils.FeatureNet(n_actions=2, n_latent_dims=2, lr=0.001)
+fnet = FeatureNet(n_actions=2, n_latent_dims=2, lr=0.001)
 
 def get_batch(x0, x1, a, batch_size=32):
     idx = np.random.choice(len(a), batch_size, replace=False)

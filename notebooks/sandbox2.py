@@ -6,7 +6,7 @@ import random
 import torch
 from tqdm import tqdm
 
-import notebooks.nnutils as nnutils
+from notebooks.featurenet import FeatureNet
 
 #%% Generate starting states
 sigma = 0.1

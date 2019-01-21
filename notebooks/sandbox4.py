@@ -6,7 +6,7 @@ import random
 import torch
 from tqdm import tqdm
 
-import notebooks.nnutils as nnutils
+from notebooks.featurenet import FeatureNet
 from gridworlds.domain.gridworld.gridworld import GridWorld
 
 #% Generate starting states
