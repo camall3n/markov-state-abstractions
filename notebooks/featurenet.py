@@ -53,19 +53,20 @@ class FeatureNet(Network):
         return self._train_batch(x0, x1, a, model='inv')
 
     def train_fwd_batch(self, x0, x1, a):
-        return self._train_batch(x0, x1, a, model='fwd')
+        return self._train_batch(x0, x1, a, model='both')
 
     def _train_batch(self, x0, x1, a, model='inv'):
         self.optimizer.zero_grad()
         z0 = self.phi(x0)
         z1 = self.phi(x1)
-        if model=='inv':
+        loss = 0
+        if model in ['inv', 'both']:
             a_hat = self.inv_model(z0, z1)
-            loss = self.compute_inv_loss(a_logits=a_hat, a=a)
-        else:
+            loss += 10*self.compute_inv_loss(a_logits=a_hat, a=a)
+        if model in ['fwd', 'both']:
             z1_hat = self.fwd_model(z0, a)
-            loss = self.compute_fwd_loss(z1, z1_hat)
-            loss += self.compute_diversity_loss(z0, z1)
+            loss += self.compute_fwd_loss(z1, z1_hat)
+            # loss += self.compute_diversity_loss(z0, z1)
         loss.backward()
         self.optimizer.step()
         return loss

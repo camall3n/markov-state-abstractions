@@ -13,7 +13,7 @@ from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWor
 
 #% Generate starting states
 # env = GridWorld(rows=3,cols=3)
-env = TestWorld()
+env =   TestWorld()
 # env.add_random_walls(10)
 # env.plot()
 #%%
@@ -159,9 +159,9 @@ def get_batch(x0, x1, a, batch_size):
 
 get_next_batch = lambda: get_batch(u0[:n_samples//2,:], u1[:n_samples//2,:], a[:n_samples//2], batch_size=batch_size)
 
-batch_size = 1024
+batch_size = 512
 n_frames = 200
-def animate(i, n_inv_steps=10, n_fwd_steps=1, plot_every=10):
+def animate(i, n_inv_steps=10, n_fwd_steps=1, plot_every=20):
     for _ in range(plot_every):
         for _ in range(n_inv_steps):
             tx0, tx1, ta = get_next_batch()
@@ -200,4 +200,4 @@ ani = matplotlib.animation.FuncAnimation(fig, animate, frames=n_frames, interval
 # --- Save video to file ---
 Writer = matplotlib.animation.writers['ffmpeg']
 writer = Writer(fps=15, metadata=dict(artist='Cam Allen'), bitrate=256)
-ani.save('v2_testworld_repel_max_diff.mp4', writer=writer)
+ani.save('v0_testworld_batchnorm.mp4', writer=writer)
