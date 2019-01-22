@@ -85,7 +85,7 @@ ax.set_title('observations (t)')
 
 #%% Learn inv dynamics
 input_shape = u0.shape[1:]
-fnet = nnutils.FeatureNet(n_actions=4, input_shape=input_shape, n_latent_dims=2, n_hidden_layers=1, n_units_per_layer=32, lr=0.001)
+fnet = FeatureNet(n_actions=4, input_shape=input_shape, n_latent_dims=2, n_hidden_layers=1, n_units_per_layer=32, lr=0.001, inv_steps_per_fwd=10)
 fnet.print_summary()
 
 #%%
@@ -98,13 +98,23 @@ test_c  = c0[-n_samples//10:]
 ax = fig.add_subplot(224)
 x, y = [], []
 with torch.no_grad():
-    a_hat = fnet.predict_a(test_x0,test_x1).numpy()
-    accuracy = np.sum(a_hat == test_a.numpy())/len(test_a.numpy())
-    z0 = fnet.phi(test_x0).numpy()
-x = z0[:,0]
-y = z0[:,1]
-sc = ax.scatter(x,y,c=test_c)
-t = ax.text(-0.5, .5, 'accuracy = '+str(accuracy))
+    tx0 = torch.as_tensor(u0, dtype=torch.float32)
+    tx1 = torch.as_tensor(u1, dtype=torch.float32)
+    ta  = torch.as_tensor(a, dtype=torch.long)
+    z0 = fnet.phi(tx0)
+    z1 = fnet.phi(tx1)
+    z1_hat = fnet.fwd_model(z0, ta)
+
+    inv_a_hat = fnet.predict_a(z0,z1).numpy()
+    inv_accuracy = np.sum(inv_a_hat == a)/len(a)
+    fwd_a_hat = fnet.predict_a(z0,z1_hat).numpy()
+    fwd_accuracy = np.sum(fwd_a_hat == a)/len(a)
+x = z0.numpy()[:,0]
+y = z0.numpy()[:,1]
+sc = ax.scatter(x,y,c=c0)
+tframe = ax.text(-0.25, .7, 'frame = '+str(0))
+tinv = ax.text(-0.5, .5, 'inv_accuracy = '+str(inv_accuracy))
+tfwd = ax.text(-0.5, .3, 'fwd_accuracy = '+str(fwd_accuracy))
 plt.xlim([-1.1,1.1])
 plt.ylim([-1.1,1.1])
 plt.xlabel(r'$z_0$')
@@ -121,30 +131,40 @@ def get_batch(x0, x1, a, batch_size):
     return tx0, tx1, ta
 
 batch_size = 1024
-def animate(i, steps_per_frame=20):
+n_frames = 200
+def animate(i, steps_per_frame=1):
     loss = 0
-    for i in range(steps_per_frame):
+    for _ in range(steps_per_frame):
         tx0, tx1, ta = get_batch(u0[:n_samples//2,:], u1[:n_samples//2,:], a[:n_samples//2], batch_size=batch_size)
         loss += fnet.train_batch(tx0, tx1, ta).detach().numpy()
 
     with torch.no_grad():
+        tx0 = torch.as_tensor(u0, dtype=torch.float32)
+        tx1 = torch.as_tensor(u1, dtype=torch.float32)
+        ta  = torch.as_tensor(a, dtype=torch.long)
+        z0 = fnet.phi(tx0)
+        z1 = fnet.phi(tx1)
+        z1_hat = fnet.fwd_model(z0, ta)
 
-        a_hat = fnet.predict_a(test_x0,test_x1).numpy()
-        accuracy = np.sum(a_hat == test_a.numpy())/len(test_a.numpy())
-        z0 = fnet.phi(test_x0).numpy()
-        z1 = fnet.phi(test_x1).numpy()
-        sc.set_offsets(z0)
-        t.set_text('accuracy = '+str(accuracy))
+        inv_a_hat = fnet.predict_a(z0,z1).numpy()
+        inv_accuracy = np.sum(inv_a_hat == a)/len(a)
+        fwd_a_hat = fnet.predict_a(z0,z1_hat).numpy()
+        fwd_accuracy = np.sum(fwd_a_hat == a)/len(a)
+
+        sc.set_offsets(z0.numpy())
+
+        tframe.set_text('frame = '+str(i))
+        tinv.set_text('inv_accuracy = '+str(inv_accuracy))
+        tfwd.set_text('fwd_accuracy = '+str(fwd_accuracy))
 
 #%%
 
 # --- Watch live ---
-plt.waitforbuttonpress()
-ani = matplotlib.animation.FuncAnimation(fig, animate, frames=50, interval=33, repeat=False)
-plt.show()
+# plt.waitforbuttonpress()
+ani = matplotlib.animation.FuncAnimation(fig, animate, frames=n_frames, interval=1, repeat=False)
+# plt.show()
 
 # --- Save video to file ---
-# ani = matplotlib.animation.FuncAnimation(fig, lambda i: animate(i, steps_per_frame=20), frames=50, interval=1, repeat=False)
-# Writer = matplotlib.animation.writers['ffmpeg']
-# writer = Writer(fps=15, metadata=dict(artist='Cam Allen'), bitrate=1024)
-# ani.save('representation5.mp4', writer=writer)
+Writer = matplotlib.animation.writers['ffmpeg']
+writer = Writer(fps=15, metadata=dict(artist='Cam Allen'), bitrate=256)
+ani.save('representation5.mp4', writer=writer)

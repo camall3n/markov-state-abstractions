@@ -3,60 +3,61 @@ import torch
 import torch.nn
 
 from .nnutils import Network
+from .phinet import PhiNet
+from .invnet import InvNet
+from .fwdnet import FwdNet
 
 class FeatureNet(Network):
-    def __init__(self, n_actions, input_shape=2, n_latent_dims=4, n_hidden_layers=1, n_units_per_layer=32, lr=0.001):
+    def __init__(self, n_actions, input_shape=2, n_latent_dims=4, n_hidden_layers=1, n_units_per_layer=32, lr=0.001, inv_steps_per_fwd=5):
         super().__init__()
         self.n_actions = n_actions
-        self.input_shape = input_shape
         self.lr = lr
+        self.inv_steps_per_fwd = inv_steps_per_fwd
 
-        self.shape_flat = np.prod(self.input_shape)
+        self.phi = PhiNet(input_shape=input_shape, n_latent_dims=n_latent_dims, n_units_per_layer=n_units_per_layer, n_hidden_layers=n_hidden_layers, lr=lr)
 
-        self.phi_layers = []
-        self.phi_layers.extend([Reshape(-1, self.shape_flat)])
-        self.phi_layers.extend([torch.nn.Linear(self.shape_flat, n_units_per_layer), torch.nn.Tanh()])
-        self.phi_layers.extend([torch.nn.Linear(n_units_per_layer, n_units_per_layer), torch.nn.Tanh()] * (n_hidden_layers-1))
-        self.phi_layers.extend([torch.nn.Linear(n_units_per_layer, n_latent_dims), torch.nn.Tanh()])
-        self.phi = torch.nn.Sequential(*self.phi_layers)
+        self.fwd_model = FwdNet(n_actions=n_actions, n_latent_dims=n_latent_dims, n_hidden_layers=0, lr=lr)
 
-        self.action_head_layers = []
-        self.action_head_layers.extend([torch.nn.Linear(2 * n_latent_dims, n_units_per_layer), torch.nn.Tanh()])
-        self.action_head_layers.extend([torch.nn.Linear(n_units_per_layer, n_units_per_layer), torch.nn.Tanh()] * (n_hidden_layers-1))
-        self.action_head_layers.extend([torch.nn.Linear(n_units_per_layer, self.n_actions)])
-        self.action_head = torch.nn.Sequential(*self.action_head_layers)
+        self.inv_model = InvNet(n_actions=n_actions, n_latent_dims=n_latent_dims, n_units_per_layer=n_units_per_layer, n_hidden_layers=n_hidden_layers, lr=lr)
 
         self.cross_entropy = torch.nn.CrossEntropyLoss(reduction='mean')
-        self.softmax = torch.nn.Softmax(dim=-1)
-
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
 
-    def layers(self):
-        phi_sequential = list(self.phi.modules())[0]
-        phi_layers = list(phi_sequential.modules())[1:]
-        action_head_sequential = list(self.phi.modules())[0]
-        action_head_layers = list(action_head_sequential.modules())[1:]
-        return phi_layers + action_head_layers
-
-    def forward(self, x0, x1):
-        z0 = self.phi(x0)
-        z1 = self.phi(x1)
-        context = torch.cat((z0,z1), -1)
-        a_logits = self.action_head(context)
-        return a_logits
-
-    def predict_a(self, x0, x1):
-        a_logits = self(x0, x1)
-        return torch.argmax(a_logits, dim=-1)
-
-    def compute_loss(self, x0, x1, a):
-        a_logits = self(x0, x1)
+    def compute_loss(self, a_logits, a):
         loss = self.cross_entropy(input=a_logits, target=a)
         return loss
 
+    def forward(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def predict_a(self, z0, z1, ):
+        a_logits = self.inv_model(z0, z1)
+        return torch.argmax(a_logits, dim=-1)
+
     def train_batch(self, x0, x1, a):
+        loss = 0
+        for _ in range(self.inv_steps_per_fwd):
+            loss += self.train_inv_batch(x0, x1, a)
+        loss += self.train_fwd_batch(x0, x1, a)
+        return loss / (self.inv_steps_per_fwd + 1)
+
+    def train_inv_batch(self, x0, x1, a):
+        self.inv_model.unfreeze()
+        return self._train_batch(x0, x1, a, inv_only=True)
+
+    def train_fwd_batch(self, x0, x1, a):
+        self.inv_model.freeze()
+        return self._train_batch(x0, x1, a, inv_only=False)
+
+    def _train_batch(self, x0, x1, a, inv_only=True):
         self.optimizer.zero_grad()
-        loss = self.compute_loss(x0, x1, a)
+        z0 = self.phi(x0)
+        if inv_only:
+            z1 = self.phi(x1)
+        else:
+            z1 = self.fwd_model(z0, a)
+        a_logits = self.inv_model(z0, z1)
+        loss = self.compute_loss(a_logits, a)
         loss.backward()
         self.optimizer.step()
         return loss

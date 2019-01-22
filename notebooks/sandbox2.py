@@ -83,7 +83,7 @@ ax.set_title('observations (t)')
 # plt.show()
 
 #%% Learn inv dynamics
-fnet = nnutils.FeatureNet(n_actions=2, n_latent_dims=2, n_hidden_layers=1, n_units_per_layer=128, lr=0.002)
+fnet = FeatureNet(n_actions=2, n_latent_dims=2, n_hidden_layers=1, n_units_per_layer=128, lr=0.002)
 # fnet.print_summary()
 
 ax = fig.add_subplot(224)
@@ -91,13 +91,21 @@ x, y = [], []
 with torch.no_grad():
     tx0 = torch.as_tensor(u0, dtype=torch.float32)
     tx1 = torch.as_tensor(u1, dtype=torch.float32)
-    a_hat = fnet.predict_a(tx0,tx1).numpy()
-    accuracy = np.sum(a_hat == a)/len(a)
-    z0 = fnet.phi(tx0).numpy()
-x = z0[:,0]
-y = z0[:,1]
+    ta  = torch.as_tensor(a, dtype=torch.long)
+    z0 = fnet.phi(tx0)
+    z1 = fnet.phi(tx1)
+    z1_hat = fnet.fwd_model(z0, ta)
+
+    inv_a_hat = fnet.predict_a(z0,z1).numpy()
+    inv_accuracy = np.sum(inv_a_hat == a)/len(a)
+    fwd_a_hat = fnet.predict_a(z0,z1_hat).numpy()
+    fwd_accuracy = np.sum(fwd_a_hat == a)/len(a)
+x = z0.numpy()[:,0]
+y = z0.numpy()[:,1]
 sc = ax.scatter(x,y,c=s0)
-t = ax.text(-0.25, .5, 'accuracy = '+str(accuracy))
+tframe = ax.text(-0.25, .7, 'frame = '+str(0))
+tinv = ax.text(-0.5, .5, 'inv_accuracy = '+str(inv_accuracy))
+tfwd = ax.text(-0.5, .3, 'fwd_accuracy = '+str(fwd_accuracy))
 plt.xlim([-1.1,1.1])
 plt.ylim([-1.1,1.1])
 plt.xlabel(r'$z_0$')
@@ -110,26 +118,33 @@ def get_batch(x0, x1, a, batch_size):
     idx = np.random.choice(len(a), batch_size, replace=False)
     tx0 = torch.as_tensor(x0[idx], dtype=torch.float32)
     tx1 = torch.as_tensor(x1[idx], dtype=torch.float32)
-    ta = torch.as_tensor(a[idx])
+    ta = torch.as_tensor(a[idx], dtype=torch.long)
     return tx0, tx1, ta
 
 batch_size = 128
 
-def animate(i, steps_per_frame=5):
-    for i in range(steps_per_frame):
+def animate(i, steps_per_frame=1):
+    for _ in range(steps_per_frame):
         tx0, tx1, ta = get_batch(u0[:n_samples//2,:], u1[:n_samples//2,:], a[:n_samples//2], batch_size=batch_size)
         loss = fnet.train_batch(tx0, tx1, ta)
 
     with torch.no_grad():
         tx0 = torch.as_tensor(u0, dtype=torch.float32)
         tx1 = torch.as_tensor(u1, dtype=torch.float32)
-        ta  = torch.as_tensor(a, dtype=torch.int)
-        a_hat = fnet.predict_a(tx0,tx1).numpy()
-        accuracy = np.sum(a_hat == a)/len(a)
-        z0 = fnet.phi(tx0).numpy()
-        z1 = fnet.phi(tx1).numpy()
-        sc.set_offsets(z0)
-        t.set_text('accuracy = '+str(accuracy))
+        ta  = torch.as_tensor(a, dtype=torch.long)
+        z0 = fnet.phi(tx0)
+        z1 = fnet.phi(tx1)
+        z1_hat = fnet.fwd_model(z0, ta)
+
+        inv_a_hat = fnet.predict_a(z0,z1).numpy()
+        inv_accuracy = np.sum(inv_a_hat == a)/len(a)
+        fwd_a_hat = fnet.predict_a(z0,z1_hat).numpy()
+        fwd_accuracy = np.sum(fwd_a_hat == a)/len(a)
+
+        sc.set_offsets(z0.numpy())
+        tframe.set_text('frame = '+str(i))
+        tinv.set_text('inv_accuracy = '+str(inv_accuracy))
+        tfwd.set_text('fwd_accuracy = '+str(fwd_accuracy))
 
 # --- Watch live ---
 plt.waitforbuttonpress()

@@ -33,3 +33,14 @@ class Network(torch.nn.Module):
     def print_summary(self):
         s = str(self)
         print(s)
+
+def one_hot(x, depth, dtype=torch.float32):
+    """Convert a batch of indices to a batch of one-hot vectors
+
+    Parameters
+    ----------
+    depth : int
+        The length of each output vector
+    """
+    i = x.unsqueeze(-1).expand(-1, depth)
+    return torch.zeros_like(i, dtype=dtype).scatter_(-1, i, 1)
