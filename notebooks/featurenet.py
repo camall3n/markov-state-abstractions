@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import torch
 import torch.nn
@@ -20,12 +21,19 @@ class FeatureNet(Network):
 
         self.inv_model = InvNet(n_actions=n_actions, n_latent_dims=n_latent_dims, n_units_per_layer=n_units_per_layer, n_hidden_layers=n_hidden_layers, lr=lr)
 
-        self.cross_entropy = torch.nn.CrossEntropyLoss(reduction='mean')
+        self.cross_entropy = torch.nn.CrossEntropyLoss()
+        self.mse = torch.nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
 
-    def compute_loss(self, a_logits, a):
-        loss = self.cross_entropy(input=a_logits, target=a)
-        return loss
+    def compute_inv_loss(self, a_logits, a):
+        return self.cross_entropy(input=a_logits, target=a)
+
+    def compute_fwd_loss(self, z1, z1_hat):
+        return self.mse(z1, z1_hat)
+
+    def compute_diversity_loss(self, z0, z1):
+        # Encourage the largest difference to be non-zero
+        return 0.1*torch.mean(torch.exp(-100 * torch.max(torch.pow(z0-z1,2),dim=-1)[0]))
 
     def forward(self, *args, **kwargs):
         raise NotImplementedError
@@ -42,22 +50,22 @@ class FeatureNet(Network):
         return loss / (self.inv_steps_per_fwd + 1)
 
     def train_inv_batch(self, x0, x1, a):
-        self.inv_model.unfreeze()
-        return self._train_batch(x0, x1, a, inv_only=True)
+        return self._train_batch(x0, x1, a, model='inv')
 
     def train_fwd_batch(self, x0, x1, a):
-        self.inv_model.freeze()
-        return self._train_batch(x0, x1, a, inv_only=False)
+        return self._train_batch(x0, x1, a, model='fwd')
 
-    def _train_batch(self, x0, x1, a, inv_only=True):
+    def _train_batch(self, x0, x1, a, model='inv'):
         self.optimizer.zero_grad()
         z0 = self.phi(x0)
-        if inv_only:
-            z1 = self.phi(x1)
+        z1 = self.phi(x1)
+        if model=='inv':
+            a_hat = self.inv_model(z0, z1)
+            loss = self.compute_inv_loss(a_logits=a_hat, a=a)
         else:
-            z1 = self.fwd_model(z0, a)
-        a_logits = self.inv_model(z0, z1)
-        loss = self.compute_loss(a_logits, a)
+            z1_hat = self.fwd_model(z0, a)
+            loss = self.compute_fwd_loss(z1, z1_hat)
+            loss += self.compute_diversity_loss(z0, z1)
         loss.backward()
         self.optimizer.step()
         return loss
