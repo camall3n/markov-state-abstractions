@@ -42,20 +42,13 @@ class FeatureNet(Network):
         a_logits = self.inv_model(z0, z1)
         return torch.argmax(a_logits, dim=-1)
 
-    def train_batch(self, x0, x1, a):
-        loss = 0
-        for _ in range(self.inv_steps_per_fwd):
-            loss += self.train_inv_batch(x0, x1, a)
-        loss += self.train_fwd_batch(x0, x1, a)
-        return loss / (self.inv_steps_per_fwd + 1)
-
     def train_inv_batch(self, x0, x1, a):
-        return self._train_batch(x0, x1, a, model='inv')
+        return self.train_batch(x0, x1, a, model='inv')
 
     def train_fwd_batch(self, x0, x1, a):
-        return self._train_batch(x0, x1, a, model='fwd')
+        return self.train_batch(x0, x1, a, model='fwd')
 
-    def _train_batch(self, x0, x1, a, model='inv'):
+    def train_batch(self, x0, x1, a, model='inv'):
         self.optimizer.zero_grad()
         z0 = self.phi(x0)
         z1 = self.phi(x1)
