@@ -30,7 +30,7 @@ for t in range(n_samples):
     actions.append(a)
 states = np.stack(states)
 s0 = np.asarray(states[:-1,:])
-c0 = s0[:,0]*env._rows+s0[:,1]
+c0 = s0[:,0]*env._cols+s0[:,1]
 s1 = np.asarray(states[1:,:])
 a = np.asarray(actions)
 
@@ -39,6 +39,7 @@ np.sum(np.all(s0==s1,axis=1))
 sigma = 0.1
 x0 = s0 + sigma * np.random.randn(n_samples,2)
 x1 = x0 + np.asarray(s1 - s0) + sigma/2 * np.random.randn(n_samples,2)
+# x1 = s1 + sigma * np.random.randn(n_samples,2)
 
 fig = plt.figure(figsize=(10,6))
 ax = fig.add_subplot(231)
@@ -159,9 +160,9 @@ def get_batch(x0, x1, a, batch_size):
 
 get_next_batch = lambda: get_batch(u0[:n_samples//2,:], u1[:n_samples//2,:], a[:n_samples//2], batch_size=batch_size)
 
-batch_size = 512
+batch_size = 1024
 n_frames = 200
-def animate(i, n_inv_steps=10, n_fwd_steps=1, plot_every=20):
+def animate(i, n_inv_steps=10, n_fwd_steps=1, plot_every=10):
     for _ in range(plot_every):
         for _ in range(n_inv_steps):
             tx0, tx1, ta = get_next_batch()
@@ -193,11 +194,11 @@ def animate(i, n_inv_steps=10, n_fwd_steps=1, plot_every=20):
 #%%
 
 # --- Watch live ---
-# plt.waitforbuttonpress()
+plt.waitforbuttonpress()
 ani = matplotlib.animation.FuncAnimation(fig, animate, frames=n_frames, interval=1, repeat=False)
-# plt.show()
+plt.show()
 
 # --- Save video to file ---
-Writer = matplotlib.animation.writers['ffmpeg']
-writer = Writer(fps=15, metadata=dict(artist='Cam Allen'), bitrate=256)
-ani.save('v0_testworld_batchnorm.mp4', writer=writer)
+# Writer = matplotlib.animation.writers['ffmpeg']
+# writer = Writer(fps=15, metadata=dict(artist='Cam Allen'), bitrate=256)
+# ani.save('video.mp4', writer=writer)
