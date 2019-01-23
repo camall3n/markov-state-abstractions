@@ -164,6 +164,7 @@ batch_size = 1024
 n_frames = 200
 def animate(i, n_inv_steps=10, n_fwd_steps=1, plot_every=10):
     for _ in range(plot_every):
+        fnet.train()
         for _ in range(n_inv_steps):
             tx0, tx1, ta = get_next_batch()
             fnet.train_inv_batch(tx0, tx1, ta)
@@ -172,6 +173,7 @@ def animate(i, n_inv_steps=10, n_fwd_steps=1, plot_every=10):
             fnet.train_fwd_batch(tx0, tx1, ta)
 
     with torch.no_grad():
+        fnet.eval()
         tx0 = torch.as_tensor(u0, dtype=torch.float32)
         tx1 = torch.as_tensor(u1, dtype=torch.float32)
         ta  = torch.as_tensor(a, dtype=torch.long)

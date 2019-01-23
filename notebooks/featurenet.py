@@ -66,7 +66,7 @@ class FeatureNet(Network):
         if model in ['fwd', 'both']:
             z1_hat = self.fwd_model(z0, a)
             loss += self.compute_fwd_loss(z1, z1_hat)
-            loss += self.compute_diversity_loss(z0, z1)
+            # loss += self.compute_diversity_loss(z0, z1)
         loss.backward()
         self.optimizer.step()
         return loss
