@@ -167,10 +167,10 @@ def animate(i, n_inv_steps=10, n_fwd_steps=1, plot_every=10):
         fnet.train()
         for _ in range(n_inv_steps):
             tx0, tx1, ta = get_next_batch()
-            fnet.train_inv_batch(tx0, tx1, ta)
+            fnet.train_batch(tx0, tx1, ta, model='inv')
         for _ in range(n_fwd_steps):
             tx0, tx1, ta = get_next_batch()
-            fnet.train_fwd_batch(tx0, tx1, ta)
+            fnet.train_batch(tx0, tx1, ta, model='fwd')
 
     with torch.no_grad():
         fnet.eval()
