@@ -109,7 +109,7 @@ with torch.no_grad():
     a_hat = fnet.inv_model(z0,z1)
 
     inv_loss = fnet.compute_inv_loss(a_logits=a_hat, a=ta)
-    fwd_loss = fnet.compute_fwd_loss(z1, z1_hat)
+    fwd_loss = fnet.compute_fwd_loss(z0, z1, z1_hat)
 
 ax = fig.add_subplot(234)
 inv_x = z0.numpy()[:,0]
@@ -183,7 +183,7 @@ def animate(i, n_inv_steps=10, n_fwd_steps=1, plot_every=10):
         a_hat = fnet.inv_model(z0,z1)
 
         inv_loss = fnet.compute_inv_loss(a_logits=a_hat, a=ta)
-        fwd_loss = fnet.compute_fwd_loss(z1, z1_hat)
+        fwd_loss = fnet.compute_fwd_loss(z0, z1, z1_hat)
 
         inv_sc.set_offsets(z0.numpy())
         fwd_sc.set_offsets(z1_hat.numpy())
