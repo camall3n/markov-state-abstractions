@@ -31,7 +31,7 @@ class FeatureNet(Network):
     def compute_fwd_loss(self, z0, z1, z1_hat):
         eps = 1e-6
         error = torch.sqrt(torch.sum(torch.pow(z1_hat - z1, 2), dim=-1))
-        dz = torch.sqrt(torch.sum(torch.pow(z1 - z0, 2), dim=-1)).detach()
+        dz = torch.sqrt(torch.sum(torch.pow(z1 - z0, 2), dim=-1))
         return torch.mean(error / (dz + eps))
         # return self.mse(z1,z1_hat)
 
