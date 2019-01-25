@@ -30,8 +30,8 @@ class FeatureNet(Network):
 
     def compute_fwd_loss(self, z0, z1, z1_hat):
         eps = 1e-6
-        error = torch.max(torch.abs(z1_hat - z1), dim=-1)[0]
-        dz = torch.max(torch.abs(z1 - z0), dim=-1)[0].detach()
+        error = torch.sqrt(torch.sum(torch.pow(z1_hat - z1, 2), dim=-1))
+        dz = torch.sqrt(torch.sum(torch.pow(z1 - z0, 2), dim=-1)).detach()
         return torch.mean(error / (dz + eps))
         # return self.mse(z1,z1_hat)
 
@@ -62,7 +62,7 @@ class FeatureNet(Network):
             loss += self.compute_inv_loss(a_logits=a_hat, a=a)
         if model in ['fwd', 'both']:
             z1_hat = self.fwd_model(z0, a)
-            loss += 0.1 * self.compute_fwd_loss(z0, z1, z1_hat)
+            loss += 0.05 * self.compute_fwd_loss(z0, z1, z1_hat)
             # loss += self.compute_diversity_loss(z0, z1)
         loss.backward()
         self.optimizer.step()
