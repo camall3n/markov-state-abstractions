@@ -194,13 +194,18 @@ def animate(i, n_inv_steps=10, n_fwd_steps=1, plot_every=10):
         tfwd.set_text('fwd_loss = '+str(fwd_loss.numpy()))
 
 #%%
+live = True
+# live = False
 
 # --- Watch live ---
-plt.waitforbuttonpress()
+if live:
+    plt.waitforbuttonpress()
 ani = matplotlib.animation.FuncAnimation(fig, animate, frames=n_frames, interval=1, repeat=False)
-plt.show()
+if live:
+    plt.show()
 
 # --- Save video to file ---
-# Writer = matplotlib.animation.writers['ffmpeg']
-# writer = Writer(fps=15, metadata=dict(artist='Cam Allen'), bitrate=256)
-# ani.save('video.mp4', writer=writer)
+if not live:
+    Writer = matplotlib.animation.writers['ffmpeg']
+    writer = Writer(fps=15, metadata=dict(artist='Cam Allen'), bitrate=256)
+    ani.save('video_max_err_over_detached_dz_0.1.mp4', writer=writer)
