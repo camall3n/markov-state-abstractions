@@ -7,5 +7,7 @@ grid/logs/
 grid/scripts/
 logs/
 models/
+videos/
+results/
 
 **.pyc
