@@ -1,8 +1,8 @@
-# %matplotlib inline
+import imageio
 import numpy as np
+# import matplotlib
+# matplotlib.use('tkagg')
 import matplotlib.pyplot as plt
-import matplotlib.animation
-import random
 import scipy.stats
 import scipy.ndimage.filters
 import torch
@@ -18,6 +18,7 @@ env =   TestWorld()
 # env.plot()
 #%%
 n_samples = 20000
+n_test_samples = 2000
 states = [env.get_state()]
 actions = []
 for t in range(n_samples):
@@ -43,8 +44,6 @@ fig = plt.figure(figsize=(10,6))
 def plot_states(x, fig, subplot=111, colors=None, cmap=None, title=''):
     ax = fig.add_subplot(subplot)
     ax.scatter(x[:,0],x[:,1],c=colors, cmap=cmap)
-    # plt.xlim(-1.5,1.5)
-    # plt.ylim(-1.5,1.5)
     plt.xlabel('x')
     plt.ylabel('y')
     plt.xticks([])
@@ -80,33 +79,31 @@ fnet.print_summary()
 
 #%%
 
-test_x0 = torch.as_tensor(u0[-n_samples//10:,:], dtype=torch.float32)
-test_x1 = torch.as_tensor(u1[-n_samples//10:,:], dtype=torch.float32)
-test_a  = torch.as_tensor(a[-n_samples//10:], dtype=torch.int)
-test_c  = c0[-n_samples//10:]
+test_x0 = torch.as_tensor(u0[-n_test_samples:,:], dtype=torch.float32)
+test_x1 = torch.as_tensor(u1[-n_test_samples:,:], dtype=torch.float32)
+test_a  = torch.as_tensor(a[-n_test_samples:], dtype=torch.long)
+test_c  = c0[-n_test_samples:]
 
-def score_rep(fnet, frame):
+def test_rep(fnet, step):
     with torch.no_grad():
         fnet.eval()
-        tx0 = torch.as_tensor(u0, dtype=torch.float32)
-        tx1 = torch.as_tensor(u1, dtype=torch.float32)
-        ta  = torch.as_tensor(a, dtype=torch.long)
-        z0 = fnet.phi(tx0)
-        z1 = fnet.phi(tx1)
-        z1_hat = fnet.fwd_model(z0, ta)
-        a_hat = fnet.inv_model(z0,z1)
+        z0 = fnet.phi(test_x0)
+        z1 = fnet.phi(test_x1)
+        z1_hat = fnet.fwd_model(z0, test_a)
+        a_hat = fnet.inv_model(z0, z1)
 
-        inv_loss = fnet.compute_inv_loss(a_logits=a_hat, a=ta)
+        inv_loss = fnet.compute_inv_loss(a_logits=a_hat, a=test_a)
         fwd_loss = fnet.compute_fwd_loss(z0, z1, z1_hat)
-    return z0, z1_hat, z1, frame, inv_loss, fwd_loss
+    return z0, z1_hat, z1, step, inv_loss, fwd_loss
 
-z0, z1_hat, z1, frame, inv_loss, fwd_loss = score_rep(fnet, frame=0)
+z0, z1_hat, z1, step, inv_loss, fwd_loss = test_rep(fnet, step=0)
 
 def plot_rep(z, fig, subplot=111, colors=None, cmap=None, title=''):
     ax = fig.add_subplot(subplot)
-    x = z.numpy()[:,0]
-    y = z.numpy()[:,1]
-    sc = ax.scatter(x,y,c=colors, cmap=cmap)
+    z = z.numpy()
+    x = z[:,0]
+    y = z[:,1]
+    sc = ax.scatter(x,y,c=test_c, cmap=cmap)
     plt.xlim([-1.1,1.1])
     plt.ylim([-1.1,1.1])
     plt.xlabel(r'$z_0$')
@@ -120,18 +117,21 @@ _, inv_sc = plot_rep(z0, fig, subplot=234, colors=c0, cmap='Set3', title=r'$\phi
 ax, fwd_sc = plot_rep(z1_hat, fig, subplot=235, colors=c0, cmap='Set3', title=r'$T(\phi(x_t),a_t)$')
 _, true_sc = plot_rep(z1, fig, subplot=236, colors=c0, cmap='Set3', title=r'$\phi(x_{t+1})$')
 
-tframe = ax.text(-0.25, .7, 'frame = '+str(0))
+tstep = ax.text(-0.75, .7, 'updates = '+str(0))
 tinv = ax.text(-0.75, .5, 'inv_loss = '+str(inv_loss.numpy()))
 tfwd = ax.text(-0.75, .3, 'fwd_loss = '+str(fwd_loss.numpy()))
 
-def update_plots(z0, z1_hat, z1, frame, inv_loss, fwd_loss):
+def update_plots(z0, z1_hat, z1, step, inv_loss, fwd_loss):
     inv_sc.set_offsets(z0.numpy())
     fwd_sc.set_offsets(z1_hat.numpy())
     true_sc.set_offsets(z1.numpy())
 
-    tframe.set_text('frame = '+str(frame))
+    tstep.set_text('updates = '+str(step))
     tinv.set_text('inv_loss = '+str(inv_loss.numpy()))
     tfwd.set_text('fwd_loss = '+str(fwd_loss.numpy()))
+
+    fig.canvas.draw()
+    fig.canvas.flush_events()
 
 def get_batch(x0, x1, a, batch_size):
     idx = np.random.choice(len(a), batch_size, replace=False)
@@ -143,31 +143,32 @@ def get_batch(x0, x1, a, batch_size):
 get_next_batch = lambda: get_batch(u0[:n_samples//2,:], u1[:n_samples//2,:], a[:n_samples//2], batch_size=batch_size)
 
 batch_size = 1024
-n_frames = 200
-def animate(i, n_inv_steps=10, n_fwd_steps=1, plot_every=10):
-    for _ in range(plot_every):
-        fnet.train()
-        for _ in range(n_inv_steps):
+
+n_steps = 200
+n_frames = n_steps // 20
+n_updates_per_frame = n_steps // n_frames
+n_inv_steps_per_update = 10
+n_fwd_steps_per_update = 1
+
+fig.show()
+pbar = tqdm(total=n_frames)
+data = []
+for frame in range(n_frames+1):
+    for _ in range(n_updates_per_frame):
+        for _ in range(n_inv_steps_per_update):
             tx0, tx1, ta = get_next_batch()
             fnet.train_batch(tx0, tx1, ta, model='inv')
-        for _ in range(n_fwd_steps):
+        for _ in range(n_fwd_steps_per_update):
             tx0, tx1, ta = get_next_batch()
             fnet.train_batch(tx0, tx1, ta, model='fwd')
 
-    update_plots(*score_rep(fnet, frame=i))
+    updates = test_rep(fnet, step=frame*n_updates_per_frame)
+    update_plots(*updates)
 
-#%%
-live = True
-# live = False
+    frame = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+    frame = frame.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    data.append(frame)
+    pbar.update(1)
 
-if live:
-    plt.waitforbuttonpress()
-
-ani = matplotlib.animation.FuncAnimation(fig, animate, frames=n_frames, interval=1, repeat=False)
-
-if live:
-    plt.show()
-else:
-    Writer = matplotlib.animation.writers['ffmpeg']
-    writer = Writer(fps=15, metadata=dict(artist='Cam Allen'), bitrate=256)
-    ani.save('video.mp4', writer=writer)
+imageio.mimwrite('video.mp4', data, fps=15)
+pbar.close()

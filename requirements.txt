@@ -2,6 +2,7 @@ appnope==0.1.0
 backcall==0.1.0
 cycler==0.10.0
 decorator==4.3.0
+imageio==2.4.1
 ipykernel==5.1.0
 ipython==7.2.0
 ipython-genutils==0.2.0
@@ -14,13 +15,17 @@ numpy==1.15.4
 parso==0.3.1
 pexpect==4.6.0
 pickleshare==0.7.5
+Pillow==5.4.1
 prompt-toolkit==2.0.7
 ptyprocess==0.6.0
 Pygments==2.3.1
 pyparsing==2.3.0
 python-dateutil==2.7.5
 pyzmq==17.1.2
+scipy==1.2.0
 six==1.12.0
+torch==1.0.0
 tornado==5.1.1
+tqdm==4.29.1
 traitlets==4.3.2
 wcwidth==0.1.7

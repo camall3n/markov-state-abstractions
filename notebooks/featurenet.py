@@ -47,6 +47,7 @@ class FeatureNet(Network):
         return torch.argmax(a_logits, dim=-1)
 
     def train_batch(self, x0, x1, a, model='inv'):
+        self.train()
         self.optimizer.zero_grad()
         z0 = self.phi(x0)
         z1 = self.phi(x1)
