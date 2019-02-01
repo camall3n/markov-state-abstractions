@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 class RepVisualization:
-    def __init__(self, x0, x1, obs, colors=None, cmap='Set3'):
+    def __init__(self, x0, x1, obs, colors=None, cmap=None):
         self.fig = plt.figure(figsize=(10,6))
         self.cmap = cmap
         self.colors = colors
