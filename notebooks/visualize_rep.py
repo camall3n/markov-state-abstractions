@@ -11,12 +11,13 @@ from tqdm import tqdm
 from notebooks.featurenet import FeatureNet
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld
 
-#% Generate starting states
+#%% ------------------ Define MDP ------------------
 # env = GridWorld(rows=3,cols=3)
 env =   TestWorld()
 # env.add_random_walls(10)
 # env.plot()
-#%%
+
+#%% ------------------ Generate experiences ------------------
 n_samples = 20000
 n_test_samples = 2000
 states = [env.get_state()]
@@ -35,10 +36,27 @@ c0 = s0[:,0]*env._cols+s0[:,1]
 s1 = np.asarray(states[1:,:])
 a = np.asarray(actions)
 
+#%% ------------------ Define sensors ------------------
 sigma = 0.1
 x0 = s0 + sigma * np.random.randn(n_samples,2)
 x1 = x0 + np.asarray(s1 - s0) + sigma/2 * np.random.randn(n_samples,2)
 # x1 = s1 + sigma * np.random.randn(n_samples,2)
+
+def entangle(x):
+    bins = 3*env._rows
+    digitized = scipy.stats.binned_statistic_2d(x[:,0],x[:,1],np.arange(n_samples), bins=bins, expand_binnumbers=True)[-1].transpose()
+    u = np.zeros([n_samples,bins,bins])
+    for i in range(n_samples):
+        u[i,digitized[i,0]-1,digitized[i,1]-1] = 1
+    u = scipy.ndimage.filters.gaussian_filter(u, sigma=.6, truncate=1., mode='nearest')
+    return u
+
+u0 = entangle(x0)
+u1 = entangle(x1)
+
+#%% ------------------ Prepare visualization ------------------
+fnet = FeatureNet(n_actions=4, input_shape=u0.shape[1:], n_latent_dims=2, n_hidden_layers=1, n_units_per_layer=32, lr=0.001)
+fnet.print_summary()
 
 fig = plt.figure(figsize=(10,6))
 def plot_states(x, fig, subplot=111, colors=None, cmap=None, title=''):
@@ -53,31 +71,11 @@ def plot_states(x, fig, subplot=111, colors=None, cmap=None, title=''):
 plot_states(x0, fig, subplot=231, colors=c0, cmap='Set3', title='states (t)')
 plot_states(x1, fig, subplot=233, colors=c0, cmap='Set3', title='states (t+1)')
 
-#% Entangle variables
-def entangle(x):
-    bins = 3*env._rows
-    digitized = scipy.stats.binned_statistic_2d(x[:,0],x[:,1],np.arange(n_samples), bins=bins, expand_binnumbers=True)[-1].transpose()
-    u = np.zeros([n_samples,bins,bins])
-    for i in range(n_samples):
-        u[i,digitized[i,0]-1,digitized[i,1]-1] = 1
-    u = scipy.ndimage.filters.gaussian_filter(u, sigma=.6, truncate=1., mode='nearest')
-    return u
-
-u0 = entangle(x0)
-u1 = entangle(x1)
-
 ax = fig.add_subplot(232)
 ax.imshow(u0[-1])
 plt.xticks([])
 plt.yticks([])
 ax.set_title('observations (t)')
-
-#%% Learn inv dynamics
-input_shape = u0.shape[1:]
-fnet = FeatureNet(n_actions=4, input_shape=input_shape, n_latent_dims=2, n_hidden_layers=1, n_units_per_layer=32, lr=0.001)
-fnet.print_summary()
-
-#%%
 
 test_x0 = torch.as_tensor(u0[-n_test_samples:,:], dtype=torch.float32)
 test_x1 = torch.as_tensor(u1[-n_test_samples:,:], dtype=torch.float32)
@@ -133,22 +131,23 @@ def update_plots(z0, z1_hat, z1, step, inv_loss, fwd_loss):
     fig.canvas.draw()
     fig.canvas.flush_events()
 
-def get_batch(x0, x1, a, batch_size):
+#%% ------------------ Run Experiment ------------------
+n_steps = 2000
+n_frames = n_steps // 20
+n_updates_per_frame = n_steps // n_frames
+
+batch_size = 1024
+n_inv_steps_per_update = 10
+n_fwd_steps_per_update = 1
+
+def get_batch(x0, x1, a, batch_size=batch_size):
     idx = np.random.choice(len(a), batch_size, replace=False)
     tx0 = torch.as_tensor(x0[idx], dtype=torch.float32)
     tx1 = torch.as_tensor(x1[idx], dtype=torch.float32)
     ta = torch.as_tensor(a[idx])
     return tx0, tx1, ta
 
-get_next_batch = lambda: get_batch(u0[:n_samples//2,:], u1[:n_samples//2,:], a[:n_samples//2], batch_size=batch_size)
-
-batch_size = 1024
-
-n_steps = 200
-n_frames = n_steps // 20
-n_updates_per_frame = n_steps // n_frames
-n_inv_steps_per_update = 10
-n_fwd_steps_per_update = 1
+get_next_batch = lambda: get_batch(u0[:n_samples//2,:], u1[:n_samples//2,:], a[:n_samples//2])
 
 fig.show()
 pbar = tqdm(total=n_frames)
@@ -162,8 +161,7 @@ for frame in range(n_frames+1):
             tx0, tx1, ta = get_next_batch()
             fnet.train_batch(tx0, tx1, ta, model='fwd')
 
-    updates = test_rep(fnet, step=frame*n_updates_per_frame)
-    update_plots(*updates)
+    update_plots(*test_rep(fnet, step=frame*n_updates_per_frame))
 
     frame = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
     frame = frame.reshape(fig.canvas.get_width_height()[::-1] + (3,))
