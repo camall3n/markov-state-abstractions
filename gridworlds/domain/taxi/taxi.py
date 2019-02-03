@@ -73,8 +73,8 @@ class BaseTaxi(GridWorld):
         else:
             self.goal = None
 
-    def plot(self):
-        ax = super().plot()
+    def plot(self, ax=None, goal_ax=None):
+        ax = super().plot(ax)
         for _, depot in self.depots.items():
             depot.plot(ax)
         for p in (p for p in self.passengers if not p.intaxi):
@@ -83,7 +83,7 @@ class BaseTaxi(GridWorld):
             p.plot(ax)
 
         if self.goal:
-            self.goal.plot()
+            self.goal.plot(goal_ax)
 
     def step(self, action):
         if action < 4:
@@ -158,14 +158,15 @@ class TaxiGoal(BaseGrid):
         for p in self.passengers:
             p.position = self.depots[passenger_goals[p.name]].position
 
-    def plot(self):
-        ax = super().plot()
+    def plot(self, ax):
+        ax = super().plot(ax, draw_bg_grid=False)
         for _, depot in self.depots.items():
             depot.plot(ax)
         for p in self.passengers:
             p.plot(ax)
-        plt.text(0.5,0.5, 'Goal:', fontsize=12, color='k',
+        ax.text(0,0.5, 'Goal:', fontsize=12, color='k',
             horizontalalignment='center', verticalalignment='center')
+        return ax
 
 class Taxi5x5(BaseTaxi, TaxiGrid5x5):
     name = 'Taxi5x5'

@@ -38,26 +38,39 @@ class BaseGrid:
     def contents(self, row, col):
         return self._contents[row//2, col//2]
 
-    def plot(self):
+    def plot(self, ax=None, draw_bg_grid=True):
         scale = 3/5
         rowscale = scale * self._rows
         colscale = scale * self._cols
-        plt.figure(figsize=(colscale,rowscale))
-        ax = plt.axes()
+        if ax is None:
+            plt.figure(figsize=(colscale,rowscale))
+            ax = plt.axes()
         ax.axis('off')
-        plt.xlim([-0.1,self._cols+0.1]), plt.ylim([-0.1,self._rows+0.1])
-        plt.xticks([]), plt.yticks([])
-        plt.gca().invert_yaxis()
+        ax.axis('equal')
+        ax.set_xticks([]), ax.set_yticks([])
+        ax.invert_yaxis()
+
+        # Draw faint background grid
+        row_range = np.linspace(0,self._rows,self._rows+1)
+        col_range = np.linspace(0,self._cols,self._cols+1)
+        if draw_bg_grid:
+            for row in range(self._rows):
+                ax.vlines(col_range, row, row+1, colors='lightgray', linewidth=0.5)
+            for col in range(self._cols):
+                ax.hlines(row_range, col, col+1, colors='lightgray', linewidth=0.5)
+        else:
+            ax.set_xlim([0,self._cols])
+            ax.set_ylim([0,self._rows])
+            # ax.set_xlim([-0.1,self._cols+0.1])
+            # ax.set_ylim([-0.1,self._rows+0.1])
 
         # Get lists of vertical and horizontal wall locations
         v_walls = self._grid[:,::2][1::2,:]
         h_walls = self._grid[::2,:][:,1::2].transpose()
-        row_range = np.linspace(0,self._rows,self._rows+1)
-        col_range = np.linspace(0,self._cols,self._cols+1)
         for row in range(self._rows):
-            plt.vlines(col_range[v_walls[row]==1], row, row+1)
+            ax.vlines(col_range[v_walls[row]==1], row, row+1)
         for col in range(self._cols):
-            plt.hlines(row_range[h_walls[col]==1], col, col+1)
+            ax.hlines(row_range[h_walls[col]==1], col, col+1)
         return ax
 
     def has_wall(self, position, offset):

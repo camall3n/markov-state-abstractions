@@ -16,5 +16,5 @@ class Passenger(BaseSprite):
             textcolor = 'white'
         else:
             textcolor = 'black'
-        plt.text(x, y, self.name[0], fontsize=12, color=textcolor,
+        ax.text(x, y, self.name[0], fontsize=12, color=textcolor,
             horizontalalignment='center', verticalalignment='center')

@@ -35,8 +35,8 @@ class GridWorld(grid.BaseGrid):
     def get_state(self):
         return np.copy(self.agent.position)
 
-    def plot(self):
-        ax = super().plot()
+    def plot(self, ax=None):
+        ax = super().plot(ax)
         if self.agent:
             self.agent.plot(ax)
         return ax
