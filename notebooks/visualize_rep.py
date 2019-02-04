@@ -93,7 +93,7 @@ def test_rep(fnet):
 
         inv_loss = fnet.compute_inv_loss(a_logits=a_hat, a=test_a)
         fwd_loss = fnet.compute_fwd_loss(z0, z1, z1_hat)
-    results = [z0, z1_hat, z1, inv_loss, fwd_loss]
+    results = [z0, z1_hat, z1, inv_loss, fwd_loss, test_a, a_hat]
     return [r.numpy() for r in results]
 
 #%% ------------------ Run Experiment ------------------
@@ -111,4 +111,3 @@ for frame in tqdm(range(n_frames+1)):
     data.append(frame)
 
 imageio.mimwrite('video.mp4', data, fps=15)
-pbar.close()
