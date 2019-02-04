@@ -60,13 +60,15 @@ class RepVisualization:
 
     def _setup_effects(self, subplot=111, title=''):
         ax = self.fig.add_subplot(subplot)
-        ax.set_xlabel('action')
+        # ax.set_xlabel('action')
         ax.set_ylabel(r'$\Delta z$')
         ax.set_ylim([-2,2])
         ax.set_title(title)
+        ax.set_xticks([])
+        ax.set_yticks([])
         return ax
 
-    def _plot_effects(self, z0, z1, a, ax, title=''):
+    def _plot_effects(self, z0, z1, a, ax, title='', noise=False):
         ax.clear()
         ax.set_xlabel('action')
         ax.set_ylabel(r'$\Delta z$')
@@ -74,9 +76,11 @@ class RepVisualization:
         ax.set_title(title)
         n_dims = z0.shape[-1]
         dz_flat = (z1 - z0).flatten()
+        if noise:
+            dz_flat += noise * np.random.randn(len(dz_flat))
         a_flat = np.repeat(a, n_dims)
         var_flat = np.tile(np.arange(n_dims), len(a))
-        sns.violinplot(x=a_flat, y=dz_flat, hue=var_flat, inner=None, dodge=False, ax=ax)
+        sns.violinplot(x=a_flat, y=dz_flat, hue=var_flat, inner=None, dodge=False, bw='silverman', ax=ax)
         plt.setp(ax.collections, alpha=.7)
         return ax
 
@@ -92,7 +96,7 @@ class RepVisualization:
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
-        self._plot_effects(z0, z1_hat, a, ax=self.effects_hat, title=r'$T(\phi(x_t),a) - \phi(x_{t})$')
+        self._plot_effects(z0, z1_hat, a, ax=self.effects_hat, title=r'$T(\phi(x_t),a) - \phi(x_{t})$', noise=0.02)
         self._plot_effects(z0, z1, a, ax=self.effects, title=r'$\phi(x_{t+1}) - \phi(x_{t})$')
 
         frame = np.frombuffer(self.fig.canvas.tostring_rgb(), dtype=np.uint8)
