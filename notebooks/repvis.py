@@ -32,7 +32,7 @@ class RepVisualization:
         self.effects_hat = self._setup_effects(subplot=338)
         self.effects = self._setup_effects(subplot=339)
 
-        self.fig.tight_layout(pad=5.0, h_pad=1.08, w_pad=1.08)
+        self.fig.tight_layout(pad=5.0, h_pad=1.08, w_pad=2.5)
         self.fig.show()
 
     def _plot_states(self, x, subplot=111, title=''):
@@ -61,7 +61,7 @@ class RepVisualization:
     def _setup_effects(self, subplot=111, title=''):
         ax = self.fig.add_subplot(subplot)
         # ax.set_xlabel('action')
-        ax.set_ylabel(r'$\Delta z$')
+        ax.set_ylabel(r'$\Delta\ z$')
         ax.set_ylim([-2,2])
         ax.set_title(title)
         ax.set_xticks([])
@@ -71,7 +71,7 @@ class RepVisualization:
     def _plot_effects(self, z0, z1, a, ax, title='', noise=False):
         ax.clear()
         ax.set_xlabel('action')
-        ax.set_ylabel(r'$\Delta z$')
+        ax.set_ylabel(r'$\Delta\ z$')
         ax.set_ylim([-2,2])
         ax.set_title(title)
         n_dims = z0.shape[-1]
@@ -81,6 +81,10 @@ class RepVisualization:
         a_flat = np.repeat(a, n_dims)
         var_flat = np.tile(np.arange(n_dims), len(a))
         sns.violinplot(x=a_flat, y=dz_flat, hue=var_flat, inner=None, dodge=False, bw='silverman', ax=ax)
+
+        # Re-label legend entries
+        for i, t in enumerate(ax.legend_.texts):
+            t.set_text(r'$z_{('+str(i)+')}$')
         plt.setp(ax.collections, alpha=.7)
         return ax
 
