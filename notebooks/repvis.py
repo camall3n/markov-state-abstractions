@@ -81,6 +81,7 @@ class RepVisualization:
         a_flat = np.repeat(a, n_dims)
         var_flat = np.tile(np.arange(n_dims), len(a))
         sns.violinplot(x=a_flat, y=dz_flat, hue=var_flat, inner=None, dodge=False, bw='silverman', ax=ax)
+        ax.axhline(y=0, ls=":", c=".5")
 
         # Re-label legend entries
         for i, t in enumerate(ax.legend_.texts):
