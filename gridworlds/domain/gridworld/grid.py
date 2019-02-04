@@ -61,8 +61,6 @@ class BaseGrid:
         else:
             ax.set_xlim([0,self._cols])
             ax.set_ylim([0,self._rows])
-            # ax.set_xlim([-0.1,self._cols+0.1])
-            # ax.set_ylim([-0.1,self._rows+0.1])
 
         # Get lists of vertical and horizontal wall locations
         v_walls = self._grid[:,::2][1::2,:]
