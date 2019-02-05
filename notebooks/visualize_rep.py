@@ -52,8 +52,8 @@ u0 = entangle(x0)
 u1 = entangle(x1)
 
 #%% ------------------ Setup experiment ------------------
-n_steps = 2000
-n_frames = n_steps // 20
+n_steps = 5000
+n_frames = 100
 n_updates_per_frame = n_steps // n_frames
 
 batch_size = 1024
