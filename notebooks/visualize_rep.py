@@ -98,7 +98,7 @@ def test_rep(fnet):
 
 #%% ------------------ Run Experiment ------------------
 data = []
-for frame in tqdm(range(n_frames+1)):
+for frame_idx in tqdm(range(n_frames+1)):
     for _ in range(n_updates_per_frame):
         for _ in range(n_inv_steps_per_update):
             tx0, tx1, ta = get_next_batch()
@@ -107,7 +107,7 @@ for frame in tqdm(range(n_frames+1)):
             tx0, tx1, ta = get_next_batch()
             fnet.train_batch(tx0, tx1, ta, model='fwd')
 
-    frame = repvis.update_plots(frame*n_updates_per_frame, *test_rep(fnet))
+    frame = repvis.update_plots(frame_idx*n_updates_per_frame, *test_rep(fnet))
     data.append(frame)
 
 imageio.mimwrite('video.mp4', data, fps=15)
