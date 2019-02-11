@@ -40,9 +40,9 @@ x1 = x0 + np.asarray(s1 - s0) + sigma/2 * np.random.randn(n_samples,2)
 # x1 = s1 + sigma * np.random.randn(n_samples,2)
 
 def entangle(x):
-    bins = 3*env._rows
+    bins = (3*env._rows, 3*env._cols)
     digitized = scipy.stats.binned_statistic_2d(x[:,0],x[:,1],np.arange(n_samples), bins=bins, expand_binnumbers=True)[-1].transpose()
-    u = np.zeros([n_samples,bins,bins])
+    u = np.zeros([n_samples,bins[0],bins[1]])
     for i in range(n_samples):
         u[i,digitized[i,0]-1,digitized[i,1]-1] = 1
     u = scipy.ndimage.filters.gaussian_filter(u, sigma=.6, truncate=1., mode='nearest')
