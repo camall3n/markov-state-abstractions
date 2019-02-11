@@ -37,7 +37,7 @@ class RepVisualization:
 
     def _plot_states(self, x, subplot=111, title=''):
         ax = self.fig.add_subplot(subplot)
-        ax.scatter(x[:,0],x[:,1],c=self.colors, cmap=self.cmap)
+        ax.scatter(x[:,1],-x[:,0],c=self.colors, cmap=self.cmap)
         ax.set_xlabel('x')
         ax.set_ylabel('y')
         ax.set_xticks([])
