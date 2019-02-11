@@ -11,11 +11,15 @@ class InvNet(Network):
         self.lr = lr
         self.frozen = False
 
-        self.inv_layers = []
-        self.inv_layers.extend([torch.nn.Linear(2 * n_latent_dims, n_units_per_layer), torch.nn.Tanh()])
-        self.inv_layers.extend([torch.nn.Linear(n_units_per_layer, n_units_per_layer), torch.nn.Tanh()] * (n_hidden_layers-1))
-        self.inv_layers.extend([torch.nn.Linear(n_units_per_layer, self.n_actions)])
-        self.inv_model = torch.nn.Sequential(*self.inv_layers)
+        self.layers = []
+        if n_hidden_layers == 0:
+            self.layers.extend([torch.nn.Linear(2*n_latent_dims, n_actions)])
+        else:
+            self.layers.extend([torch.nn.Linear(2*n_latent_dims, n_units_per_layer), torch.nn.Tanh()])
+            self.layers.extend([torch.nn.Linear(n_units_per_layer, n_units_per_layer), torch.nn.Tanh()] * (n_hidden_layers-1))
+            self.layers.extend([torch.nn.Linear(n_units_per_layer, n_actions)])
+
+        self.inv_model = torch.nn.Sequential(*self.layers)
 
     def forward(self, z0, z1):
         context = torch.cat((z0,z1), -1)

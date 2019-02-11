@@ -12,15 +12,15 @@ class PhiNet(Network):
 
         shape_flat = np.prod(self.input_shape)
 
-        self.phi_layers = []
-        self.phi_layers.extend([Reshape(-1, shape_flat)])
-        self.phi_layers.extend([torch.nn.Linear(shape_flat, n_units_per_layer), torch.nn.Tanh()])
-        self.phi_layers.extend([torch.nn.Linear(n_units_per_layer, n_units_per_layer), torch.nn.Tanh()] * (n_hidden_layers-1))
-        self.phi_layers.extend([
-            torch.nn.Linear(n_units_per_layer, n_latent_dims),
-            # torch.nn.BatchNorm1d(n_latent_dims, affine=False),
-            torch.nn.Tanh()])
-        self.phi = torch.nn.Sequential(*self.phi_layers)
+        self.layers = []
+        self.layers.extend([Reshape(-1, shape_flat)])
+        if n_hidden_layers == 0:
+            self.layers.extend([torch.nn.Linear(shape_flat, n_latent_dims), torch.nn.Tanh()])
+        else:
+            self.layers.extend([torch.nn.Linear(shape_flat, n_units_per_layer), torch.nn.Tanh()])
+            self.layers.extend([torch.nn.Linear(n_units_per_layer, n_units_per_layer), torch.nn.Tanh()] * (n_hidden_layers-1))
+            self.layers.extend([torch.nn.Linear(n_units_per_layer, n_latent_dims), torch.nn.Tanh()])
+        self.phi = torch.nn.Sequential(*self.layers)
 
     def forward(self, x):
         z = self.phi(x)
