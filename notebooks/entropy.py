@@ -13,7 +13,7 @@ sns.distplot(s, hist=True, kde=False, bins=50)
 plt.show()
 
 #%% Seaborn KDE:
-sns.kdeplot(s, bw=0.05, clip=[0,1], shade=True)
+sns.kdeplot(s, bw=0.005, clip=[0,1], shade=True)
 plt.show()
 
 #%% Manually implement KDE
@@ -26,7 +26,7 @@ def areaplot(x, y, ax=None, label=''):
     sns.lineplot(x, y, ax=ax, label=label)
     ax.fill_between(x, 0, y, alpha=0.25)
 
-sigma = 0.05
+sigma = 0.002
 ds = np.concatenate((np.array((0,)), np.diff(s)))
 
 x = np.linspace(0,1,N)
@@ -68,6 +68,22 @@ print('h_ss =', h_ss)
 #%% Tuning sigma manually
 N = 1000
 eps = 1e-6
+ss = (s[np.newaxis] - s[:, np.newaxis])
+sigmas = np.logspace(-4,0,50)
+h_ss = np.zeros_like(sigmas)
+for i, sigma in enumerate(sigmas):
+    K = lambda x: np.exp(-x**2 / (2*sigma**2)) / (sigma * np.sqrt(2*np.pi))
+    h_ss[i] = np.log(len(s)-1) - 1/len(s) * np.sum(np.log(eps + np.sum(K(ss), axis=1)-K(0)), axis=0)
+fig, ax = plt.subplots()
+ax.semilogx(sigmas, h_ss)
+
+best_idx = np.argmin(h_ss)
+print('h_hat =', h_ss[best_idx])
+print('sigma =', sigmas[best_idx])
+
+#%% Tuning sigma manually
+N = 1000
+eps = 1e-6
 s = np.random.uniform(0,1,N)
 ss = (s[np.newaxis] - s[:, np.newaxis])
 sigmas = np.logspace(-4,0,50)
@@ -87,7 +103,7 @@ print('sigma =', sigmas[best_idx])
 s = np.random.normal(0,1,N)
 eps = 1e-6
 ss = (s[np.newaxis] - s[:, np.newaxis])
-sigmas = np.logspace(-4,0,50)
+sigmas = np.logspace(-4,1,50)
 h_ss = np.zeros_like(sigmas)
 for i, sigma in enumerate(sigmas):
     K = lambda x: np.exp(-x**2 / (2*sigma**2)) / (sigma * np.sqrt(2*np.pi))
