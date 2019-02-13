@@ -92,7 +92,7 @@ for i, sigma in enumerate(sigmas):
     K = lambda x: np.exp(-x**2 / (2*sigma**2)) / (sigma * np.sqrt(2*np.pi))
     h_ss[i] = np.log(len(s)-1) - 1/len(s) * np.sum(np.log(eps + np.sum(K(ss), axis=1)-K(0)), axis=0)
 fig, ax = plt.subplots()
-ax.loglog(sigmas, h_ss)
+ax.semilogx(sigmas, h_ss)
 
 best_idx = np.argmin(h_ss)
 print('h_true =', np.log(1-0))
@@ -109,7 +109,7 @@ for i, sigma in enumerate(sigmas):
     K = lambda x: np.exp(-x**2 / (2*sigma**2)) / (sigma * np.sqrt(2*np.pi))
     h_ss[i] = np.log(len(s)-1) - 1/len(s) * np.sum(np.log(eps + np.sum(K(ss), axis=1)-K(0)), axis=0)
 fig, ax = plt.subplots()
-ax.loglog(sigmas, h_ss)
+ax.semilogx(sigmas, h_ss)
 
 best_idx = np.argmin(h_ss)
 print('h_true =', np.log(np.sqrt(2*np.pi*np.e)))
