@@ -23,19 +23,21 @@ def compute_entropy_torch(x):
 N = 1000
 x_np = np.random.uniform(0,1,N)
 x_tch = torch.as_tensor(x_np, dtype=torch.float32)
-print(compute_entropy_np(x_np))
-print(compute_entropy_torch(x_tch))
+# print(compute_entropy_np(x_np))
+# print(compute_entropy_torch(x_tch))
 
 class EntropyNet(PhiNet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
 
-    def train_batch(self, x):
+    def train_batch(self, x, ascend=False):
         self.train()
         self.optimizer.zero_grad()
         z = self.phi(x)
         loss = compute_entropy_torch(z)
+        if ascend:
+            loss = -loss
         loss.backward()
         self.optimizer.step()
         return loss
@@ -52,22 +54,55 @@ for i in range(n_updates):
     with torch.no_grad():
         rep = net.phi(x_tch)
         reps.append(rep.squeeze())
+# fig = plt.figure(figsize=(10,4))
+# plt.plot(range(n_updates), losses)
+# plt.ylabel('entropy')
+# plt.xlabel('n_updates')
+#
+#
+# fig = plt.figure(figsize=(10,4))
+# axes = fig.subplots(nrows=1, ncols=5, sharey=True, sharex=True)
+# axes = axes.flatten()
+# idx = np.arange(0,n_updates,n_updates//5)
+#
+# for i in range(len(axes)):
+#     sns.distplot(reps[idx[i]], hist=False, ax=axes[i])
+#     axes[i].set_xlabel('z')
+#     axes[i].set_title(str(idx[i])+' updates')
+# axes[0].set_ylabel('p(z)')
+#
+# plt.tight_layout()
+# plt.show()
+
+n_updates = 50
+
+for i in range(n_updates):
+    loss = net.train_batch(x_tch, ascend=True)
+    losses.append(-loss)
+    with torch.no_grad():
+        rep = net.phi(x_tch)
+        reps.append(rep.squeeze())
 reps = torch.stack(reps).numpy()
+losses = torch.stack(losses).detach().numpy()
 fig = plt.figure(figsize=(10,4))
-plt.plot(range(n_updates), losses)
+plt.plot(range(2*n_updates), losses)
 plt.ylabel('entropy')
 plt.xlabel('n_updates')
+plt.vlines(50,min(losses), max(losses), linestyles='dashed')
+plt.tight_layout()
 
 
 fig = plt.figure(figsize=(10,4))
-axes = fig.subplots(nrows=1, ncols=5, sharey=True, sharex=True)
+axes = fig.subplots(nrows=2, ncols=5, sharey=True, sharex=True)
 axes = axes.flatten()
-idx = np.arange(0,n_updates,n_updates//5)
+idx = np.arange(0,2*n_updates,2*n_updates//10)
 
 for i in range(len(axes)):
     sns.distplot(reps[idx[i]], hist=False, ax=axes[i])
-    axes[i].set_xlabel('z')
+    if i >= len(axes)/2:
+        axes[i].set_xlabel('z')
     axes[i].set_title(str(idx[i])+' updates')
+axes[0].set_ylabel('p(z)')
 axes[0].set_ylabel('p(z)')
 
 plt.tight_layout()
