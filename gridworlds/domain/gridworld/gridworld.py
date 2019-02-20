@@ -56,6 +56,16 @@ class TestWorld(GridWorld):
         #| |    _|
         #|___|___|
 
+class RingWorld(GridWorld):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for r in range(self._rows-2):
+            self._grid[2*r+3, 2] = 1
+            self._grid[2*r+3, 2*self._cols-2] = 1
+        for c in range(self._cols-2):
+            self._grid[2, 2*c+3] = 1
+            self._grid[2*self._rows-2, 2*c+3] = 1
+
 class SnakeWorld(GridWorld):
     def __init__(self):
         super().__init__(rows=3, cols=4)
