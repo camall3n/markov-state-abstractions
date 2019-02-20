@@ -3,7 +3,8 @@ import numpy as np
 import seaborn as sns
 
 class RepVisualization:
-    def __init__(self, x0, x1, obs, colors=None, cmap=None):
+    def __init__(self, env, x0, x1, obs, colors=None, cmap=None):
+        self.env = env
         self.fig = plt.figure(figsize=(10,8))
         self.cmap = cmap
         self.colors = colors
@@ -16,6 +17,9 @@ class RepVisualization:
         ax.set_xticks([])
         ax.set_yticks([])
         ax.set_title('observations (t)')
+
+        ax = self.fig.add_subplot(337)
+        env.plot(ax)
 
         z0 = np.zeros_like(x0)
         z1_hat = np.zeros_like(x0)

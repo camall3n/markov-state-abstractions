@@ -1,5 +1,6 @@
 import imageio
 import numpy as np
+import random
 import scipy.stats
 import scipy.ndimage.filters
 import torch
@@ -7,13 +8,22 @@ from tqdm import tqdm
 
 from notebooks.featurenet import FeatureNet
 from notebooks.repvis import RepVisualization
-from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld
+from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
 
 #%% ------------------ Define MDP ------------------
-# env = GridWorld(rows=3,cols=3)
-env =   TestWorld()
+seed = 0
+np.random.seed(seed)
+random.seed(seed)
+torch.manual_seed(seed)
+
+env = GridWorld(rows=7,cols=4)
+# env = RingWorld(2,4)
+# env = TestWorld()
 # env.add_random_walls(10)
 # env.plot()
+
+# cmap = 'Set3'
+cmap = None
 
 #%% ------------------ Generate experiences ------------------
 n_samples = 20000
@@ -74,7 +84,7 @@ test_a  = torch.as_tensor(a[-n_test_samples:], dtype=torch.long)
 test_c  = c0[-n_test_samples:]
 obs = test_u0[-1]
 
-repvis = RepVisualization(test_x0, test_x1, obs, colors=test_c, cmap='Set3')
+repvis = RepVisualization(env, test_x0, test_x1, obs, colors=test_c, cmap=cmap)
 
 def get_batch(x0, x1, a, batch_size=batch_size):
     idx = np.random.choice(len(a), batch_size, replace=False)
