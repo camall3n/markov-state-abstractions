@@ -28,6 +28,8 @@ class RepVisualization:
         self.tstep = ax.text(-0.75, .7, 'updates = '+str(0))
         self.tinv = ax.text(-0.75, .5, 'inv_loss = '+str(np.nan))
         self.tfwd = ax.text(-0.75, .3, 'fwd_loss = '+str(np.nan))
+        self.tdis = ax.text(-0.75, .1, 'dis_loss = '+str(np.nan))
+        self.tent = ax.text(-0.75,-.1, 'ent_loss = '+str(np.nan))
 
         self.effects_hat = self._setup_effects(subplot=338)
         self.effects = self._setup_effects(subplot=339)
@@ -89,7 +91,7 @@ class RepVisualization:
         plt.setp(ax.collections, alpha=.7)
         return ax
 
-    def update_plots(self, step, z0, z1_hat, z1, inv_loss, fwd_loss, a, a_hat):
+    def update_plots(self, step, z0, z1_hat, z1, inv_loss, fwd_loss, dis_loss, ent_loss, a, a_hat):
         self.inv_sc.set_offsets(z0)
         self.fwd_sc.set_offsets(z1_hat)
         self.true_sc.set_offsets(z1)
@@ -97,6 +99,8 @@ class RepVisualization:
         self.tstep.set_text('updates = '+str(step))
         self.tinv.set_text('inv_loss = '+str(inv_loss))
         self.tfwd.set_text('fwd_loss = '+str(fwd_loss))
+        self.tdis.set_text('dis_loss = '+str(dis_loss))
+        self.tent.set_text('ent_loss = '+str(ent_loss))
 
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()

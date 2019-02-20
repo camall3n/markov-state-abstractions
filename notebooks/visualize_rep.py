@@ -52,13 +52,15 @@ u0 = entangle(x0)
 u1 = entangle(x1)
 
 #%% ------------------ Setup experiment ------------------
-n_steps = 5000
+n_steps = 1000
 n_frames = 100
 n_updates_per_frame = n_steps // n_frames
 
 batch_size = 1024
 n_inv_steps_per_update = 10
 n_fwd_steps_per_update = 1
+n_disentangle_steps_per_update = 1
+n_entropy_steps_per_update = 0
 
 fnet = FeatureNet(n_actions=4, input_shape=u0.shape[1:], n_latent_dims=2, n_hidden_layers=1, n_units_per_layer=32, lr=0.001)
 fnet.print_summary()
@@ -93,7 +95,9 @@ def test_rep(fnet):
 
         inv_loss = fnet.compute_inv_loss(a_logits=a_hat, a=test_a)
         fwd_loss = fnet.compute_fwd_loss(z0, z1, z1_hat)
-    results = [z0, z1_hat, z1, inv_loss, fwd_loss, test_a, a_hat]
+        dis_loss = fnet.compute_disentanglement_loss(z0, z1)
+        ent_loss = fnet.compute_entropy_loss(z0, z1, test_a)
+    results = [z0, z1_hat, z1, inv_loss, fwd_loss, dis_loss, ent_loss, test_a, a_hat]
     return [r.numpy() for r in results]
 
 #%% ------------------ Run Experiment ------------------
@@ -106,6 +110,12 @@ for frame_idx in tqdm(range(n_frames+1)):
         for _ in range(n_fwd_steps_per_update):
             tx0, tx1, ta = get_next_batch()
             fnet.train_batch(tx0, tx1, ta, model='fwd')
+        for _ in range(n_disentangle_steps_per_update):
+            tx0, tx1, ta = get_next_batch()
+            fnet.train_batch(tx0, tx1, ta, model='disentanglement')
+        for _ in range(n_entropy_steps_per_update):
+            tx0, tx1, ta = get_next_batch()
+            fnet.train_batch(tx0, tx1, ta, model='entropy')
 
     frame = repvis.update_plots(frame_idx*n_updates_per_frame, *test_rep(fnet))
     data.append(frame)
