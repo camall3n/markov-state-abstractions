@@ -7,6 +7,7 @@ grid/logs/
 grid/scripts/
 logs/
 models/
+notebooks/unversioned/*
 videos/
 results/
 
