@@ -60,7 +60,7 @@ n_updates_per_frame = n_steps // n_frames
 batch_size = 1024
 n_inv_steps_per_update = 10
 n_fwd_steps_per_update = 10
-n_disentangle_steps_per_update = 0
+n_disentangle_steps_per_update = 1
 n_entropy_steps_per_update = 0
 
 fnet = FeatureNet(n_actions=4, input_shape=x0.shape[1:], n_latent_dims=2, n_hidden_layers=1, n_units_per_layer=32, lr=0.003)
