@@ -43,10 +43,11 @@ a = np.asarray(actions)
 
 #%% ------------------ Define sensor ------------------
 sensor = SensorChain([
-            NoisySensor(sigma=0.05),
-            ImageSensor(size=(3*env._rows, 3*env._cols)),
-            BlurSensor(sigma=0.6, truncate=1.),
-        ])
+    OffsetSensor(offset=(0.5,0.5)),
+    NoisySensor(sigma=0.05),
+    ImageSensor(range=((0,env._rows), (0,env._cols)), pixel_density=3),
+    BlurSensor(sigma=0.6, truncate=1.),
+])
 
 x0 = sensor.observe(s0)
 x1 = sensor.observe(s1)
@@ -70,7 +71,10 @@ test_x0 = torch.as_tensor(x0[-n_test_samples:,:], dtype=torch.float32)
 test_x1 = torch.as_tensor(x1[-n_test_samples:,:], dtype=torch.float32)
 test_a  = torch.as_tensor(a[-n_test_samples:], dtype=torch.long)
 test_c  = c0[-n_test_samples:]
-obs = test_x0[-1]
+
+env.reset_agent()
+state = env.get_state()
+obs = sensor.observe(state)
 
 repvis = RepVisualization(env, obs, batch_size=n_test_samples, n_dims=2, colors=test_c, cmap=cmap)
 

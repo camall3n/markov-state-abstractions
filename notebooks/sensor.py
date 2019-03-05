@@ -23,19 +23,24 @@ class NoisySensor:
         return x
 
 class ImageSensor:
-    def __init__(self, size):
-        assert isinstance(size, (tuple, list, np.ndarray))
-        self.size = size
+    def __init__(self, range, pixel_density=1):
+        assert isinstance(range, (tuple, list, np.ndarray))
+        self.range = range
+        self.size = (pixel_density*range[0][-1],pixel_density*range[1][-1])
 
     def observe(self, s):
-        assert s.ndim == 2 and s.shape[-1] == 2
+        assert s.ndim > 0 and s.shape[-1] == 2
+        if s.ndim==1:
+            s = np.expand_dims(s, axis=0)
         n_samples = s.shape[0]
-        digitized = scipy.stats.binned_statistic_2d(s[:,0],s[:,1],np.arange(n_samples), bins=self.size, expand_binnumbers=True)[-1].transpose()
+        digitized = scipy.stats.binned_statistic_2d(s[:,0],s[:,1],np.arange(n_samples), statistic='count', bins=self.size, range=self.range, expand_binnumbers=True)
+        digitized = digitized[-1].transpose()
         x = np.zeros([n_samples,self.size[0],self.size[1]])
         for i in range(n_samples):
             x[i,digitized[i,0]-1,digitized[i,1]-1] = 1
+        if n_samples==1:
+            x = x[0,:,:]
         return x
-
 class BlurSensor:
     def __init__(self, sigma=0.6, truncate=1.0):
         self.sigma = sigma
