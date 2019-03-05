@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from ...utils import reset_seeds
+
 grid_type = int
 
 # Offsets:
@@ -34,6 +36,11 @@ class BaseGrid:
         # Reset valid positions and walls
         self._grid[1:-1:2,1:-1] = 0
         self._grid[1:-1,1:-1:2] = 0
+
+    def get_random_position(self, seed=None):
+        if seed is not None:
+            reset_seeds(seed)
+        return np.asarray((np.random.randint(0,self._rows), np.random.randint(0,self._cols)))
 
     def contents(self, row, col):
         return self._contents[row//2, col//2]

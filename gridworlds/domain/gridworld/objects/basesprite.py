@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 class BaseSprite:
     def __init__(self, position=(0,0)):
-        self.position = np.asarray(position)
+        self.position = np.asarray(position)# row, col
 
     def __setattr__(self, name, value):
         if name=='position':

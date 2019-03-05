@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 
 from . import grid
 from .objects.agent import Agent
+from .objects.depot import Depot
 
 class GridWorld(grid.BaseGrid):
     def __init__(self, *args, **kwargs):
@@ -16,6 +17,15 @@ class GridWorld(grid.BaseGrid):
             3: grid.DOWN
         }
         self.agent.position = np.asarray((0,0), dtype=int)
+        self.goal = None
+
+    def reset_agent(self, seed=None):
+        self.agent.position = self.get_random_position(seed)
+
+    def reset_goal(self, seed=None):
+        if self.goal is None:
+            self.goal = Depot()
+        self.goal.position = self.get_random_position(seed)
 
     def step(self, action):
         assert(action in range(4))
@@ -23,7 +33,10 @@ class GridWorld(grid.BaseGrid):
         if not self.has_wall(self.agent.position, direction):
             self.agent.position += direction
         s = self.get_state()
-        r = 0
+        if self.goal:
+            r = 1 if self.agent.position == self.goal.position else 0
+        else:
+            r = 0
         done = False
         return s, r, done
 
@@ -39,6 +52,8 @@ class GridWorld(grid.BaseGrid):
         ax = super().plot(ax)
         if self.agent:
             self.agent.plot(ax)
+        if self.goal:
+            self.goal.plot(ax)
         return ax
 
 class TestWorld(GridWorld):
