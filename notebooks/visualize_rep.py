@@ -9,12 +9,12 @@ from tqdm import tqdm
 from notebooks.featurenet import FeatureNet
 from notebooks.repvis import RepVisualization
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
+from gridworlds.utils import reset_seeds
+from notebooks.sensor import *
 
 #%% ------------------ Define MDP ------------------
-seed = 0
-np.random.seed(seed)
-random.seed(seed)
-torch.manual_seed(seed)
+seed = 3
+reset_seeds(seed)
 
 env = GridWorld(rows=7,cols=4)
 # env = RingWorld(2,4)
