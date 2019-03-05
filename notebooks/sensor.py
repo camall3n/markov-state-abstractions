@@ -2,6 +2,13 @@ import numpy as np
 import scipy.ndimage.filters
 import scipy.stats
 
+class OffsetSensor:
+    def __init__(self, offset):
+        self.offset = offset
+
+    def observe(self, s):
+        return s + self.offset
+
 class NoisySensor:
     def __init__(self, sigma=0.1):
         self.sigma = sigma
