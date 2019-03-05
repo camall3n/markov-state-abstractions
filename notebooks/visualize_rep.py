@@ -8,7 +8,7 @@ from notebooks.featurenet import FeatureNet
 from notebooks.repvis import RepVisualization
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
 from gridworlds.utils import reset_seeds
-from notebooks.sensor import *
+from gridworlds.sensors import *
 
 #%% ------------------ Define MDP ------------------
 seed = 3
