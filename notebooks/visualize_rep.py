@@ -1,8 +1,6 @@
 import imageio
 import numpy as np
 import random
-import scipy.stats
-import scipy.ndimage.filters
 import torch
 from tqdm import tqdm
 
@@ -43,48 +41,38 @@ c0 = s0[:,0]*env._cols+s0[:,1]
 s1 = np.asarray(states[1:,:])
 a = np.asarray(actions)
 
-#%% ------------------ Define sensors ------------------
-sigma = 0.1
-x0 = s0 + sigma * np.random.randn(n_samples,2)
-x1 = x0 + np.asarray(s1 - s0) + sigma/2 * np.random.randn(n_samples,2)
-# x1 = s1 + sigma * np.random.randn(n_samples,2)
+#%% ------------------ Define sensor ------------------
+sensor = SensorChain([
+            NoisySensor(sigma=0.05),
+            ImageSensor(size=(3*env._rows, 3*env._cols)),
+            BlurSensor(sigma=0.6, truncate=1.),
+        ])
 
-def entangle(x):
-    bins = (3*env._rows, 3*env._cols)
-    digitized = scipy.stats.binned_statistic_2d(x[:,0],x[:,1],np.arange(n_samples), bins=bins, expand_binnumbers=True)[-1].transpose()
-    u = np.zeros([n_samples,bins[0],bins[1]])
-    for i in range(n_samples):
-        u[i,digitized[i,0]-1,digitized[i,1]-1] = 1
-    u = scipy.ndimage.filters.gaussian_filter(u, sigma=.6, truncate=1., mode='nearest')
-    return u
-
-u0 = entangle(x0)
-u1 = entangle(x1)
+x0 = sensor.observe(s0)
+x1 = sensor.observe(s1)
 
 #%% ------------------ Setup experiment ------------------
-n_steps = 250
-n_frames = 25
+n_steps = 300
+n_frames = 30
 n_updates_per_frame = n_steps // n_frames
 
 batch_size = 1024
 n_inv_steps_per_update = 10
 n_fwd_steps_per_update = 10
-n_disentangle_steps_per_update = 1
+n_disentangle_steps_per_update = 0
 n_entropy_steps_per_update = 0
 
-fnet = FeatureNet(n_actions=4, input_shape=u0.shape[1:], n_latent_dims=2, n_hidden_layers=1, n_units_per_layer=32, lr=0.003)
+fnet = FeatureNet(n_actions=4, input_shape=x0.shape[1:], n_latent_dims=2, n_hidden_layers=1, n_units_per_layer=32, lr=0.003)
 fnet.print_summary()
 
 n_test_samples = 2000
-test_x0 = x0[-n_test_samples:,:]
-test_x1 = x1[-n_test_samples:,:]
-test_u0 = torch.as_tensor(u0[-n_test_samples:,:], dtype=torch.float32)
-test_u1 = torch.as_tensor(u1[-n_test_samples:,:], dtype=torch.float32)
+test_x0 = torch.as_tensor(x0[-n_test_samples:,:], dtype=torch.float32)
+test_x1 = torch.as_tensor(x1[-n_test_samples:,:], dtype=torch.float32)
 test_a  = torch.as_tensor(a[-n_test_samples:], dtype=torch.long)
 test_c  = c0[-n_test_samples:]
-obs = test_u0[-1]
+obs = test_x0[-1]
 
-repvis = RepVisualization(env, test_x0, test_x1, obs, colors=test_c, cmap=cmap)
+repvis = RepVisualization(env, obs, batch_size=n_test_samples, n_dims=2, colors=test_c, cmap=cmap)
 
 def get_batch(x0, x1, a, batch_size=batch_size):
     idx = np.random.choice(len(a), batch_size, replace=False)
@@ -93,13 +81,13 @@ def get_batch(x0, x1, a, batch_size=batch_size):
     ta = torch.as_tensor(a[idx])
     return tx0, tx1, ta
 
-get_next_batch = lambda: get_batch(u0[:n_samples//2,:], u1[:n_samples//2,:], a[:n_samples//2])
+get_next_batch = lambda: get_batch(x0[:n_samples//2,:], x1[:n_samples//2,:], a[:n_samples//2])
 
-def test_rep(fnet):
+def test_rep(fnet, step):
     with torch.no_grad():
         fnet.eval()
-        z0 = fnet.phi(test_u0)
-        z1 = fnet.phi(test_u1)
+        z0 = fnet.phi(test_x0)
+        z1 = fnet.phi(test_x1)
         z1_hat = fnet.fwd_model(z0, test_a)
         a_hat = fnet.inv_model(z0, z1)
 
@@ -107,8 +95,16 @@ def test_rep(fnet):
         fwd_loss = fnet.compute_fwd_loss(z0, z1, z1_hat)
         dis_loss = fnet.compute_disentanglement_loss(z0, z1)
         ent_loss = fnet.compute_entropy_loss(z0, z1, test_a)
-    results = [z0, z1_hat, z1, inv_loss, fwd_loss, dis_loss, ent_loss, test_a, a_hat]
-    return [r.numpy() for r in results]
+
+        text = '\n'.join([
+            'updates = '+str(step),
+            'inv_loss = '+str(inv_loss.numpy()),
+            'fwd_loss = '+str(fwd_loss.numpy()),
+            'dis_loss = '+str(dis_loss.numpy()),
+            'ent_loss = '+str(ent_loss.numpy()),
+        ])
+    results = [z0, z1_hat, z1, test_a, a_hat]
+    return [r.numpy() for r in results] + [text]
 
 #%% ------------------ Run Experiment ------------------
 data = []
@@ -127,7 +123,7 @@ for frame_idx in tqdm(range(n_frames+1)):
             tx0, tx1, ta = get_next_batch()
             fnet.train_batch(tx0, tx1, ta, model='entropy')
 
-    frame = repvis.update_plots(frame_idx*n_updates_per_frame, *test_rep(fnet))
+    frame = repvis.update_plots(*test_rep(fnet, frame_idx*n_updates_per_frame))
     data.append(frame)
 
-imageio.mimwrite('video.mp4', data, fps=15)
+imageio.mimwrite('video-{}.mp4'.format(seed), data, fps=15)
