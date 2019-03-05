@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.ndimage.filters
+import scipy.ndimage
 import scipy.stats
 
 class OffsetSensor:
@@ -41,6 +42,15 @@ class ImageSensor:
         if n_samples==1:
             x = x[0,:,:]
         return x
+
+class ResampleSensor:
+    def __init__(self, scale, order=0):
+        self.scale = scale
+        self.order = order
+
+    def observe(self, s):
+        return scipy.ndimage.zoom(s, zoom=self.scale, order=self.order)
+
 class BlurSensor:
     def __init__(self, sigma=0.6, truncate=1.0):
         self.sigma = sigma

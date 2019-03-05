@@ -11,7 +11,7 @@ from gridworlds.utils import reset_seeds
 from gridworlds.sensors import *
 
 #%% ------------------ Define MDP ------------------
-seed = 3
+seed = 0
 reset_seeds(seed)
 
 env = GridWorld(rows=7,cols=4)
@@ -46,6 +46,7 @@ sensor = SensorChain([
     OffsetSensor(offset=(0.5,0.5)),
     NoisySensor(sigma=0.05),
     ImageSensor(range=((0,env._rows), (0,env._cols)), pixel_density=3),
+    # ResampleSensor(scale=2.0),
     BlurSensor(sigma=0.6, truncate=1.),
 ])
 
