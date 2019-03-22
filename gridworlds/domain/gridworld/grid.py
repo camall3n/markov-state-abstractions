@@ -85,6 +85,18 @@ class BaseGrid:
         wall_col = 2*col+1+d_col
         return self._grid[wall_row, wall_col]
 
+    def add_random_walls(self, n_walls=1):
+        types=['vertical']
+        for i in range(n_walls):
+            type = np.random.choice(types)
+            if type == 'horizontal':
+                row = 2 + 2*np.random.choice(self._rows-1)
+                col = 1 + 2*np.random.choice(self._cols-1)
+            else:
+                row = 1 + 2*np.random.choice(self._rows-1)
+                col = 2 + 2*np.random.choice(self._cols-1)
+            self._grid[row,col] = 1
+
     def save(self, filename):
         np.savetxt(filename, self._grid.astype(int), fmt='%1d')
 
