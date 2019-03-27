@@ -11,7 +11,7 @@ from gridworlds.utils import reset_seeds
 from gridworlds.sensors import *
 
 #%% ------------------ Define MDP ------------------
-seed = 0
+seed = 1
 reset_seeds(seed)
 
 env = GridWorld(rows=7,cols=4)
@@ -61,6 +61,7 @@ n_updates_per_frame = n_steps // n_frames
 batch_size = 1024
 n_inv_steps_per_update = 10
 n_fwd_steps_per_update = 10
+n_distinguish_steps_per_update = 10
 n_disentangle_steps_per_update = 1
 n_entropy_steps_per_update = 0
 
@@ -98,15 +99,17 @@ def test_rep(fnet, step):
 
         inv_loss = fnet.compute_inv_loss(a_logits=a_hat, a=test_a)
         fwd_loss = fnet.compute_fwd_loss(z0, z1, z1_hat)
-        dis_loss = fnet.compute_disentanglement_loss(z0, z1)
+        dis_loss = fnet.compute_distinguish_loss(test_x0, test_a, test_x1)
+        fac_loss = fnet.compute_disentanglement_loss(z0, z1)
         ent_loss = fnet.compute_entropy_loss(z0, z1, test_a)
 
         text = '\n'.join([
             'updates = '+str(step),
-            'inv_loss = '+str(inv_loss.numpy()),
-            'fwd_loss = '+str(fwd_loss.numpy()),
-            'dis_loss = '+str(dis_loss.numpy()),
-            'ent_loss = '+str(ent_loss.numpy()),
+            'L_inv = '+str(inv_loss.numpy()),
+            'L_fwd = '+str(fwd_loss.numpy()),
+            'L_dis = '+str(dis_loss.numpy()),
+            'L_fac = '+str(fac_loss.numpy()),
+            'L_ent = '+str(ent_loss.numpy()),
         ])
     results = [z0, z1_hat, z1, test_a, a_hat]
     return [r.numpy() for r in results] + [text]
@@ -121,6 +124,9 @@ for frame_idx in tqdm(range(n_frames+1)):
         for _ in range(n_fwd_steps_per_update):
             tx0, tx1, ta = get_next_batch()
             fnet.train_batch(tx0, tx1, ta, model='fwd')
+        for _ in range(n_distinguish_steps_per_update):
+            tx0, tx1, ta = get_next_batch()
+            fnet.train_batch(tx0, tx1, ta, model='distinguish')
         for _ in range(n_disentangle_steps_per_update):
             tx0, tx1, ta = get_next_batch()
             fnet.train_batch(tx0, tx1, ta, model='disentanglement')

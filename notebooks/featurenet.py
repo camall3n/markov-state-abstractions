@@ -7,6 +7,7 @@ from .nnutils import Network
 from .phinet import PhiNet
 from .invnet import InvNet
 from .fwdnet import FwdNet
+from .distinguishnet import DistinguishNet
 
 class FeatureNet(Network):
     def __init__(self, n_actions, input_shape=2, n_latent_dims=4, n_hidden_layers=1, n_units_per_layer=32, lr=0.001, inv_steps_per_fwd=5):
@@ -22,7 +23,10 @@ class FeatureNet(Network):
 
         self.inv_model = InvNet(n_actions=n_actions, n_latent_dims=n_latent_dims, n_units_per_layer=n_units_per_layer, n_hidden_layers=n_hidden_layers, lr=lr)
 
+        self.distinguish_model = DistinguishNet(n_actions=n_actions, n_latent_dims=n_latent_dims, n_hidden_layers=n_hidden_layers, n_units_per_layer=n_units_per_layer)
+
         self.cross_entropy = torch.nn.CrossEntropyLoss()
+        self.bce_loss = torch.nn.BCELoss()
         self.mse = torch.nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
 
@@ -35,6 +39,22 @@ class FeatureNet(Network):
         dz = torch.sqrt(torch.sum(torch.pow(z1 - z0, 2), dim=-1))
         return torch.mean(error / (dz + eps))
         # return self.mse(z1,z1_hat)
+
+    def compute_distinguish_loss(self, x0, a, x1):
+        N = x1.nelement()
+        # shuffle next states
+        idx = torch.randperm(N)
+        x1_alt = x1.view(-1)[idx].view(x1.size())
+        # randomly replace some of the next states
+        is_fake = torch.multinomial(torch.as_tensor([0.5,0.5]), num_samples=len(x1), replacement=True)
+        x1_choices = torch.stack([x1,x1_alt], dim=0)
+        fake_idx = is_fake.view(1,-1,1,1).expand_as(x1_choices)
+        x1 = torch.gather(x1_choices, dim=0, index=fake_idx)[0]
+        # abstract and guess which ones are fakes
+        z0 = self.phi(x0)
+        z1 = self.phi(x1)
+        fakes = self.distinguish_model(z0, a, z1)
+        return self.bce_loss(input=fakes, target=is_fake.float())
 
     def compute_diversity_loss(self, z0, z1):
         # Encourage the largest difference to be non-zero
@@ -85,6 +105,8 @@ class FeatureNet(Network):
         if model in ['fwd', 'all']:
             z1_hat = self.fwd_model(z0, a)
             loss += 0.1 * self.compute_fwd_loss(z0, z1, z1_hat)
+        if model in ['distinguish', 'all']:
+            loss += self.compute_distinguish_loss(x0, a, x1)
         if model in ['disentanglement', 'all']:
             loss += self.compute_disentanglement_loss(z0, z1)
         if model in ['entropy', 'all']:
