@@ -61,7 +61,7 @@ n_updates_per_frame = n_steps // n_frames
 batch_size = 1024
 n_inv_steps_per_update = 10
 n_fwd_steps_per_update = 10
-n_distinguish_steps_per_update = 10
+n_distinguish_steps_per_update = 5
 n_disentangle_steps_per_update = 1
 n_entropy_steps_per_update = 0
 
