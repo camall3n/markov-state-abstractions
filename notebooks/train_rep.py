@@ -1,5 +1,7 @@
 import imageio
+import json
 import numpy as np
+import os
 import random
 import torch
 from tqdm import tqdm
@@ -7,14 +9,38 @@ from tqdm import tqdm
 from notebooks.featurenet import FeatureNet
 from notebooks.repvis import RepVisualization
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
-from gridworlds.utils import reset_seeds
+from gridworlds.utils import reset_seeds, get_parser
 from gridworlds.sensors import *
 
-#%% ------------------ Define MDP ------------------
-seed = 0
-reset_seeds(seed)
 
-env = GridWorld(rows=7,cols=4)
+parser = get_parser()
+# parser.add_argument('-d','--dims', help='Number of latent dimensions', type=int, default=2)
+parser.add_argument('-n','--n_updates', help='Number of training updates', type=int, default=3000)
+parser.add_argument('-r','--rows', help='Number of gridworld rows', type=int, default=7)
+parser.add_argument('-c','--cols', help='Number of gridworld columns', type=int, default=4)
+parser.add_argument('-lr','--learning_rate', help='Learning rate for Adam optimizer', type=float, default=0.003)
+parser.add_argument('-s','--seed', help='Random seed', type=int, default=0)
+parser.add_argument('-t','--tag', help='Tag for identifying experiment', type=str, required=True)
+parser.add_argument('-v','--video', help="Save training video", action='store_true')
+parser.set_defaults(video=False)
+args = parser.parse_args()
+
+filename = 'video-{}.mp4'.format(args.tag, args.seed)
+
+log_dir = 'logs/' + str(args.tag)
+vid_dir = 'videos/' + str(args.tag)
+os.makedirs(log_dir, exist_ok=True)
+if args.video:
+    os.makedirs(vid_dir, exist_ok=True)
+
+log = open(log_dir+'/train.txt', 'w')
+with open(log_dir+'/args.txt', 'w') as arg_file:
+    arg_file.write(repr(args))
+
+reset_seeds(args.seed)
+
+#%% ------------------ Define MDP ------------------
+env = GridWorld(rows=args.rows, cols=args.cols)
 # env = RingWorld(2,4)
 # env = TestWorld()
 # env.add_random_walls(10)
@@ -54,13 +80,12 @@ x0 = sensor.observe(s0)
 x1 = sensor.observe(s1)
 
 #%% ------------------ Setup experiment ------------------
-n_steps = 3000
 n_updates_per_frame = 100
-n_frames = n_steps // n_updates_per_frame
+n_frames = args.n_updates // n_updates_per_frame
 
 batch_size = 1024
 
-fnet = FeatureNet(n_actions=4, input_shape=x0.shape[1:], n_latent_dims=2, n_hidden_layers=1, n_units_per_layer=32, lr=0.003)
+fnet = FeatureNet(n_actions=4, input_shape=x0.shape[1:], n_latent_dims=2, n_hidden_layers=1, n_units_per_layer=32, lr=args.learning_rate)
 fnet.print_summary()
 
 n_test_samples = 2000
@@ -73,7 +98,8 @@ env.reset_agent()
 state = env.get_state()
 obs = sensor.observe(state)
 
-repvis = RepVisualization(env, obs, batch_size=n_test_samples, n_dims=2, colors=test_c, cmap=cmap)
+if args.video:
+    repvis = RepVisualization(env, obs, batch_size=n_test_samples, n_dims=2, colors=test_c, cmap=cmap)
 
 def get_batch(x0, x1, a, batch_size=batch_size):
     idx = np.random.choice(len(a), batch_size, replace=False)
@@ -92,20 +118,20 @@ def test_rep(fnet, step):
         z1_hat = fnet.fwd_model(z0, test_a)
         a_hat = fnet.inv_model(z0, z1)
 
-        inv_loss = fnet.compute_inv_loss(a_logits=a_hat, a=test_a)
-        fwd_loss = fnet.compute_fwd_loss(z0, z1, z1_hat)
-        cpc_loss = fnet.compute_cpc_loss(z1, z1_hat)
-        fac_loss = fnet.compute_factored_loss(z0, z1)
-        ent_loss = fnet.compute_entropy_loss(z0, z1, test_a)
+        loss_info = {
+            'step': step,
+            'L_inv': fnet.compute_inv_loss(a_logits=a_hat, a=test_a).numpy().tolist(),
+            'L_fwd': fnet.compute_fwd_loss(z0, z1, z1_hat).numpy().tolist(),
+            'L_cpc': fnet.compute_cpc_loss(z1, z1_hat).numpy().tolist(),
+            'L_fac': fnet.compute_factored_loss(z0, z1).numpy().tolist(),
+            'L_ent': fnet.compute_entropy_loss(z0, z1, test_a).numpy().tolist(),
+        }
+        json_str = json.dumps(loss_info)
+        log.write(json_str+'\n')
+        log.flush()
 
-        text = '\n'.join([
-            'updates = '+str(step),
-            'L_inv = '+str(inv_loss.numpy()),
-            'L_fwd = '+str(fwd_loss.numpy()),
-            'L_cpc = '+str(cpc_loss.numpy()),
-            'L_fac = '+str(fac_loss.numpy()),
-            'L_ent = '+str(ent_loss.numpy()),
-        ])
+        text = '\n'.join([key+' = '+str(val) for key, val in loss_info.items()])
+
     results = [z0, z1_hat, z1, test_a, a_hat]
     return [r.numpy() for r in results] + [text]
 
@@ -116,7 +142,12 @@ for frame_idx in tqdm(range(n_frames+1)):
         tx0, tx1, ta = get_next_batch()
         fnet.train_batch(tx0, tx1, ta, model='all')
 
-    frame = repvis.update_plots(*test_rep(fnet, frame_idx*n_updates_per_frame))
-    data.append(frame)
+    test_results = test_rep(fnet, frame_idx*n_updates_per_frame)
+    if args.video:
+        frame = repvis.update_plots(*test_results)
+        data.append(frame)
 
-imageio.mimwrite('video-{}.mp4'.format(seed), data, fps=15)
+if args.video:
+    imageio.mimwrite(filename, data, fps=15)
+
+log.close()

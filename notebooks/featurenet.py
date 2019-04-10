@@ -36,8 +36,9 @@ class FeatureNet(Network):
     def compute_fwd_loss(self, z0, z1, z1_hat):
         eps = 1e-6
         error = torch.sqrt(torch.sum(torch.pow(z1_hat - z1, 2), dim=-1))
-        dz = torch.sqrt(torch.sum(torch.pow(z1 - z0, 2), dim=-1))
-        return torch.mean(error / (dz + eps))
+        # dz = torch.sqrt(torch.sum(torch.pow(z1 - z0, 2), dim=-1))
+        # return torch.mean(error / (dz + eps))
+        return torch.mean(error)
         # return self.mse(z1,z1_hat)
 
     def compute_cpc_loss(self, z1, z1_hat):
@@ -106,7 +107,7 @@ class FeatureNet(Network):
             loss += 0.1 * self.compute_fwd_loss(z0, z1, z1_hat)
         if model in ['cpc', 'all']:
             # loss += self.compute_distinguish_loss(x0, a, x1)
-            loss += self.compute_cpc_loss(z1, z1_hat)
+            loss += 0.1 * self.compute_cpc_loss(z1, z1_hat)
         if model in ['factor', 'all']:
             loss += 0.1 * self.compute_factored_loss(z0, z1)
         # if model in ['entropy', 'all']:
