@@ -55,8 +55,8 @@ x1 = sensor.observe(s1)
 
 #%% ------------------ Setup experiment ------------------
 n_steps = 3000
-n_frames = 30
-n_updates_per_frame = n_steps // n_frames
+n_updates_per_frame = 100
+n_frames = n_steps // n_updates_per_frame
 
 batch_size = 1024
 
