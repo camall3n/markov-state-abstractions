@@ -54,16 +54,11 @@ x0 = sensor.observe(s0)
 x1 = sensor.observe(s1)
 
 #%% ------------------ Setup experiment ------------------
-n_steps = 300
+n_steps = 3000
 n_frames = 30
 n_updates_per_frame = n_steps // n_frames
 
 batch_size = 1024
-n_inv_steps_per_update = 10
-n_fwd_steps_per_update = 10
-n_distinguish_steps_per_update = 5
-n_disentangle_steps_per_update = 1
-n_entropy_steps_per_update = 0
 
 fnet = FeatureNet(n_actions=4, input_shape=x0.shape[1:], n_latent_dims=2, n_hidden_layers=1, n_units_per_layer=32, lr=0.003)
 fnet.print_summary()
@@ -118,23 +113,10 @@ def test_rep(fnet, step):
 data = []
 for frame_idx in tqdm(range(n_frames+1)):
     for _ in range(n_updates_per_frame):
-        for _ in range(n_inv_steps_per_update):
-            tx0, tx1, ta = get_next_batch()
-            fnet.train_batch(tx0, tx1, ta, model='inv')
-        for _ in range(n_fwd_steps_per_update):
-            tx0, tx1, ta = get_next_batch()
-            fnet.train_batch(tx0, tx1, ta, model='fwd')
-        for _ in range(n_distinguish_steps_per_update):
-            tx0, tx1, ta = get_next_batch()
-            fnet.train_batch(tx0, tx1, ta, model='cpc')
-        for _ in range(n_disentangle_steps_per_update):
-            tx0, tx1, ta = get_next_batch()
-            fnet.train_batch(tx0, tx1, ta, model='factor')
-        for _ in range(n_entropy_steps_per_update):
-            tx0, tx1, ta = get_next_batch()
-            fnet.train_batch(tx0, tx1, ta, model='entropy')
+        tx0, tx1, ta = get_next_batch()
+        fnet.train_batch(tx0, tx1, ta, model='all')
 
     frame = repvis.update_plots(*test_rep(fnet, frame_idx*n_updates_per_frame))
     data.append(frame)
 
-imageio.mimwrite('v26-cpc/video-{}.mp4'.format(seed), data, fps=15)
+imageio.mimwrite('video-{}.mp4'.format(seed), data, fps=15)

@@ -108,9 +108,9 @@ class FeatureNet(Network):
             # loss += self.compute_distinguish_loss(x0, a, x1)
             loss += self.compute_cpc_loss(z1, z1_hat)
         if model in ['factor', 'all']:
-            loss += self.compute_factored_loss(z0, z1)
-        if model in ['entropy', 'all']:
-            loss += .2 * self.compute_entropy_loss(z0, z1, a)
+            loss += 0.1 * self.compute_factored_loss(z0, z1)
+        # if model in ['entropy', 'all']:
+        #     loss += .2 * self.compute_entropy_loss(z0, z1, a)
         loss.backward()
         self.optimizer.step()
         return loss
