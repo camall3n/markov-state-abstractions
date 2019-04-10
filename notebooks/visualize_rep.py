@@ -11,7 +11,7 @@ from gridworlds.utils import reset_seeds
 from gridworlds.sensors import *
 
 #%% ------------------ Define MDP ------------------
-seed = 1
+seed = 0
 reset_seeds(seed)
 
 env = GridWorld(rows=7,cols=4)
@@ -99,15 +99,15 @@ def test_rep(fnet, step):
 
         inv_loss = fnet.compute_inv_loss(a_logits=a_hat, a=test_a)
         fwd_loss = fnet.compute_fwd_loss(z0, z1, z1_hat)
-        dis_loss = fnet.compute_distinguish_loss(test_x0, test_a, test_x1)
-        fac_loss = fnet.compute_disentanglement_loss(z0, z1)
+        cpc_loss = fnet.compute_cpc_loss(z1, z1_hat)
+        fac_loss = fnet.compute_factored_loss(z0, z1)
         ent_loss = fnet.compute_entropy_loss(z0, z1, test_a)
 
         text = '\n'.join([
             'updates = '+str(step),
             'L_inv = '+str(inv_loss.numpy()),
             'L_fwd = '+str(fwd_loss.numpy()),
-            'L_dis = '+str(dis_loss.numpy()),
+            'L_cpc = '+str(cpc_loss.numpy()),
             'L_fac = '+str(fac_loss.numpy()),
             'L_ent = '+str(ent_loss.numpy()),
         ])
@@ -126,10 +126,10 @@ for frame_idx in tqdm(range(n_frames+1)):
             fnet.train_batch(tx0, tx1, ta, model='fwd')
         for _ in range(n_distinguish_steps_per_update):
             tx0, tx1, ta = get_next_batch()
-            fnet.train_batch(tx0, tx1, ta, model='distinguish')
+            fnet.train_batch(tx0, tx1, ta, model='cpc')
         for _ in range(n_disentangle_steps_per_update):
             tx0, tx1, ta = get_next_batch()
-            fnet.train_batch(tx0, tx1, ta, model='disentanglement')
+            fnet.train_batch(tx0, tx1, ta, model='factor')
         for _ in range(n_entropy_steps_per_update):
             tx0, tx1, ta = get_next_batch()
             fnet.train_batch(tx0, tx1, ta, model='entropy')
@@ -137,4 +137,4 @@ for frame_idx in tqdm(range(n_frames+1)):
     frame = repvis.update_plots(*test_rep(fnet, frame_idx*n_updates_per_frame))
     data.append(frame)
 
-imageio.mimwrite('video-{}.mp4'.format(seed), data, fps=15)
+imageio.mimwrite('v26-cpc/video-{}.mp4'.format(seed), data, fps=15)
