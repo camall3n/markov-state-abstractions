@@ -1,5 +1,6 @@
 import imageio
 import json
+#!! do not import matplotlib until you check input arguments
 import numpy as np
 import os
 import torch
@@ -21,13 +22,20 @@ parser.add_argument('-lr','--learning_rate', help='Learning rate for Adam optimi
 parser.add_argument('-s','--seed', help='Random seed', type=int, default=0)
 parser.add_argument('-t','--tag', help='Tag for identifying experiment', type=str, required=True)
 parser.add_argument('-v','--video', help="Save training video", action='store_true')
+parser.add_argument('--no_graphics', help='Turn off graphics (e.g. for running on cluster)', action='store_true')
 parser.set_defaults(video=False)
+parser.set_defaults(no_graphics=False)
 args = parser.parse_args()
 
+if args.no_graphics:
+    import matplotlib
+    # Force matplotlib to not use any Xwindows backend.
+    matplotlib.use('Agg')
 
 log_dir = 'logs/' + str(args.tag)
 vid_dir = 'videos/' + str(args.tag)
 os.makedirs(log_dir, exist_ok=True)
+
 if args.video:
     os.makedirs(vid_dir, exist_ok=True)
     filename = vid_dir+'/video-{}.mp4'.format(args.seed)
