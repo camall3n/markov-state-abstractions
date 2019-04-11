@@ -2,14 +2,13 @@ import imageio
 import json
 import numpy as np
 import os
-import random
 import torch
 from tqdm import tqdm
 
 from notebooks.featurenet import FeatureNet
 from notebooks.repvis import RepVisualization
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
-from gridworlds.utils import reset_seeds, get_parser
+from gridworlds.utils import reset_seeds, get_parser, MI
 from gridworlds.sensors import *
 
 
@@ -25,16 +24,16 @@ parser.add_argument('-v','--video', help="Save training video", action='store_tr
 parser.set_defaults(video=False)
 args = parser.parse_args()
 
-filename = 'video-{}.mp4'.format(args.tag, args.seed)
 
 log_dir = 'logs/' + str(args.tag)
 vid_dir = 'videos/' + str(args.tag)
 os.makedirs(log_dir, exist_ok=True)
 if args.video:
     os.makedirs(vid_dir, exist_ok=True)
+    filename = vid_dir+'/video-{}.mp4'.format(args.seed)
 
-log = open(log_dir+'/train.txt', 'w')
-with open(log_dir+'/args.txt', 'w') as arg_file:
+log = open(log_dir+'/train-{}.txt'.format(args.seed), 'w')
+with open(log_dir+'/args-{}.txt'.format(args.seed), 'w') as arg_file:
     arg_file.write(repr(args))
 
 reset_seeds(args.seed)
@@ -67,6 +66,8 @@ c0 = s0[:,0]*env._cols+s0[:,1]
 s1 = np.asarray(states[1:,:])
 a = np.asarray(actions)
 
+MI_max = MI(s0,s0)
+
 #%% ------------------ Define sensor ------------------
 sensor = SensorChain([
     OffsetSensor(offset=(0.5,0.5)),
@@ -89,6 +90,8 @@ fnet = FeatureNet(n_actions=4, input_shape=x0.shape[1:], n_latent_dims=2, n_hidd
 fnet.print_summary()
 
 n_test_samples = 2000
+test_s0 = s0[-n_test_samples:,:]
+test_s1 = s1[-n_test_samples:,:]
 test_x0 = torch.as_tensor(x0[-n_test_samples:,:], dtype=torch.float32)
 test_x1 = torch.as_tensor(x1[-n_test_samples:,:], dtype=torch.float32)
 test_a  = torch.as_tensor(a[-n_test_samples:], dtype=torch.long)
@@ -125,6 +128,7 @@ def test_rep(fnet, step):
             'L_cpc': fnet.compute_cpc_loss(z1, z1_hat).numpy().tolist(),
             'L_fac': fnet.compute_factored_loss(z0, z1).numpy().tolist(),
             'L_ent': fnet.compute_entropy_loss(z0, z1, test_a).numpy().tolist(),
+            'MI': MI(test_s0, z0.numpy())/MI_max
         }
         json_str = json.dumps(loss_info)
         log.write(json_str+'\n')
