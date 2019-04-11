@@ -12,6 +12,7 @@ jupyter-core==4.4.0
 kiwisolver==1.0.1
 matplotlib==3.0.2
 numpy==1.15.4
+pandas==0.24.1
 parso==0.3.1
 pexpect==4.6.0
 pickleshare==0.7.5
@@ -21,8 +22,10 @@ ptyprocess==0.6.0
 Pygments==2.3.1
 pyparsing==2.3.0
 python-dateutil==2.7.5
+pytz==2018.9
 pyzmq==17.1.2
 scipy==1.2.0
+seaborn==0.9.0
 six==1.12.0
 torch==1.0.0
 tornado==5.1.1

@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from ...utils import reset_seeds
+
 grid_type = int
 
 # Offsets:
@@ -34,6 +36,11 @@ class BaseGrid:
         # Reset valid positions and walls
         self._grid[1:-1:2,1:-1] = 0
         self._grid[1:-1,1:-1:2] = 0
+
+    def get_random_position(self, seed=None):
+        if seed is not None:
+            reset_seeds(seed)
+        return np.asarray((np.random.randint(0,self._rows), np.random.randint(0,self._cols)))
 
     def contents(self, row, col):
         return self._contents[row//2, col//2]
@@ -77,6 +84,18 @@ class BaseGrid:
         wall_row = 2*row+1+d_row
         wall_col = 2*col+1+d_col
         return self._grid[wall_row, wall_col]
+
+    def add_random_walls(self, n_walls=1):
+        types=['vertical']
+        for i in range(n_walls):
+            type = np.random.choice(types)
+            if type == 'horizontal':
+                row = 2 + 2*np.random.choice(self._rows-1)
+                col = 1 + 2*np.random.choice(self._cols-1)
+            else:
+                row = 1 + 2*np.random.choice(self._rows-1)
+                col = 2 + 2*np.random.choice(self._cols-1)
+            self._grid[row,col] = 1
 
     def save(self, filename):
         np.savetxt(filename, self._grid.astype(int), fmt='%1d')

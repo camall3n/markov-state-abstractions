@@ -3,36 +3,42 @@ import numpy as np
 import seaborn as sns
 
 class RepVisualization:
-    def __init__(self, x0, x1, obs, colors=None, cmap=None):
+    def __init__(self, env, obs, batch_size, n_dims, colors=None, cmap=None):
+        self.env = env
         self.fig = plt.figure(figsize=(10,8))
         self.cmap = cmap
         self.colors = colors
 
-        self._plot_states(x0, subplot=331, title='states (t)')
-        self._plot_states(x1, subplot=333, title='states (t+1)')
+        self.env_ax = self.fig.add_subplot(331)
+        env.plot(self.env_ax)
+        self.env_ax.set_title('Environment')
 
-        ax = self.fig.add_subplot(332)
-        ax.imshow(obs)
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.set_title('observations (t)')
+        self.text_ax = self.fig.add_subplot(332)
+        self.text_ax.set_xticks([])
+        self.text_ax.set_yticks([])
+        self.text_ax.axis('off')
+        self.text_ax.set_ylim([0,1])
+        self.text_ax.set_xlim([0,1])
+        self.text = self.text_ax.text(0.05, 0.1, '')
 
-        z0 = np.zeros_like(x0)
-        z1_hat = np.zeros_like(x0)
-        z1 = np.zeros_like(x0)
+        self.obs_ax = self.fig.add_subplot(333)
+        self.obs_ax.imshow(obs)
+        self.obs_ax.set_xticks([])
+        self.obs_ax.set_yticks([])
+        self.obs_ax.set_title('Sampled observation (x)')
+
+        z0 = np.zeros((batch_size, n_dims))
+        z1_hat = np.zeros((batch_size, n_dims))
+        z1 = np.zeros((batch_size, n_dims))
 
         _, self.inv_sc = self._plot_rep(z0, subplot=334, title=r'$\phi(x_t)$')
-        ax, self.fwd_sc = self._plot_rep(z1_hat, subplot=335, title=r'$T(\phi(x_t),a_t)$')
+        _, self.fwd_sc = self._plot_rep(z1_hat, subplot=335, title=r'$T(\phi(x_t),a_t)$')
         _, self.true_sc = self._plot_rep(z1, subplot=336, title=r'$\phi(x_{t+1})$')
-
-        self.tstep = ax.text(-0.75, .7, 'updates = '+str(0))
-        self.tinv = ax.text(-0.75, .5, 'inv_loss = '+str(np.nan))
-        self.tfwd = ax.text(-0.75, .3, 'fwd_loss = '+str(np.nan))
 
         self.effects_hat = self._setup_effects(subplot=338)
         self.effects = self._setup_effects(subplot=339)
 
-        self.fig.tight_layout(pad=5.0, h_pad=1.08, w_pad=2.5)
+        self.fig.tight_layout(pad=5.0, h_pad=1.1, w_pad=2.5)
         self.fig.show()
 
     def _plot_states(self, x, subplot=111, title=''):
@@ -89,20 +95,18 @@ class RepVisualization:
         plt.setp(ax.collections, alpha=.7)
         return ax
 
-    def update_plots(self, step, z0, z1_hat, z1, inv_loss, fwd_loss, a, a_hat):
+    def update_plots(self, z0, z1_hat, z1, a, a_hat, text):
         self.inv_sc.set_offsets(z0)
         self.fwd_sc.set_offsets(z1_hat)
         self.true_sc.set_offsets(z1)
 
-        self.tstep.set_text('updates = '+str(step))
-        self.tinv.set_text('inv_loss = '+str(inv_loss))
-        self.tfwd.set_text('fwd_loss = '+str(fwd_loss))
+        self.text.set_text(text)
 
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
-        self._plot_effects(z0, z1_hat, a, ax=self.effects_hat, title=r'$T(\phi(x_t),a) - \phi(x_{t})$', noise=0.02)
-        self._plot_effects(z0, z1, a, ax=self.effects, title=r'$\phi(x_{t+1}) - \phi(x_{t})$', noise=0.02)
+        self._plot_effects(z0, z1_hat, a, ax=self.effects_hat, title=r'$T(\phi(x_t),a) - \phi(x_{t})$')
+        self._plot_effects(z0, z1, a, ax=self.effects, title=r'$\phi(x_{t+1}) - \phi(x_{t})$')
 
         frame = np.frombuffer(self.fig.canvas.tostring_rgb(), dtype=np.uint8)
         frame = frame.reshape(self.fig.canvas.get_width_height()[::-1] + (3,))
