@@ -4,21 +4,25 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-tag = 'v30-'
+tag = 'exp1-'
 
 logfiles = sorted(glob.glob(os.path.join('logs',tag+'*','train-*.txt')))
 
 seeds = [f.split('-')[-1].split('.')[0] for f in logfiles]
 logs = [open(f,'r').read().splitlines() for f in logfiles]
-results = [[json.loads(item) for item in log] for log in logs]
-data = [list(zip(*[[item[field] for field in item.keys()] for item in r])) for r in results]
-fields = results[0][0].keys()
-results = [dict(zip(fields, [np.asarray(v) for v in d]) ) for d in data]
 
-fig, ax = plt.subplots()
+def get_results(log):
+    results = [json.loads(item) for item in log]
+    fields = results[0].keys()
+    data = dict([(f, np.asarray([item[f] for item in results])) for f in fields])
+    return data
+
+results = [get_results(log) for log in logs]
+mi = np.asarray([r['MI'] for r in results])
+fig, ax = plt.subplots(figsize=(8,6))
 for s, result in zip(seeds, results):
-    ax.plot(result['step'], result['MI'], label=s)
-ax.legend()
+    ax.plot(result['step'], result['MI'], color='C0', label=s, alpha=0.3)
 ax.set_title('Normalized Mutual Information (by seed)')
 ax.set_xlabel('Updates')
+# ax.set_xlim([100,3000])
 plt.show()
