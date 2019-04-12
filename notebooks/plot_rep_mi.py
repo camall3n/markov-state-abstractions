@@ -4,25 +4,22 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-tag = 'exp1-'
+from gridworlds.utils import load_experiment
 
-logfiles = sorted(glob.glob(os.path.join('logs',tag+'*','train-*.txt')))
 
-seeds = [f.split('-')[-1].split('.')[0] for f in logfiles]
-logs = [open(f,'r').read().splitlines() for f in logfiles]
+results1 = load_experiment('exp1-', coefs={'L_inv': 1.0, 'L_fwd': 0.1, 'L_cpc': 1.0, 'L_fac': 0.1})
+results4 = load_experiment('exp4-', coefs={'L_inv': 1.0, 'L_fwd': 0.1, 'L_cpc': 1.0, 'L_fac': 0.0})
 
-def get_results(log):
-    results = [json.loads(item) for item in log]
-    fields = results[0].keys()
-    data = dict([(f, np.asarray([item[f] for item in results])) for f in fields])
-    return data
-
-results = [get_results(log) for log in logs]
-mi = np.asarray([r['MI'] for r in results])
-fig, ax = plt.subplots(figsize=(8,6))
-for s, result in zip(seeds, results):
-    ax.plot(result['step'], result['MI'], color='C0', label=s, alpha=0.3)
-ax.set_title('Normalized Mutual Information (by seed)')
-ax.set_xlabel('Updates')
-# ax.set_xlim([100,3000])
+fig, ax = plt.subplots(1, 2, figsize=(8,4), sharey=True)
+for i, (_, result) in enumerate(results1.items()):
+    label = 'With $L_F$ regularization' if i==0 else None
+    ax[0].plot(result['step'], result['MI'], color='C0', label=label, alpha=0.3)
+for i, (_, result) in enumerate(results4.items()):
+    label = 'Without $L_F$ regularization' if i==0 else None
+    ax[1].plot(result['step'], result['MI'], color='C1', label=label, alpha=0.2)
+ax[0].set_xlabel('Updates')
+ax[0].set_ylabel('Normalized Mutual Information')
+ax[1].set_xlabel('Updates')
+ax[0].legend()
+ax[1].legend()
 plt.show()

@@ -4,41 +4,34 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-tag = 'exp1-'
+from gridworlds.utils import load_experiment
 
-logfiles = sorted(glob.glob(os.path.join('logs',tag+'*','train-*.txt')))
+results1 = load_experiment('exp1-', coefs={'L_inv': 1.0, 'L_fwd': 0.1, 'L_cpc': 1.0, 'L_fac': 0.1})
+results4 = load_experiment('exp4-', coefs={'L_inv': 1.0, 'L_fwd': 0.1, 'L_cpc': 1.0, 'L_fac': 0.0})
 
-seeds = [f.split('-')[-1].split('.')[0] for f in logfiles]
-logs = [open(f,'r').read().splitlines() for f in logfiles]
+#%%
 
-def get_results(log):
-    results = [json.loads(item) for item in log]
-    fields = results[0].keys()
-    data = dict([(f, np.asarray([item[f] for item in results])) for f in fields])
-    return data
-
-results = [get_results(log) for log in logs]
-total_loss = [(
-    1.0 * result['L_inv'] +
-    0.1 * result['L_fwd'] +
-    1.0 * result['L_cpc'] +
-    0.1 * (result['L_fac']-1)
-) for result in results]
-
-fig, ax = plt.subplots(figsize=(8,6))
-for s, result, loss in zip(seeds, results, total_loss):
-    ax.plot(result['step'], loss, color='C0', label=s, alpha=0.3)
-ax.set_title('Total Loss (by seed)')
-ax.set_xlabel('Updates')
-# ax.set_xlim([0,3000])
-
-target_y = 0.25
-target_x = 2000
-
-ax.vlines([target_x], ymin=0, ymax=target_y, linestyles='dashed')
-ax.hlines([target_y], xmin=0, xmax=target_x, linestyles='dashed')
-ax.text(1000,0,'successful runs',ha='center')
+fig, ax = plt.subplots(1,2,figsize=(8,4), sharey=True)
+for i, (seed, result) in enumerate(results4.items()):
+    label = 'Without $L_F$ regularization' if i==0 else None
+    ax[1].plot(result['step'], result['L'], color='C1', label=label, alpha=0.3)
+for i, (seed, result) in enumerate(results1.items()):
+    label = 'With $L_F$ regularization' if i==0 else None
+    ax[0].plot(result['step'], result['L'], color='C0', label=label, alpha=0.3)
+ax[0].set_ylabel('Total Loss')
+[a.set_xlabel('Updates') for a in ax]
+[a.legend() for a in ax]
 plt.show()
 
-n_good = np.sum(np.asarray([l[target_x//100] for l in total_loss]) < target_y)
-print(n_good, 'successful runs out of', len(total_loss),'total')
+#%%
+fig, ax = plt.subplots(1,2,figsize=(8,4), sharey=True)
+for i, (seed, result) in enumerate(results4.items()):
+    label = 'Without $L_F$ regularization' if i==0 else None
+    ax[1].plot(result['step'], result['L_fac'], color='C1', label=label, alpha=0.3)
+for i, (seed, result) in enumerate(results1.items()):
+    label = 'With $L_F$ regularization' if i==0 else None
+    ax[0].plot(result['step'], result['L_fac'], color='C0', label=label, alpha=0.3)
+ax[0].set_ylabel('$L_F$')
+[a.set_xlabel('Updates') for a in ax]
+[a.legend() for a in ax]
+plt.show()
