@@ -93,12 +93,7 @@ class FeatureNet(Network):
         a_logits = self.inv_model(z0, z1)
         return torch.argmax(a_logits, dim=-1)
 
-    def train_batch(self, x0, x1, a, model='inv'):
-        self.train()
-        self.optimizer.zero_grad()
-        z0 = self.phi(x0)
-        z1 = self.phi(x1)
-        z1_hat = self.fwd_model(z0, a)
+    def compute_loss(self, z0, z1, z1_hat, a, model='all'):
         loss = 0
         if model in ['inv', 'all']:
             a_hat = self.inv_model(z0, z1)
@@ -112,6 +107,15 @@ class FeatureNet(Network):
             loss += 0.1 * self.compute_factored_loss(z0, z1)
         # if model in ['entropy', 'all']:
         #     loss += .2 * self.compute_entropy_loss(z0, z1, a)
+        return loss
+
+    def train_batch(self, x0, x1, a, model='inv'):
+        self.train()
+        self.optimizer.zero_grad()
+        z0 = self.phi(x0)
+        z1 = self.phi(x1)
+        z1_hat = self.fwd_model(z0, a)
+        loss = self.compute_loss(z0, z1, z1_hat, a, model=model)
         loss.backward()
         self.optimizer.step()
         return loss

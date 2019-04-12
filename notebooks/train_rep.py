@@ -136,6 +136,7 @@ def test_rep(fnet, step):
             'L_cpc': fnet.compute_cpc_loss(z1, z1_hat).numpy().tolist(),
             'L_fac': fnet.compute_factored_loss(z0, z1).numpy().tolist(),
             'L_ent': fnet.compute_entropy_loss(z0, z1, test_a).numpy().tolist(),
+            'L': fnet.compute_loss(z0, z1, z1_hat, test_a, 'all').numpy().tolist(),
             'MI': MI(test_s0, z0.numpy())/MI_max
         }
         json_str = json.dumps(loss_info)
