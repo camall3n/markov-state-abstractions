@@ -10,5 +10,5 @@ models/
 notebooks/unversioned/*
 videos/
 results/
-
+**__pycache__
 **.pyc
