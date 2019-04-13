@@ -18,5 +18,17 @@ pip install -r requirements.txt
 ```
 
 ### Running
+Running one experiment:
+```
+python -m notebooks.train_rep [args]
+```
 
-...
+Running many experiments:
+```
+./cluster/run.py --command "python -m notebooks.train_rep [cmd args (w/ seed last)]" [cluster args]
+```
+
+Rsync updates from grid:
+```
+rsync -zurP brown:~/path/to/gridworlds/logs .
+```
