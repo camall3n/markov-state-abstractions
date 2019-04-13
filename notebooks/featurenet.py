@@ -1,3 +1,4 @@
+from collections import defaultdict
 import math
 import numpy as np
 import torch
@@ -10,12 +11,15 @@ from .fwdnet import FwdNet
 from .cpcnet import CPCNet
 
 class FeatureNet(Network):
-    def __init__(self, n_actions, input_shape=2, n_latent_dims=4, n_hidden_layers=1, n_units_per_layer=32, lr=0.001, inv_steps_per_fwd=5):
+    def __init__(self, n_actions, input_shape=2, n_latent_dims=4, n_hidden_layers=1, n_units_per_layer=32, lr=0.001, coefs=None):
         super().__init__()
         self.n_actions = n_actions
         self.n_latent_dims = n_latent_dims
         self.lr = lr
-        self.inv_steps_per_fwd = inv_steps_per_fwd
+        self.coefs = defaultdict(lambda:1.0)
+        if coefs is not None:
+            for k, v in coefs.items():
+                self.coefs[k] = v
 
         self.phi = PhiNet(input_shape=input_shape, n_latent_dims=n_latent_dims, n_units_per_layer=n_units_per_layer, n_hidden_layers=n_hidden_layers, lr=lr)
 
@@ -95,16 +99,15 @@ class FeatureNet(Network):
 
     def compute_loss(self, z0, z1, z1_hat, a, model='all'):
         loss = 0
-        if model in ['inv', 'all']:
+        if model in ['L_inv', 'all']:
             a_hat = self.inv_model(z0, z1)
-            loss += self.compute_inv_loss(a_logits=a_hat, a=a)
-        if model in ['fwd', 'all']:
-            loss += 0.1 * self.compute_fwd_loss(z0, z1, z1_hat)
-        if model in ['cpc', 'all']:
-            # loss += self.compute_distinguish_loss(x0, a, x1)
-            loss += self.compute_cpc_loss(z1, z1_hat)
-        if model in ['factor', 'all']:
-            loss += 0.1 * self.compute_factored_loss(z0, z1)
+            loss += self.coefs['L_inv'] * self.compute_inv_loss(a_logits=a_hat, a=a)
+        if model in ['L_fwd', 'all']:
+            loss += self.coefs['L_fwd'] * self.compute_fwd_loss(z0, z1, z1_hat)
+        if model in ['L_cpc', 'all']:
+            loss += self.coefs['L_cpc'] * self.compute_cpc_loss(z1, z1_hat)
+        if model in ['L_fac', 'all']:
+            loss += self.coefs['L_fac'] * self.compute_factored_loss(z0, z1)
         # if model in ['entropy', 'all']:
         #     loss += .2 * self.compute_entropy_loss(z0, z1, a)
         return loss

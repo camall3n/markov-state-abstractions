@@ -8,11 +8,11 @@ import seaborn as sns
 
 from gridworlds.utils import load_experiment
 
-def load_experiment(tag, coefs=None):
+def load_experiment(tag):
     logfiles = sorted(glob.glob(os.path.join('logs',tag+'*','train-*.txt')))
     seeds = [int(f.split('-')[-1].split('.')[0]) for f in logfiles]
     logs = [open(f,'r').read().splitlines() for f in logfiles]
-    def read_log(log, coefs=coefs):
+    def read_log(log):
         results = [json.loads(item) for item in log]
         data = pd.DataFrame(results)
         return data

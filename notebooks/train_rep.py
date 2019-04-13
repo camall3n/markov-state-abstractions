@@ -15,14 +15,30 @@ from gridworlds.sensors import *
 
 parser = get_parser()
 # parser.add_argument('-d','--dims', help='Number of latent dimensions', type=int, default=2)
-parser.add_argument('-n','--n_updates', help='Number of training updates', type=int, default=3000)
-parser.add_argument('-r','--rows', help='Number of gridworld rows', type=int, default=7)
-parser.add_argument('-c','--cols', help='Number of gridworld columns', type=int, default=4)
-parser.add_argument('-lr','--learning_rate', help='Learning rate for Adam optimizer', type=float, default=0.003)
-parser.add_argument('-s','--seed', help='Random seed', type=int, default=0)
-parser.add_argument('-t','--tag', help='Tag for identifying experiment', type=str, required=True)
-parser.add_argument('-v','--video', help="Save training video", action='store_true')
-parser.add_argument('--no_graphics', help='Turn off graphics (e.g. for running on cluster)', action='store_true')
+parser.add_argument('-n','--n_updates', type=int, default=3000,
+                    help='Number of training updates')
+parser.add_argument('-r','--rows', type=int, default=7,
+                    help='Number of gridworld rows')
+parser.add_argument('-c','--cols', type=int, default=4,
+                    help='Number of gridworld columns')
+parser.add_argument('--L_inv', type=float, default=1.0,
+                    help='Coefficient for inverse dynamics loss')
+parser.add_argument('--L_fwd', type=float, default=0.1,
+                    help='Coefficient for forward dynamics loss')
+parser.add_argument('--L_cpc', type=float, default=1.0,
+                    help='Coefficient for contrastive predictive coding loss')
+parser.add_argument('--L_fac', type=float, default=0.1,
+                    help='Coefficient for factorization loss')
+parser.add_argument('-lr','--learning_rate', type=float, default=0.003,
+                    help='Learning rate for Adam optimizer')
+parser.add_argument('-s','--seed', type=int, default=0,
+                    help='Random seed')
+parser.add_argument('-t','--tag', type=str, required=True,
+                    help='Tag for identifying experiment')
+parser.add_argument('-v','--video', action='store_true',
+                    help="Save training video")
+parser.add_argument('--no_graphics', action='store_true',
+                    help='Turn off graphics (e.g. for running on cluster)')
 parser.set_defaults(video=False)
 parser.set_defaults(no_graphics=False)
 args = parser.parse_args()
@@ -94,7 +110,14 @@ n_frames = args.n_updates // n_updates_per_frame
 
 batch_size = 1024
 
-fnet = FeatureNet(n_actions=4, input_shape=x0.shape[1:], n_latent_dims=2, n_hidden_layers=1, n_units_per_layer=32, lr=args.learning_rate)
+coefs = {
+    'L_inv': args.L_inv,
+    'L_fwd': args.L_fwd,
+    'L_cpc': args.L_cpc,
+    'L_fac': args.L_fac,
+}
+
+fnet = FeatureNet(n_actions=4, input_shape=x0.shape[1:], n_latent_dims=2, n_hidden_layers=1, n_units_per_layer=32, lr=args.learning_rate, coefs=coefs)
 fnet.print_summary()
 
 n_test_samples = 2000
