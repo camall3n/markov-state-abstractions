@@ -20,11 +20,11 @@ def load_experiment(tag):
     data = pd.concat(results, join='outer', keys=seeds, names=['seed']).sort_values(by='seed', kind='mergesort').reset_index(level=0)
     return data
 
-labels = ['tag', 'fwd_model', 'factored']
-experiments = [('exp1-', True, True),
-               ('exp4-', True, False),
-               ('exp2-', False, True),
-               ('exp5-', False, False)]
+labels = ['tag', 'factored', 'fwd_model']
+experiments = [('exp6-no-fac-no-fwd', False, False),
+               ('exp7-no-fac',        False, True),
+               ('exp8-no-fwd-6x6',     True, False),
+               ('exp9-6x6',            True, True)]
 data = pd.concat([load_experiment(e[0]) for e in experiments], join='outer', keys=experiments, names=labels).reset_index(level=[0,1,2])
 
 g = sns.relplot(x='step', y='MI', units='seed', row='fwd_model', col='factored', kind='line', estimator=None, data=data, hue='tag', alpha=0.2, legend=False, height=4)
@@ -33,13 +33,13 @@ g.fig.suptitle('Normalized Mutual Information')
 plt.show()
 
 #%%
-g = sns.relplot(x='step', y='L_fac', units='seed', row='fwd_model', col='factored', kind='line', estimator=None, data=data, hue='tag', alpha=0.2, legend=False, height=4)
+g = sns.relplot(x='step', y='L', units='seed', row='fwd_model', col='factored', kind='line', estimator=None, data=data, hue='tag', alpha=0.2, legend=False, height=4)
 plt.subplots_adjust(top=0.9)
-g.fig.suptitle('L_fac vs. Time')
+g.fig.suptitle('Total Loss vs. Time')
 plt.show()
 
 #%%
-g = sns.relplot(x='step', y='L_inv', units='seed', row='fwd_model', col='factored', kind='line', estimator=None, data=data, hue='tag', alpha=0.2, legend=False, height=4)
+g = sns.relplot(x='step', y='L_fac', units='seed', row='fwd_model', col='factored', kind='line', estimator=None, data=data, hue='tag', alpha=0.2, legend=False, height=4)
 plt.subplots_adjust(top=0.9)
-g.fig.suptitle('L_inv vs. Time')
+g.fig.suptitle('L_fac vs. Time')
 plt.show()
