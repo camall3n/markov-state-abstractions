@@ -24,7 +24,7 @@ labels = ['tag']
 experiments = ['test-nofac-6x6']
 data = pd.concat([load_experiment(e) for e in experiments], join='outer', keys=experiments, names=labels).reset_index(level=[0])
 
-g = sns.relplot(x='episode', y='reward', kind='line', units='trial', estimator=None, data=data, legend=False, height=4)
+g = sns.relplot(x='total_steps', y='total_reward', kind='line', units='trial', estimator=None, data=data, legend=False, height=4, alpha=0.2)
 plt.subplots_adjust(top=0.9)
 g.fig.suptitle('Reward vs. Time')
 plt.show()

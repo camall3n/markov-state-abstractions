@@ -70,6 +70,8 @@ agent = RandomAgent(n_actions=4)
 #%% ------------------ Train agent ------------------
 for trial in tqdm(range(args.n_trials), desc='trials'):
     env.reset_goal()
+    total_reward = 0
+    total_steps = 0
     for episode in tqdm(range(args.n_episodes), desc='episodes'):
         env.reset_agent()
         ep_rewards = []
@@ -81,16 +83,21 @@ for trial in tqdm(range(args.n_trials), desc='trials'):
             sp, r, done = env.step(a)
             xp = sensor.observe(sp)
             ep_rewards.append(r)
+            total_reward += r
 
             agent.train(x, a, r, xp, done)
             if done:
                 break
+        total_steps += step
         score_info = {
             'trial': trial,
             'episode': episode,
             'reward': sum(ep_rewards),
+            'total_reward': total_reward,
+            'total_steps': total_steps,
             'steps': step
         }
         json_str = json.dumps(score_info)
         log.write(json_str+'\n')
         log.flush()
+print('\n\n')
