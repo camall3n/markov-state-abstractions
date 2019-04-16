@@ -39,6 +39,12 @@ g.fig.suptitle('Total Loss vs. Time')
 plt.show()
 
 #%%
+g = sns.relplot(x='L', y='MI', units='seed', row='fwd_model', col='factored', kind='line', estimator=None, hue='tag', data=data, alpha=0.3, height=4, legend=False)
+plt.subplots_adjust(top=0.9)
+g.fig.suptitle('Mutual Information vs. Loss')
+plt.show()
+
+#%%
 g = sns.relplot(x='step', y='L_fac', units='seed', row='fwd_model', col='factored', kind='line', estimator=None, data=data, hue='tag', alpha=0.2, legend=False, height=4)
 plt.subplots_adjust(top=0.9)
 g.fig.suptitle('L_fac vs. Time')
