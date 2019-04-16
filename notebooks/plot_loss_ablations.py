@@ -57,25 +57,25 @@ experiments = [('exp10-no-cpc-6x6', False),
                ('exp9-6x6',         True)]
 data = pd.concat([load_experiment(e[0]) for e in experiments], join='outer', keys=experiments, names=labels).reset_index(level=[0,1])
 
-g = sns.relplot(x='step', y='MI', units='seed', col='cpc_model', kind='line', estimator=None, data=data, hue='tag', alpha=0.2, legend=False, height=4)
+g = sns.relplot(x='step', y='MI', units='seed', col='cpc_model', kind='line', estimator=None, data=data, hue='tag', alpha=0.2, legend=False, height=4, palette='husl')
 plt.subplots_adjust(top=0.9)
 g.fig.suptitle('Normalized Mutual Information')
 plt.show()
 
 #%%
-g = sns.relplot(x='step', y='L', units='seed', col='cpc_model', kind='line', estimator=None, data=data, hue='tag', alpha=0.2, legend=False, height=4)
+g = sns.relplot(x='step', y='L', units='seed', col='cpc_model', kind='line', estimator=None, data=data, hue='tag', alpha=0.2, legend=False, height=4, palette='husl')
 plt.subplots_adjust(top=0.9)
 g.fig.suptitle('Total Loss vs. Time')
 plt.show()
 
 #%%
-g = sns.relplot(x='L', y='MI', units='seed', col='cpc_model', kind='line', estimator=None, data=data, hue='tag', alpha=0.2, legend=False, height=4)
+g = sns.relplot(x='L', y='MI', units='seed', col='cpc_model', kind='line', estimator=None, data=data, hue='tag', alpha=0.2, legend=False, height=4, palette='husl')
 plt.subplots_adjust(top=0.9)
 g.fig.suptitle('MI vs. L')
 plt.show()
 
 #%%
-g = sns.relplot(x='step', y='L_fac', units='seed', col='cpc_model', kind='line', estimator=None, data=data, hue='tag', alpha=0.2, legend=False, height=4)
+g = sns.relplot(x='step', y='L_fac', units='seed', col='cpc_model', kind='line', estimator=None, data=data, hue='tag', alpha=0.2, legend=False, height=4, palette='husl')
 plt.subplots_adjust(top=0.9)
 g.fig.suptitle('L_fac vs. Time')
 plt.show()
