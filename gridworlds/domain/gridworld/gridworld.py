@@ -34,7 +34,7 @@ class GridWorld(grid.BaseGrid):
             self.agent.position += direction
         s = self.get_state()
         if self.goal:
-            r = 1 if self.agent.position == self.goal.position else 0
+            r = 1 if np.all(self.agent.position == self.goal.position) else 0
         else:
             r = 0
         done = False
