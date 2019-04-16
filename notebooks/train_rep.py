@@ -39,8 +39,11 @@ parser.add_argument('-v','--video', action='store_true',
                     help="Save training video")
 parser.add_argument('--no_graphics', action='store_true',
                     help='Turn off graphics (e.g. for running on cluster)')
+parser.add_argument('--save', action='store_true',
+                    help='Save final network weights')
 parser.set_defaults(video=False)
 parser.set_defaults(no_graphics=False)
+parser.set_defaults(save=False)
 args = parser.parse_args()
 
 if args.no_graphics:
@@ -185,5 +188,8 @@ for frame_idx in tqdm(range(n_frames+1)):
 
 if args.video:
     imageio.mimwrite(filename, data, fps=15)
+
+if args.save:
+    fnet.phi.save(args.tag, 'phi-{}'.format(args.seed))
 
 log.close()
