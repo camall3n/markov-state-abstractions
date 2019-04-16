@@ -34,10 +34,12 @@ class GridWorld(grid.BaseGrid):
             self.agent.position += direction
         s = self.get_state()
         if self.goal:
-            r = 1 if np.all(self.agent.position == self.goal.position) else 0
+            at_goal = np.all(self.agent.position == self.goal.position)
+            r = 1 if at_goal else 0
+            done = True if at_goal else False
         else:
             r = 0
-        done = False
+            done = False
         return s, r, done
 
     def can_run(self, action):
