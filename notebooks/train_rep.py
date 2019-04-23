@@ -6,7 +6,7 @@ import os
 import torch
 from tqdm import tqdm
 
-from notebooks.featurenet import FeatureNet
+from gridworlds.nn.featurenet import FeatureNet
 from notebooks.repvis import RepVisualization
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
 from gridworlds.utils import reset_seeds, get_parser, MI

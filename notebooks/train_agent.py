@@ -4,7 +4,7 @@ import numpy as np
 import os
 from tqdm import tqdm
 
-from notebooks.phinet import PhiNet
+from gridworlds.nn.phinet import PhiNet
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
 from gridworlds.agents.randomagent import RandomAgent
 from gridworlds.utils import reset_seeds, get_parser
