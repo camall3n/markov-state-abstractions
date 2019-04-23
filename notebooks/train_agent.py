@@ -6,6 +6,7 @@ from tqdm import tqdm
 
 from notebooks.phinet import PhiNet
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
+from gridworlds.agents.randomagent import RandomAgent
 from gridworlds.utils import reset_seeds, get_parser
 from gridworlds.sensors import *
 
@@ -28,10 +29,6 @@ parser.add_argument('-s','--seed', type=int, default=0,
                     help='Random seed')
 parser.add_argument('-t','--tag', type=str, required=True,
                     help='Tag for identifying experiment')
-parser.add_argument('--no_graphics', action='store_true',
-                    help='Turn off graphics (e.g. for running on cluster)')
-parser.set_defaults(video=False)
-parser.set_defaults(no_graphics=False)
 parser.set_defaults(save=False)
 args = parser.parse_args()
 
@@ -58,13 +55,6 @@ phinet = PhiNet(input_shape=x0.shape, n_latent_dims=2, n_hidden_layers=1, n_unit
 phinet.load(modelfile)
 
 #%% ------------------ Load agent ------------------
-class RandomAgent:
-    def __init__(self, n_actions):
-        self.n_actions = n_actions
-    def act(self, x):
-        return np.random.randint(self.n_actions)
-    def train(self, x, a, r, xp, done):
-        pass
 agent = RandomAgent(n_actions=4)
 
 #%% ------------------ Train agent ------------------
