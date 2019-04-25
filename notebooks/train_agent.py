@@ -29,9 +29,9 @@ parser.add_argument('-r','--rows', type=int, default=7,
                     help='Number of gridworld rows')
 parser.add_argument('-c','--cols', type=int, default=4,
                     help='Number of gridworld columns')
-parser.add_argument('-b','--batch_size', type=int, default=32,
+parser.add_argument('-b','--batch_size', type=int, default=16,
                     help='Number of experiences to sample per batch')
-parser.add_argument('-lr','--learning_rate', type=float, default=0.0001,
+parser.add_argument('-lr','--learning_rate', type=float, default=0.001,
                     help='Learning rate for Adam optimizer')
 parser.add_argument('-s','--seed', type=int, default=0,
                     help='Random seed')

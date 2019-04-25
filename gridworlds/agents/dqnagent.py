@@ -7,7 +7,7 @@ from ..nn.nnutils import one_hot
 from .replaymemory import ReplayMemory, Experience
 
 class DQNAgent():
-    def __init__(self, n_latent_dims, n_actions, phi, lr=0.0001, epsilon=0.05, batch_size=4):
+    def __init__(self, n_latent_dims, n_actions, phi, lr=0.001, epsilon=0.05, batch_size=16):
         self.n_actions = n_actions
         self.n_latent_dims = n_latent_dims
         self.lr = lr
