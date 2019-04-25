@@ -49,6 +49,18 @@ class Network(torch.nn.Module):
         state_dict = torch.load(model_file, map_location=map_loc)
         self.load_state_dict(state_dict)
 
+    def freeze(self):
+        if not self.frozen:
+            for param in self.parameters():
+                param.requires_grad = False
+            self.frozen = True
+
+    def unfreeze(self):
+        if self.frozen:
+            for param in self.parameters():
+                param.requires_grad = True
+            self.frozen = False
+
 def one_hot(x, depth, dtype=torch.float32):
     """Convert a batch of indices to a batch of one-hot vectors
 

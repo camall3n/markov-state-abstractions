@@ -25,15 +25,3 @@ class InvNet(Network):
         context = torch.cat((z0,z1), -1)
         a_logits = self.inv_model(context)
         return a_logits
-
-    def freeze(self):
-        if not self.frozen:
-            for param in self.parameters():
-                param.requires_grad = False
-            self.frozen = True
-
-    def unfreeze(self):
-        if self.frozen:
-            for param in self.parameters():
-                param.requires_grad = True
-            self.frozen = False

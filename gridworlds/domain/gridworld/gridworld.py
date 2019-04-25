@@ -19,13 +19,17 @@ class GridWorld(grid.BaseGrid):
         self.agent.position = np.asarray((0,0), dtype=int)
         self.goal = None
 
-    def reset_agent(self, seed=None):
-        self.agent.position = self.get_random_position(seed)
+    def reset_agent(self):
+        self.agent.position = self.get_random_position()
+        at = lambda x, y: np.all(x.position == y.position)
+        while (self.goal is not None) and at(self.agent, self.goal):
+            self.agent.position = self.get_random_position()
 
-    def reset_goal(self, seed=None):
+    def reset_goal(self):
         if self.goal is None:
             self.goal = Depot()
-        self.goal.position = self.get_random_position(seed)
+        self.goal.position = self.get_random_position()
+        self.reset_agent()
 
     def step(self, action):
         assert(action in range(4))
@@ -35,7 +39,7 @@ class GridWorld(grid.BaseGrid):
         s = self.get_state()
         if self.goal:
             at_goal = np.all(self.agent.position == self.goal.position)
-            r = 1 if at_goal else 0
+            r = 0 if at_goal else -1
             done = True if at_goal else False
         else:
             r = 0

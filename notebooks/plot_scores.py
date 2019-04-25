@@ -10,6 +10,7 @@ from gridworlds.utils import load_experiment
 
 def load_experiment(tag):
     logfiles = sorted(glob.glob(os.path.join('logs',tag+'*','scores-*.txt')))
+    agents = [f.split('-')[-2] for f in logfiles]
     seeds = [int(f.split('-')[-1].split('.')[0]) for f in logfiles]
     logs = [open(f,'r').read().splitlines() for f in logfiles]
     def read_log(log):
@@ -17,14 +18,15 @@ def load_experiment(tag):
         data = pd.DataFrame(results)
         return data
     results = [read_log(log) for log in logs]
-    data = pd.concat(results, join='outer', keys=seeds, names=['seed']).sort_values(by='seed', kind='mergesort').reset_index(level=0)
+    keys = list(zip(agents, seeds))
+    data = pd.concat(results, join='outer', keys=keys, names=['agent','seed']).sort_values(by='seed', kind='mergesort').reset_index(level=[0,1])
     return data
 
 labels = ['tag']
 experiments = ['test-nofac-6x6']
 data = pd.concat([load_experiment(e) for e in experiments], join='outer', keys=experiments, names=labels).reset_index(level=[0])
 
-g = sns.relplot(x='total_steps', y='total_reward', kind='line', units='trial', estimator=None, data=data, legend=False, height=4, alpha=0.2)
+g = sns.relplot(x='episode', y='total_reward', kind='line', units='trial', estimator=None, hue='agent', data=data, height=4, alpha=0.2, legend=False)
 plt.subplots_adjust(top=0.9)
 g.fig.suptitle('Reward vs. Time')
 plt.show()
