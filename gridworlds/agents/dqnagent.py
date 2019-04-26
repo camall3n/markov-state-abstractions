@@ -7,7 +7,7 @@ from ..nn.nnutils import one_hot
 from .replaymemory import ReplayMemory, Experience
 
 class DQNAgent():
-    def __init__(self, n_latent_dims, n_actions, phi, lr=0.001, epsilon=0.05, batch_size=16):
+    def __init__(self, n_latent_dims, n_actions, phi, lr=0.001, epsilon=0.05, batch_size=16, train_phi=False):
         self.n_actions = n_actions
         self.n_latent_dims = n_latent_dims
         self.lr = lr
@@ -18,6 +18,7 @@ class DQNAgent():
         self.copy_period = 50
         self.n_steps_init = 500#batch_size*3
         self.decay_period = 2500
+        self.train_phi = train_phi
         self.replay = ReplayMemory(10000)
         self.reset()
 
@@ -43,12 +44,14 @@ class DQNAgent():
         else:
             with torch.no_grad():
                 q_values = self.q(self.phi(torch.tensor(x, dtype=torch.float32)))
-                a = torch.argmax(q_values, dim=-1).numpy().tolist()
+                a = torch.argmax(q_values, dim=-1).numpy().tolist()[0]
         return a
 
-    def q_values(self, x):
-        z = self.phi(torch.stack(tch(x, dtype=torch.float32)))
-        return self.q(z)
+    def v(self, x):
+        with torch.no_grad():
+            z = self.phi(torch.stack(tch(x, dtype=torch.float32)))
+            v = self.q(z).numpy().max(axis=-1)
+        return v
 
     def train(self, x, a, r, xp, done, gamma):
         self.replay.push(x, a, r, xp, done)
@@ -60,7 +63,6 @@ class DQNAgent():
         batch = Experience(*zip(*experiences))
 
         with torch.no_grad():
-            z = self.phi(torch.stack(tch(batch.x, dtype=torch.float32)))
             zp = self.phi(torch.stack(tch(batch.xp, dtype=torch.float32)))
             # Compute Double-Q targets
             ap = torch.argmax(self.q(zp), dim=-1)
@@ -71,6 +73,11 @@ class DQNAgent():
 
         self.q.train()
         self.optimizer.zero_grad()
+        if self.train_phi:
+            z = self.phi(torch.stack(tch(batch.x, dtype=torch.float32)))
+        else:
+            with torch.no_grad():
+                z = self.phi(torch.stack(tch(batch.x, dtype=torch.float32)))
         q_values = self.q(z)#.gather(-1,torch.stack(tch(batch.a, dtype=torch.int64)).view(-1,1))
         q_targets_full = q_values.clone().detach()
         for i, a in enumerate(batch.a):

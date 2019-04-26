@@ -113,7 +113,7 @@ for trial in tqdm(range(args.n_trials), desc='trials'):
     total_steps = 0
     losses = []
     rewards = []
-    q_values = []
+    value_fn = []
     for episode in tqdm(range(args.n_episodes), desc='episodes'):
         env.reset_agent()
         ep_rewards = []
@@ -126,7 +126,7 @@ for trial in tqdm(range(args.n_trials), desc='trials'):
             xp = sensor.observe(sp)
             ep_rewards.append(r)
             if args.video:
-                q_values.append(agent.q_values(x).detach().numpy().max())
+                value_fn.append(agent.v(x))
             total_reward += r
 
             loss = agent.train(x, a, r, xp, done, gamma)
@@ -140,7 +140,7 @@ for trial in tqdm(range(args.n_trials), desc='trials'):
             [a.clear() for a in ax]
             plot_value_function(ax[0])
             env.plot(ax[0])
-            ax[1].plot(q_values)
+            ax[1].plot(value_fn)
             ax[2].plot(rewards, c='C3')
             ax[3].plot(losses, c='C1')
             # plot_states(ax[3])
