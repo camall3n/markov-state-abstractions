@@ -37,53 +37,75 @@ parser.add_argument('-s','--seed', type=int, default=0,
                     help='Random seed')
 parser.add_argument('-t','--tag', type=str, required=True,
                     help='Tag for identifying experiment')
+phi_group = parser.add_mutually_exclusive_group(required=True)
+phi_group.add_argument('--phi', type=str,
+                    help='Load an existing abstraction network by tag')
+phi_group.add_argument('--no_phi', action='store_true',
+                    help='Turn off abstraction and just use observed state; i.e. ϕ(x)=x')
+parser.add_argument('--train_phi', action='store_true',
+                    help='Allow simultaneous training of abstraction')
+parser.add_argument('--no_sigma', action='store_true',
+                    help='Turn off sensors and just use true state; i.e. x=s')
 parser.add_argument('-v','--video', action='store_true',
                     help='Show video of agent training')
 parser.set_defaults(save=False)
 parser.set_defaults(video=False)
+parser.set_defaults(no_phi=False)
+parser.set_defaults(train_phi=False)
+parser.set_defaults(no_sigma=False)
 args = parser.parse_args()
+if args.train_phi and args.no_phi:
+    assert False, '--no_phi and --train_phi are mutually exclusive'
 
 if args.video:
     import matplotlib.pyplot as plt
 
-log_dir = 'logs/' + str(args.tag)
+log_dir = 'scores/' + str(args.tag)
 os.makedirs(log_dir, exist_ok=True)
 log = open(log_dir+'/scores-{}-{}.txt'.format(args.agent, args.seed), 'w')
-
-reset_seeds(args.seed)
 
 #%% ------------------ Define MDP ------------------
 env = GridWorld(rows=args.rows, cols=args.cols)
 gamma = 0.9
-sensor = SensorChain([
-    OffsetSensor(offset=(0.5,0.5)),
-    NoisySensor(sigma=0.05),
-    ImageSensor(range=((0,env._rows), (0,env._cols)), pixel_density=3),
-    # ResampleSensor(scale=2.0),
-    BlurSensor(sigma=0.6, truncate=1.),
-])
-x0 = sensor.observe(env.get_state())
 
-#%% ------------------ Load abstraction ------------------
+#%% ------------------ Define sensor ------------------
+if args.no_sigma:
+    sensor = SensorChain([])
+else:
+    sensor = SensorChain([
+        OffsetSensor(offset=(0.5,0.5)),
+        NoisySensor(sigma=0.05),
+        ImageSensor(range=((0,env._rows), (0,env._cols)), pixel_density=3),
+        # ResampleSensor(scale=2.0),
+        BlurSensor(sigma=0.6, truncate=1.),
+    ])
+
+#%% ------------------ Define abstraction ------------------
 n_latent_dims = 2
-# modelfile = 'models/{}/phi-{}.pytorch'.format(args.tag, args.seed)
-# phinet = PhiNet(input_shape=x0.shape, n_latent_dims=n_latent_dims, n_hidden_layers=1, n_units_per_layer=32, lr=args.learning_rate)
-# phinet.load(modelfile)
 
-class NullAbstraction:
-    def __call__(self, x):
-        return x
-    def freeze(self):
-        pass
-sensor = SensorChain([])
-phinet = NullAbstraction()
+if args.no_phi:
+    class NullAbstraction:
+        def __call__(self, x):
+            return x
+        def freeze(self):
+            pass
+        def parameters(self):
+            return []
+    phinet = NullAbstraction()
+else:
+    x0 = sensor.observe(env.get_state())
+    modelfile = 'models/{}/phi-{}.pytorch'.format(args.phi, args.seed)
+    phinet = PhiNet(input_shape=x0.shape, n_latent_dims=n_latent_dims, n_hidden_layers=1, n_units_per_layer=32, lr=args.learning_rate)
+    phinet.load(modelfile)
+
+reset_seeds(args.seed)
 
 #%% ------------------ Load agent ------------------
 n_actions = 4
 if args.agent == 'random':
     agent = RandomAgent(n_actions=n_actions)
 elif args.agent == 'dqn':
-    agent = DQNAgent(n_latent_dims=n_latent_dims, n_actions=n_actions, phi=phinet, lr=args.learning_rate, batch_size=args.batch_size)
+    agent = DQNAgent(n_latent_dims=n_latent_dims, n_actions=n_actions, phi=phinet, lr=args.learning_rate, batch_size=args.batch_size, train_phi=args.train_phi)
 else:
     assert False, 'Invalid agent type: {}'.format(args.agent)
 

@@ -12,13 +12,14 @@ class DQNAgent():
         self.n_latent_dims = n_latent_dims
         self.lr = lr
         self.phi = phi
-        self.phi.freeze()
         self.epsilon = epsilon
         self.batch_size = batch_size
         self.copy_period = 50
         self.n_steps_init = 500#batch_size*3
         self.decay_period = 2500
         self.train_phi = train_phi
+        if not self.train_phi:
+            self.phi.freeze()
         self.replay = ReplayMemory(10000)
         self.reset()
 
@@ -29,7 +30,8 @@ class DQNAgent():
         self.q_target = QNet(n_actions=self.n_actions, n_latent_dims=self.n_latent_dims, n_hidden_layers=self.n_hidden_layers)
         self.copy_target_net()
         self.replay.reset()
-        self.optimizer = torch.optim.Adam(self.q.parameters(), lr=self.lr)
+        params = list(self.q.parameters()) + list(self.phi.parameters())
+        self.optimizer = torch.optim.Adam(params, lr=self.lr)
 
 
     def get_epsilon(self):
@@ -73,11 +75,8 @@ class DQNAgent():
 
         self.q.train()
         self.optimizer.zero_grad()
-        if self.train_phi:
-            z = self.phi(torch.stack(tch(batch.x, dtype=torch.float32)))
-        else:
-            with torch.no_grad():
-                z = self.phi(torch.stack(tch(batch.x, dtype=torch.float32)))
+        # Unless self.train_phi == True, then phi.freeze() has already been called
+        z = self.phi(torch.stack(tch(batch.x, dtype=torch.float32)))
         q_values = self.q(z)#.gather(-1,torch.stack(tch(batch.a, dtype=torch.int64)).view(-1,1))
         q_targets_full = q_values.clone().detach()
         for i, a in enumerate(batch.a):

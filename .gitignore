@@ -10,5 +10,7 @@ models/
 notebooks/unversioned/*
 videos/
 results/
+scores/
 **__pycache__
 **.pyc
+
