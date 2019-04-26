@@ -25,7 +25,7 @@ class DQNAgent():
         self.n_training_steps = 0
         self.n_hidden_layers = 1
         self.q = QNet(n_actions=self.n_actions, n_latent_dims=self.n_latent_dims, n_hidden_layers=self.n_hidden_layers)
-        self.q_old = QNet(n_actions=self.n_actions, n_latent_dims=self.n_latent_dims, n_hidden_layers=self.n_hidden_layers)
+        self.q_target = QNet(n_actions=self.n_actions, n_latent_dims=self.n_latent_dims, n_hidden_layers=self.n_hidden_layers)
         self.copy_target_net()
         self.replay.reset()
         self.optimizer = torch.optim.Adam(self.q.parameters(), lr=self.lr)
@@ -64,7 +64,7 @@ class DQNAgent():
             zp = self.phi(torch.stack(tch(batch.xp, dtype=torch.float32)))
             # Compute Double-Q targets
             ap = torch.argmax(self.q(zp), dim=-1)
-            vp = self.q_old(zp).gather(-1, ap.unsqueeze(-1)).squeeze(-1)
+            vp = self.q_target(zp).gather(-1, ap.unsqueeze(-1)).squeeze(-1)
             # vp = torch.max(self.q(zp),dim=-1)[0]
             not_done_idx = (1-torch.stack(tch(batch.done, dtype=torch.float32)))
             targets = torch.stack(tch(batch.r, dtype=torch.float32)) + gamma*vp*not_done_idx
@@ -88,7 +88,7 @@ class DQNAgent():
         return loss.detach().numpy().tolist()
 
     def copy_target_net(self):
-        self.q_old.load_state_dict(self.q.state_dict())
+        self.q_target.load_state_dict(self.q.state_dict())
 
     def soft_update(self, tau=0.1):
         """
@@ -101,7 +101,7 @@ class DQNAgent():
             tau (float): interpolation parameter - usually small eg 0.0001
         """
 
-        for theta_target, theta in zip(self.q_old.parameters(), self.q.parameters()):
+        for theta_target, theta in zip(self.q_target.parameters(), self.q.parameters()):
             theta_target.data.copy_(tau * theta.data + (1.0 - tau) * theta_target.data)
 
 def tch(tensor, dtype):
