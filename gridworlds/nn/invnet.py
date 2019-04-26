@@ -9,7 +9,6 @@ class InvNet(Network):
         super().__init__()
         self.n_actions = n_actions
         self.lr = lr
-        self.frozen = False
 
         self.layers = []
         if n_hidden_layers == 0:

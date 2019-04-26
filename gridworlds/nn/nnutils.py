@@ -24,6 +24,10 @@ class Reshape(torch.nn.Module):
 class Network(torch.nn.Module):
     """Module that, when printed, shows its total number of parameters
     """
+    def __init__(self):
+        super().__init__()
+        self.frozen = False
+        
     def __str__(self):
         s = super().__str__()+'\n'
         n_params = 0
