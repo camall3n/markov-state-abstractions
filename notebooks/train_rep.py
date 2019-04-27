@@ -21,6 +21,8 @@ parser.add_argument('-r','--rows', type=int, default=7,
                     help='Number of gridworld rows')
 parser.add_argument('-c','--cols', type=int, default=4,
                     help='Number of gridworld columns')
+parser.add_argument('-l','--latent_dims', type=int, default=2,
+                    help='Number of latent dimensions to use for representation')
 parser.add_argument('--L_inv', type=float, default=1.0,
                     help='Coefficient for inverse dynamics loss')
 parser.add_argument('--L_fwd', type=float, default=0.1,
@@ -120,7 +122,7 @@ coefs = {
     'L_fac': args.L_fac,
 }
 
-fnet = FeatureNet(n_actions=4, input_shape=x0.shape[1:], n_latent_dims=2, n_hidden_layers=1, n_units_per_layer=32, lr=args.learning_rate, coefs=coefs)
+fnet = FeatureNet(n_actions=4, input_shape=x0.shape[1:], n_latent_dims=args.latent_dims, n_hidden_layers=1, n_units_per_layer=32, lr=args.learning_rate, coefs=coefs)
 fnet.print_summary()
 
 n_test_samples = 2000

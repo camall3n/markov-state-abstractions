@@ -77,7 +77,7 @@ class FeatureNet(Network):
         for a_idx in range(self.n_actions):
             mask = (a==a_idx)
             if torch.any(mask):
-                dz_a = torch.masked_select((z1-z0), torch.stack([mask,mask],dim=-1)).reshape(-1,self.n_latent_dims)
+                dz_a = torch.masked_select((z1-z0), torch.stack([mask]*self.n_latent_dims,dim=-1)).reshape(-1,self.n_latent_dims)
                 h_a = self.kde_entropy(dz_a)
                 entropies.append(h_a)
         loss = torch.mean(torch.stack(entropies))

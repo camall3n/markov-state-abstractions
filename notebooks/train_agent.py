@@ -31,6 +31,8 @@ parser.add_argument('-c','--cols', type=int, default=4,
                     help='Number of gridworld columns')
 parser.add_argument('-b','--batch_size', type=int, default=16,
                     help='Number of experiences to sample per batch')
+parser.add_argument('-l','--latent_dims', type=int, default=2,
+                    help='Number of latent dimensions to use for representation')
 parser.add_argument('-lr','--learning_rate', type=float, default=0.001,
                     help='Learning rate for Adam optimizer')
 parser.add_argument('-s','--seed', type=int, default=0,
@@ -81,8 +83,6 @@ else:
     ])
 
 #%% ------------------ Define abstraction ------------------
-n_latent_dims = 2
-
 if args.no_phi:
     class NullAbstraction:
         def __call__(self, x):
@@ -95,7 +95,7 @@ if args.no_phi:
 else:
     x0 = sensor.observe(env.get_state())
     modelfile = 'models/{}/phi-{}.pytorch'.format(args.phi, args.seed)
-    phinet = PhiNet(input_shape=x0.shape, n_latent_dims=n_latent_dims, n_hidden_layers=1, n_units_per_layer=32, lr=args.learning_rate)
+    phinet = PhiNet(input_shape=x0.shape, n_latent_dims=args.n_latent_dims, n_hidden_layers=1, n_units_per_layer=32, lr=args.learning_rate)
     phinet.load(modelfile)
 
 reset_seeds(args.seed)
@@ -105,7 +105,7 @@ n_actions = 4
 if args.agent == 'random':
     agent = RandomAgent(n_actions=n_actions)
 elif args.agent == 'dqn':
-    agent = DQNAgent(n_latent_dims=n_latent_dims, n_actions=n_actions, phi=phinet, lr=args.learning_rate, batch_size=args.batch_size, train_phi=args.train_phi)
+    agent = DQNAgent(n_latent_dims=args.n_latent_dims, n_actions=n_actions, phi=phinet, lr=args.learning_rate, batch_size=args.batch_size, train_phi=args.train_phi)
 else:
     assert False, 'Invalid agent type: {}'.format(args.agent)
 
