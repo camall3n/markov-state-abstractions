@@ -24,14 +24,18 @@ def load_experiment(tag):
 
 labels = ['tag']
 experiments = [
-    'test-6x6-random',
-    'test-6x6-dqn-true-state',
+    # 'test-6x6-random',
+    # 'test-6x6-dqn-true-state',
     # 'test-6x6-dqn-phi-train',
-    'test-nofac-6x6-dqn-train-phi',
+    'test-6x6-dqn-phi-factored',
     'test-6x6-dqn-phi-nofac']
 data = pd.concat([load_experiment(e) for e in experiments], join='outer', keys=experiments, names=labels).reset_index(level=[0])
 
-g = sns.relplot(x='episode', y='total_reward', kind='line', hue='tag', units='trial', estimator=None, data=data, height=4, alpha=0.2, col='tag', col_wrap=2, legend=False)
+g = sns.relplot(x=' ', y='total_reward', kind='line', hue='tag', data=data, height=4, alpha=0.2,
+    # units='trial', estimator=None,
+    # col='tag', col_wrap=2,
+    # legend=False
+)
 plt.subplots_adjust(top=0.9)
 g.fig.suptitle('Reward vs. Time')
 plt.show()
