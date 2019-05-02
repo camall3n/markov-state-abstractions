@@ -37,7 +37,7 @@ experiments = [
 ]
 data = pd.concat([load_experiment(e) for e in experiments], join='outer', keys=experiments, names=labels).reset_index(level=[0])
 
-g = sns.relplot(x='episode', y='total_reward', kind='line', hue='tag', data=data, height=8, alpha=0.2,
+g = sns.relplot(x='episode', y='total_reward', kind='line', hue='tag', data=data, height=6, alpha=0.2,
     # units='trial', estimator=None,
     # col='tag', col_wrap=2,
     # legend=False
