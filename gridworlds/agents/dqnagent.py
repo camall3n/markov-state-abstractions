@@ -18,8 +18,6 @@ class DQNAgent():
         self.n_steps_init = 500#batch_size*3
         self.decay_period = 2500
         self.train_phi = train_phi
-        if not self.train_phi:
-            self.phi.freeze()
         self.replay = ReplayMemory(10000)
         self.reset()
 
@@ -75,9 +73,10 @@ class DQNAgent():
 
         self.q.train()
         self.optimizer.zero_grad()
-        # Unless self.train_phi == True, then phi.freeze() has already been called
         z = self.phi(torch.stack(tch(batch.x, dtype=torch.float32)))
-        q_values = self.q(z)#.gather(-1,torch.stack(tch(batch.a, dtype=torch.int64)).view(-1,1))
+        if not self.train_phi:
+            z = z.detach()
+        q_values = self.q(z)
         q_targets_full = q_values.clone().detach()
         for i, a in enumerate(batch.a):
             q_targets_full[i,a] = targets[i]
@@ -110,5 +109,5 @@ class DQNAgent():
         for theta_target, theta in zip(self.q_target.parameters(), self.q.parameters()):
             theta_target.data.copy_(tau * theta.data + (1.0 - tau) * theta_target.data)
 
-def tch(tensor, dtype):
+def tch(tensor, dtype=torch.float32):
     return list(map(lambda x: torch.tensor(x, dtype=dtype), tensor))

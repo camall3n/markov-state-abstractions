@@ -27,7 +27,7 @@ class Network(torch.nn.Module):
     def __init__(self):
         super().__init__()
         self.frozen = False
-        
+
     def __str__(self):
         s = super().__str__()+'\n'
         n_params = 0

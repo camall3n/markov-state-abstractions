@@ -7,6 +7,7 @@ import seaborn as sns
 import time
 from tqdm import tqdm
 
+from gridworlds.nn.nnutils import Reshape
 from gridworlds.nn.phinet import PhiNet
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
 from gridworlds.agents.randomagent import RandomAgent
@@ -84,18 +85,16 @@ else:
 
 #%% ------------------ Define abstraction ------------------
 if args.no_phi:
-    class NullAbstraction:
-        def __call__(self, x):
-            return x
+    class NullAbstraction(Reshape):
         def freeze(self):
             pass
         def parameters(self):
             return []
-    phinet = NullAbstraction()
+    phinet = NullAbstraction(-1, args.latent_dims)
 else:
     x0 = sensor.observe(env.get_state())
     modelfile = 'models/{}/phi-{}.pytorch'.format(args.phi, args.seed)
-    phinet = PhiNet(input_shape=x0.shape, n_latent_dims=args.n_latent_dims, n_hidden_layers=1, n_units_per_layer=32, lr=args.learning_rate)
+    phinet = PhiNet(input_shape=x0.shape, n_latent_dims=args.latent_dims, n_hidden_layers=1, n_units_per_layer=32, lr=args.learning_rate)
     phinet.load(modelfile)
 
 reset_seeds(args.seed)
@@ -105,7 +104,7 @@ n_actions = 4
 if args.agent == 'random':
     agent = RandomAgent(n_actions=n_actions)
 elif args.agent == 'dqn':
-    agent = DQNAgent(n_latent_dims=args.n_latent_dims, n_actions=n_actions, phi=phinet, lr=args.learning_rate, batch_size=args.batch_size, train_phi=args.train_phi)
+    agent = DQNAgent(n_latent_dims=args.latent_dims, n_actions=n_actions, phi=phinet, lr=args.learning_rate, batch_size=args.batch_size, train_phi=args.train_phi)
 else:
     assert False, 'Invalid agent type: {}'.format(args.agent)
 
