@@ -28,7 +28,13 @@ experiments = [
     # 'test-6x6-dqn-true-state',
     # 'test-6x6-dqn-phi-train',
     'test-6x6-dqn-phi-factored',
-    'test-6x6-dqn-phi-nofac']
+    'test-6x6-dqn-phi-nofac',
+    # 'exp11-3d-rep',
+    # 'exp12-10d-rep',
+    # 'exp13joint10d',
+    # 'exp14_true_state',
+    # 'exp15_pre_2d',
+]
 data = pd.concat([load_experiment(e) for e in experiments], join='outer', keys=experiments, names=labels).reset_index(level=[0])
 
 g = sns.relplot(x='episode', y='total_reward', kind='line', hue='tag', data=data, height=8, alpha=0.2,
