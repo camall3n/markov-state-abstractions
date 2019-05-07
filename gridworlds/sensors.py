@@ -2,6 +2,7 @@ import numpy as np
 import scipy.ndimage.filters
 import scipy.ndimage
 import scipy.stats
+import torch
 
 class OffsetSensor:
     def __init__(self, offset):
@@ -58,6 +59,12 @@ class BlurSensor:
 
     def observe(self, s):
         return scipy.ndimage.filters.gaussian_filter(s, sigma=self.sigma, truncate=self.truncate, mode='nearest')
+
+class TorchSensor:
+    def __init__(self, dtype=torch.float32):
+        self.dtype = dtype
+    def observe(self, s):
+        return torch.as_tensor(s, dtype=self.dtype)
 
 class SensorChain:
     def __init__(self, sensors):

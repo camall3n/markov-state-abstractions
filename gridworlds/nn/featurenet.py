@@ -1,5 +1,4 @@
 from collections import defaultdict
-import math
 import numpy as np
 import torch
 import torch.nn

@@ -20,20 +20,20 @@ def load_experiment(tag):
     results = [read_log(log) for log in logs]
     keys = list(zip(agents, seeds))
     data = pd.concat(results, join='outer', keys=keys, names=['agent','seed']).sort_values(by='seed', kind='mergesort').reset_index(level=[0,1])
-    return data
+    return data[data['episode']<=200]
 
 labels = ['tag']
 experiments = [
-    # 'test-6x6-random',
+    # 'test-6x6-random'
     # 'test-6x6-dqn-true-state',
     # 'test-6x6-dqn-phi-train',
-    'test-6x6-dqn-phi-factored',
-    'test-6x6-dqn-phi-nofac',
+    # 'test-6x6-dqn-phi-factored',
+    # 'test-6x6-dqn-phi-nofac',
     # 'exp11-3d-rep',
     # 'exp12-10d-rep',
     # 'exp13joint10d',
-    # 'exp14_true_state',
-    # 'exp15_pre_2d',
+    'exp14_true_state',
+    'exp15_pre_2d',
 ]
 data = pd.concat([load_experiment(e) for e in experiments], join='outer', keys=experiments, names=labels).reset_index(level=[0])
 
@@ -44,4 +44,5 @@ g = sns.relplot(x='episode', y='total_reward', kind='line', hue='tag', data=data
 )
 plt.subplots_adjust(top=0.9)
 g.fig.suptitle('Reward vs. Time')
+plt.savefig('results/foo.png')
 plt.show()

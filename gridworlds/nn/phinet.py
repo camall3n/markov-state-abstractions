@@ -5,10 +5,9 @@ import torch.nn
 from .nnutils import Network, Reshape
 
 class PhiNet(Network):
-    def __init__(self, input_shape=2, n_latent_dims=4, n_hidden_layers=1, n_units_per_layer=32, lr=0.001):
+    def __init__(self, input_shape=2, n_latent_dims=4, n_hidden_layers=1, n_units_per_layer=32):
         super().__init__()
         self.input_shape = input_shape
-        self.lr = lr
 
         shape_flat = np.prod(self.input_shape)
 

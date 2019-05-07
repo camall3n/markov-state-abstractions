@@ -8,6 +8,7 @@ import time
 from tqdm import tqdm
 
 from gridworlds.nn.nnutils import Reshape
+from gridworlds.nn.nullabstraction import NullAbstraction
 from gridworlds.nn.phinet import PhiNet
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
 from gridworlds.agents.randomagent import RandomAgent
@@ -85,11 +86,6 @@ else:
 
 #%% ------------------ Define abstraction ------------------
 if args.no_phi:
-    class NullAbstraction(Reshape):
-        def freeze(self):
-            pass
-        def parameters(self):
-            return []
     phinet = NullAbstraction(-1, args.latent_dims)
 else:
     x0 = sensor.observe(env.get_state())
