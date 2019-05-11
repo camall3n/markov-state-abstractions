@@ -21,5 +21,34 @@ class QNet(Network):
         self.model = torch.nn.Sequential(*self.layers)
 
     def forward(self, z):
-        a_logits = self.model(z)
-        return a_logits
+        return self.model(z)
+
+class FactoredQNet(Network):
+    def __init__(self, n_features, n_actions, n_hidden_layers=1, n_units_per_layer=32):
+        super().__init__()
+        self.n_features = n_features
+        self.n_actions = n_actions
+        self.frozen = False
+
+        self.q = torch.nn.ModuleList([QNet(1, n_actions, n_hidden_layers, n_units_per_layer) for _ in range(n_features)])
+
+    def forward(self, z, mask=None):
+        if mask is not None:
+            assert z.shape[-1] == mask.shape[-1]
+        else:
+            mask = torch.ones(self.n_features)
+        mask = mask.detach()
+        if len(z.shape) == 1:
+            z = z.unsqueeze(0)
+        z = z.unsqueeze(-1)
+        q = torch.stack([self.q[i](z[:,i]) for i in range(self.n_features)],dim=-1)
+        masked_q = torch.matmul(q, mask)
+        return masked_q
+
+# fqn = FactoredQNet(n_features=3, n_actions=4)
+#
+# z = torch.zeros(3)
+# z[1] = 1
+# m = torch.zeros(3)
+# m[1] = 1
+# masked_q = fqn(z, m)[0]
