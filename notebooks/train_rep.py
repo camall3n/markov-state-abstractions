@@ -7,7 +7,7 @@ import torch
 from tqdm import tqdm
 
 from gridworlds.nn.featurenet import FeatureNet
-from notebooks.repvis import RepVisualization
+from notebooks.repvis import RepVisualization, CleanVisualization
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
 from gridworlds.utils import reset_seeds, get_parser, MI
 from gridworlds.sensors import *
@@ -43,9 +43,12 @@ parser.add_argument('--no_graphics', action='store_true',
                     help='Turn off graphics (e.g. for running on cluster)')
 parser.add_argument('--save', action='store_true',
                     help='Save final network weights')
+parser.add_argument('--cleanvis', action='store_true',
+                    help='Switch to representation-only visualization')
 parser.set_defaults(video=False)
 parser.set_defaults(no_graphics=False)
 parser.set_defaults(save=False)
+parser.set_defaults(cleanvis=False)
 args = parser.parse_args()
 
 if args.no_graphics:
@@ -104,6 +107,7 @@ sensor = SensorChain([
     ImageSensor(range=((0,env._rows), (0,env._cols)), pixel_density=3),
     # ResampleSensor(scale=2.0),
     BlurSensor(sigma=0.6, truncate=1.),
+    NoisySensor(sigma=0.01)
 ])
 
 x0 = sensor.observe(s0)
@@ -138,7 +142,10 @@ state = env.get_state()
 obs = sensor.observe(state)
 
 if args.video:
-    repvis = RepVisualization(env, obs, batch_size=n_test_samples, n_dims=2, colors=test_c, cmap=cmap)
+    if not args.cleanvis:
+        repvis = RepVisualization(env, obs, batch_size=n_test_samples, n_dims=2, colors=test_c, cmap=cmap)
+    else:
+        repvis = CleanVisualization(env, obs, batch_size=n_test_samples, n_dims=2, colors=test_c, cmap=cmap)
 
 def get_batch(x0, x1, a, batch_size=batch_size):
     idx = np.random.choice(len(a), batch_size, replace=False)
