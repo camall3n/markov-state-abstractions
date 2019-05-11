@@ -1,3 +1,4 @@
+import imageio
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
@@ -58,23 +59,62 @@ for update in tqdm(range(1000)):
 e0 = entangler(z0)
 e1 = entangler(z1)
 
+noise_machine = SensorChain([
+    NoisySensor(sigma=0.05),
+])
+
+e0n = noise_machine.observe(e0.detach().numpy())
+e1n = noise_machine.observe(e1.detach().numpy())
+#%%
+def get_frame(ax, rep, title, save=''):
+    rep = rep.detach().numpy()
+    ax.clear()
+    ax.scatter(rep[:,0], rep[:,1], c=c0)
+    ax.set_title(title)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_ylabel(r'$z_F^{(1)}$')
+    ax.set_xlabel(r'$z_F^{(0)}$')
+    plt.rcParams.update({'font.size': 22})
+    fig = plt.gcf()
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+    frame = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+    frame = frame.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    return frame
+
 #%% ------------------ Train disentangler ------------------
-for update in tqdm(range(1000)):
-    disentangler.train_batch(e0, e1)
-d0 = disentangler(e0)
-d1 = disentangler(e1)
+reset_seeds(1)
+disentangler = FactorNet(lr=0.03, coefs={'L_fac': 0.1})
+fig, ax = plt.subplots(figsize=(8,8))
+frames = []
+e0no = sensor.observe(e0n)
+e1no = sensor.observe(e1n)
+for update in tqdm(range(100)):
+    disentangler.train_batch(e0no), e1no))
+    d0 = disentangler(e0no)
+    d1 = disentangler(e1no)
+    # if update % 10 == 0:
+    frames.append(get_frame(ax, d0, r'$z_F$'))
+
+imageio.mimwrite('results/factornet/disentangling.mp4', frames, fps=15)
 
 #%%
 def plot2d(rep, title, save=''):
-    rep = rep.detach().numpy()
+    rep = rep#.detach().numpy()
     plt.scatter(rep[:,0], rep[:,1], c=c0)
+    plt.xticks([])
+    plt.yticks([])
+    plt.xlabel(r'$z^{(0)}$')
+    plt.ylabel(r'$z^{(1)}$')
     plt.title(title)
     if save != '':
         plt.savefig(save)
     plt.show()
 
 plot2d(z0, title='True state (MI=1.0)', save='results/factornet/img1-true_state.png')
-e_title = 'Entangled (MI={})'.format(MI(s0, e0.detach().numpy())/MI_max)
-plot2d(e0, title=e_title, save='results/factornet/img2-entangled.png')
+e_title = r'$z$'#.format(MI(s0, e0.detach().numpy())/MI_max)
+plt.figure(figsize=(8,8))
+plot2d(e0n, title=e_title, save='results/factornet/img2-entangled.png')
 d_title = 'Disentangled (MI={})'.format(MI(s0, d0.detach().numpy())/MI_max)
 plot2d(d0, title=d_title, save='results/factornet/img3-disentangled.png')
