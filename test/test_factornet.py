@@ -91,7 +91,7 @@ frames = []
 e0no = sensor.observe(e0n)
 e1no = sensor.observe(e1n)
 for update in tqdm(range(100)):
-    disentangler.train_batch(e0no), e1no))
+    disentangler.train_batch(e0no, e1no)
     d0 = disentangler(e0no)
     d1 = disentangler(e1no)
     # if update % 10 == 0:
@@ -105,8 +105,8 @@ def plot2d(rep, title, save=''):
     plt.scatter(rep[:,0], rep[:,1], c=c0)
     plt.xticks([])
     plt.yticks([])
-    plt.xlabel(r'$z^{(0)}$')
-    plt.ylabel(r'$z^{(1)}$')
+    plt.xlabel(r'$z_F^{(0)}$')
+    plt.ylabel(r'$z_F^{(1)}$')
     plt.title(title)
     if save != '':
         plt.savefig(save)
@@ -116,5 +116,6 @@ plot2d(z0, title='True state (MI=1.0)', save='results/factornet/img1-true_state.
 e_title = r'$z$'#.format(MI(s0, e0.detach().numpy())/MI_max)
 plt.figure(figsize=(8,8))
 plot2d(e0n, title=e_title, save='results/factornet/img2-entangled.png')
-d_title = 'Disentangled (MI={})'.format(MI(s0, d0.detach().numpy())/MI_max)
-plot2d(d0, title=d_title, save='results/factornet/img3-disentangled.png')
+d_title = r'$z_F$'#.format(MI(s0, d0.detach().numpy())/MI_max)
+plt.figure(figsize=(8,8))
+plot2d(d0.detach().numpy(), title=d_title, save='results/factornet/img3-disentangled.png')
