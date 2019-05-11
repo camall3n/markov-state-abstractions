@@ -5,10 +5,9 @@ import torch.nn
 from .nnutils import Network
 
 class InvNet(Network):
-    def __init__(self, n_actions, n_latent_dims=4, n_hidden_layers=1, n_units_per_layer=32, lr=0.001):
+    def __init__(self, n_actions, n_latent_dims=4, n_hidden_layers=1, n_units_per_layer=32):
         super().__init__()
         self.n_actions = n_actions
-        self.lr = lr
 
         self.layers = []
         if n_hidden_layers == 0:

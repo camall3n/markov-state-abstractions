@@ -90,7 +90,7 @@ if args.no_phi:
 else:
     x0 = sensor.observe(env.get_state())
     modelfile = 'models/{}/phi-{}.pytorch'.format(args.phi, args.seed)
-    phinet = PhiNet(input_shape=x0.shape, n_latent_dims=args.latent_dims, n_hidden_layers=1, n_units_per_layer=32, lr=args.learning_rate)
+    phinet = PhiNet(input_shape=x0.shape, n_latent_dims=args.latent_dims, n_hidden_layers=1, n_units_per_layer=32)
     phinet.load(modelfile)
 
 reset_seeds(args.seed)
