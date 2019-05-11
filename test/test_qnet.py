@@ -43,6 +43,8 @@ for i in range(1000):
                 v[r,c] = max(v[r,c], r_step + gamma * v[r+1,c])
     if np.all(np.isclose(v_prev,v)):
         break
+    else:
+        v_prev = v.copy()
 
 def plot_value_function(v, ax):
     s = np.asarray([[np.asarray([x,y]) for x in range(env._cols)] for y in range(env._rows)])
