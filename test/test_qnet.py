@@ -12,7 +12,7 @@ from gridworlds.sensors import *
 
 reset_seeds(0)
 
-qnet = QNet(n_actions=4, n_latent_dims=2, n_hidden_layers=1, n_units_per_layer=32)
+qnet = QNet(n_features=2, n_actions=4, n_hidden_layers=1, n_units_per_layer=32)
 env = GridWorld(rows=6, cols=6)
 gamma = 0.9
 r_step = -1

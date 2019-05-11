@@ -24,8 +24,8 @@ class DQNAgent():
     def reset(self):
         self.n_training_steps = 0
         self.n_hidden_layers = 1
-        self.q = QNet(n_actions=self.n_actions, n_latent_dims=self.n_latent_dims, n_hidden_layers=self.n_hidden_layers)
-        self.q_target = QNet(n_actions=self.n_actions, n_latent_dims=self.n_latent_dims, n_hidden_layers=self.n_hidden_layers)
+        self.q = QNet(n_features=self.n_latent_dims, n_actions=self.n_actions, n_hidden_layers=self.n_hidden_layers)
+        self.q_target = QNet(n_features=self.n_latent_dims, n_actions=self.n_actions, n_hidden_layers=self.n_hidden_layers)
         self.copy_target_net()
         self.replay.reset()
         params = list(self.q.parameters()) + list(self.phi.parameters())
