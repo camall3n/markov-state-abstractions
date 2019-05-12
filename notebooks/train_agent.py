@@ -20,7 +20,7 @@ from gridworlds.sensors import *
 parser = get_parser()
 # parser.add_argument('-d','--dims', help='Number of latent dimensions', type=int, default=2)
 parser.add_argument('-a','--agent', type=str, required=True,
-                    choices=['random','dqn'], help='Type of agent to train')
+                    choices=['random','dqn','fqn'], help='Type of agent to train')
 parser.add_argument('-n','--n_trials', type=int, default=1,
                     help='Number of trials')
 parser.add_argument('-e','--n_episodes', type=int, default=10,
@@ -100,7 +100,9 @@ n_actions = 4
 if args.agent == 'random':
     agent = RandomAgent(n_actions=n_actions)
 elif args.agent == 'dqn':
-    agent = DQNAgent(n_latent_dims=args.latent_dims, n_actions=n_actions, phi=phinet, lr=args.learning_rate, batch_size=args.batch_size, train_phi=args.train_phi)
+    agent = DQNAgent(n_features=args.latent_dims, n_actions=n_actions, phi=phinet, lr=args.learning_rate, batch_size=args.batch_size, train_phi=args.train_phi, gamma=gamma)
+elif args.agent == 'fqn':
+    agent = DQNAgent(n_features=args.latent_dims, n_actions=n_actions, phi=phinet, lr=args.learning_rate, batch_size=args.batch_size, train_phi=args.train_phi, gamma=gamma, factored=True)
 else:
     assert False, 'Invalid agent type: {}'.format(args.agent)
 
@@ -146,7 +148,7 @@ for trial in tqdm(range(args.n_trials), desc='trials'):
                 value_fn.append(agent.v(x))
             total_reward += r
 
-            loss = agent.train(x, a, r, xp, done, gamma)
+            loss = agent.train(x, a, r, xp, done)
             losses.append(loss)
             rewards.append(r)
 
