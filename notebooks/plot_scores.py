@@ -22,11 +22,12 @@ def load_experiment(tag):
     data = pd.concat(results, join='outer', keys=keys, names=['agent','seed']).sort_values(by='seed', kind='mergesort').reset_index(level=[0,1])
     return data[data['episode']<=100]
 
-labels = ['tag','name']
-experiments = [
-    ('test-6x6-random', 'random'),
+# labels = ['tag','name','factored']
+# experiments = [
+    # ('test-6x6-random', 'random', True),
+    # ('test-6x6-random', 'random', False),
     # 'test-6x6-dqn-true-state',
-    ('test-6x6-dqn-phi-train', 'DQN (end-to-end)'),
+    # ('test-6x6-dqn-phi-train', 'DQN (end-to-end)'),
     # ('test-6x6-dqn-phi-factored', '2-D factored'),
     # ('test-6x6-dqn-phi-nofac', '2-D unfactored'),
     # 'exp11-3d-rep',
@@ -35,19 +36,39 @@ experiments = [
     # ('exp14_true_state', '2-D true state'),
     # 'exp15_pre_2d',
     # ('exp16-onehot36-joint', '36-D one-hot true state'),
-    ('exp17-factored-phi', 'DQN (pre-trained abstraction)'),
+    # ('exp17-factored-phi', 'DQN (pre-trained abstraction)'),
     # ('exp18-unfactored-phi', 'DQN (unfactored)'),
+# ]
+labels = ['tag','name','factored','lr']
+experiments = [
+    # ('dqn_fqn/dqn1', 'dqn', True),
+    # ('dqn_fqn/fqn1', 'fqn', True),
+    # ('dqn_fqn/bigdqn', 'big dqn', True),
+    ('dqn_fqn/lr-dqn-0.0003', 'dqn', False, 0.0003),
+    ('dqn_fqn/lr-dqn-0.003', 'dqn', False, 0.003),
+    ('dqn_fqn/lr-dqn-0.001', 'dqn', False, 0.001),
+    ('dqn_fqn/lr-dqn-0.01', 'dqn', False, 0.01),
+    ('dqn_fqn/lr-dqn-0.03', 'dqn', False, 0.03),
+    ('dqn_fqn/lr-dqn-0.1', 'dqn', False, 0.1),
+    ('dqn_fqn/lr-dqn-0.0003', 'fqn', True, 0.0003),
+    ('dqn_fqn/lr-dqn-0.003', 'fqn', True, 0.003),
+    ('dqn_fqn/lr-dqn-0.001', 'fqn', True, 0.001),
+    ('dqn_fqn/lr-fqn-0.01', 'fqn', True, 0.01),
+    ('dqn_fqn/lr-fqn-0.03', 'fqn', True, 0.03),
+    ('dqn_fqn/lr-fqn-0.1', 'fqn', True, 0.1),
 ]
-data = pd.concat([load_experiment(e[0]) for e in experiments], join='outer', keys=experiments, names=labels).reset_index(level=[0,1])
+data = pd.concat([load_experiment(e[0]) for e in experiments], join='outer', keys=experiments, names=labels).reset_index(level=list(range(len(labels))))
 
-# plt.rcParams.update({'font.size': 22})
-g = sns.relplot(x='episode', y='reward', kind='line', hue='name', data=data, height=6, alpha=0.2,
+# plt.rcParams.update({'font.size': 10})
+g = sns.relplot(x='episode', y='total_reward', kind='line', data=data, height=4, alpha=0.2,
+    hue='name',
+    # style='lr',
     # units='trial', estimator=None,
-    # col='tag', col_wrap=2,
+    col='lr', col_wrap=3,
     # legend=False
 )
-plt.subplots_adjust(top=0.9)
-g.fig.suptitle('Mean episode reward vs. Time (6x6 Gridworld, 150 trials each)')
+plt.subplots_adjust(top=0.85)
+g.fig.suptitle('Reward vs. Time')
 # plt.rcParams.update({'font.size': 22})
 plt.savefig('results/foo.png')
 plt.show()
