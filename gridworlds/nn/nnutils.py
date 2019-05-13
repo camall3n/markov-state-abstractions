@@ -75,3 +75,37 @@ def one_hot(x, depth, dtype=torch.float32):
     """
     i = x.unsqueeze(-1).expand(-1, depth)
     return torch.zeros_like(i, dtype=dtype).scatter_(-1, i, 1)
+
+def extract(input, idx, idx_dim, batch_dim=0):
+    '''
+Extracts slices of input tensor along idx_dim at positions
+specified by idx.
+
+Notes:
+    idx must have the same size as input.shape[batch_dim].
+    Output tensor has the shape of input with idx_dim removed.
+
+Args:
+    input (Tensor): the source tensor
+    idx (LongTensor): the indices of slices to extract
+    idx_dim (int): the dimension along which to extract slices
+    batch_dim (int): the dimension to treat as the batch dimension
+
+Example::
+
+    >>> t = torch.arange(24, dtype=torch.float32).view(3,4,2)
+    >>> i = torch.tensor([1, 3, 0], dtype=torch.int64)
+    >>> extract(t, i, idx_dim=1, batch_dim=0)
+        tensor([[ 2.,  3.],
+                [14., 15.],
+                [16., 17.]])
+'''
+    if idx_dim == batch_dim:
+        raise RuntimeError('idx_dim cannot be the same as batch_dim')
+    if len(idx) != input.shape[batch_dim]:
+        raise RuntimeError("idx length '{}' not compatible with batch_dim '{}' for input shape '{}'".format(len(idx), batch_dim, list(input.shape)))
+    viewshape = [1,]*input.ndimension()
+    viewshape[batch_dim] = input.shape[batch_dim]
+    idx = idx.view(*viewshape).expand_as(input)
+    result = torch.gather(input, idx_dim, idx).mean(dim=idx_dim)
+    return result

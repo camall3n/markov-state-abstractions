@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn
 
-from .nnutils import Network
+from .nnutils import Network, one_hot, extract
 
 class QNet(Network):
     def __init__(self, n_features, n_actions, n_hidden_layers=1, n_units_per_layer=32):
@@ -46,11 +46,3 @@ class FactoredQNet(Network):
             return masked_q
         else:
             return q
-
-# fqn = FactoredQNet(n_features=3, n_actions=4)
-#
-# z = torch.zeros(3)
-# z[1] = 1
-# m = torch.zeros(3)
-# m[1] = 1
-# masked_q = fqn(z, m)[0]

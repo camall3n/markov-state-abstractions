@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 
 from ..nn.qnet import QNet, FactoredQNet
-from ..nn.nnutils import one_hot
+from ..nn.nnutils import one_hot, extract
 from .replaymemory import ReplayMemory, Experience
 
 class DQNAgent():
@@ -59,26 +59,25 @@ class DQNAgent():
             v = self.q(z).numpy().max(axis=-1)
         return v
 
-    def get_q_targets(self, batch, q_values):
+    def get_q_targets(self, batch):
         with torch.no_grad():
             zp = self.phi(torch.stack(tch(batch.xp, dtype=torch.float32)))
             # Compute Double-Q targets
             ap = torch.argmax(self.q(zp), dim=-1)
             vp = self.q_target(zp).gather(-1, ap.unsqueeze(-1)).squeeze(-1)
             # vp = torch.max(self.q(zp),dim=-1)[0]
-            not_done_idx = (1-torch.stack(tch(batch.done, dtype=torch.float32)))
-            targets = torch.stack(tch(batch.r, dtype=torch.float32)) + self.gamma*vp*not_done_idx
+            not_done_idx = (1-torch.stack(tch(batch.done)))
+            targets = torch.stack(tch(batch.r)) + self.gamma*vp*not_done_idx
 
-        q_targets_full = q_values.clone().detach()
-        for i, a in enumerate(batch.a):
-            q_targets_full[i,a] = targets[i]
-        return q_targets_full
+        return targets
 
     def get_q_predictions(self, batch):
         z = self.phi(torch.stack(tch(batch.x, dtype=torch.float32)))
         if not self.train_phi:
             z = z.detach()
-        return self.q(z)
+        q_values = self.q(z)
+        q_acted = extract(q_values, idx=torch.stack(tch(batch.a, dtype=torch.int64)), idx_dim=-1)
+        return q_acted
 
     def train(self, x, a, r, xp, done):
         self.replay.push(x, a, r, xp, done)
@@ -93,7 +92,7 @@ class DQNAgent():
         self.optimizer.zero_grad()
 
         q_values = self.get_q_predictions(batch)
-        q_targets = self.get_q_targets(batch, q_values)
+        q_targets = self.get_q_targets(batch)
 
         loss = F.smooth_l1_loss(input=q_values, target=q_targets)
         loss.backward()
