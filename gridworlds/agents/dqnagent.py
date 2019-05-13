@@ -123,15 +123,34 @@ class DQNAgent():
             theta_target.data.copy_(tau * theta.data + (1.0 - tau) * theta_target.data)
 
 class FactoredDQNAgent(DQNAgent):
-    def __init__(self, n_features, n_actions, phi, lr=0.001, epsilon=0.05, batch_size=16, train_phi=False, n_hidden_layers=1, n_units_per_layer=32, gamma=0.9):
-        super().__init__(self, n_features, n_actions, phi, lr, epsilon, batch_size, train_phi, n_hidden_layers, n_units_per_layer, gamma, factored=True)
-        pass
+    def __init__(self, n_features, n_actions, phi, lr=0.001, epsilon=0.05, batch_size=16, train_phi=False, n_hidden_layers=1, n_units_per_layer=32, gamma=0.9, factored=True):
+        assert factored, 'FQN with dense QNet is not supported yet'
+        super().__init__(n_features, n_actions, phi, lr, epsilon, batch_size, train_phi, n_hidden_layers, n_units_per_layer, gamma, factored)
 
-    # def get_q_predictions(self, batch):
-    #     pass
-    #
-    # def get_q_targets(self, batch, q_values):
-    #     pass
+    def get_q_predictions(self, batch):
+        z = self.phi(torch.stack(tch(batch.x, dtype=torch.float32)))
+        if not self.train_phi:
+            z = z.detach()
+        a = torch.stack(tch(batch.a, dtype=torch.int64))
+        qi_acted = extract(self.q(z, reduce=False), idx=a, idx_dim=-2)
+        return qi_acted
+
+    def get_q_targets(self, batch):
+        with torch.no_grad():
+            z  = self.phi(torch.stack(tch(batch.x, dtype=torch.float32)))
+            zp = self.phi(torch.stack(tch(batch.xp, dtype=torch.float32)))
+            # Compute Double-Q targets
+            ap = torch.argmax(self.q(zp), dim=-1)
+            vp = self.q_target(zp).gather(-1, ap.unsqueeze(-1)).squeeze(-1)
+            # vp = torch.max(self.q(zp),dim=-1)[0]
+            not_done_idx = (1-torch.stack(tch(batch.done, dtype=torch.float32)))
+            targets = torch.stack(tch(batch.r, dtype=torch.float32)) + self.gamma*vp*not_done_idx
+
+            a = torch.stack(tch(batch.a, dtype=torch.int64))
+            qi_acted = extract(self.q(z, reduce=False), idx=a, idx_dim=-2)
+            qi_acted_residuals = qi_acted.sum(dim=-1, keepdim=True) - qi_acted
+            qi_targets = targets.unsqueeze(-1) - qi_acted_residuals
+        return qi_targets
 
 
 def tch(tensor, dtype=torch.float32):
