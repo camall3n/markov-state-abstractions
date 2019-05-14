@@ -20,7 +20,7 @@ def load_experiment(tag):
     results = [read_log(log) for log in logs]
     keys = list(zip(agents, seeds))
     data = pd.concat(results, join='outer', keys=keys, names=['agent','seed']).sort_values(by='seed', kind='mergesort').reset_index(level=[0,1])
-    return data#[data['episode']<=100]
+    return data[data['episode']<=100]
 
 # labels = ['tag','name','factored']
 # experiments = [
@@ -41,44 +41,67 @@ def load_experiment(tag):
 # ]
 # labels = ['tag','name','factored','lr']
 # experiments = [
-#     # ('dqn_fqn/dqn1', 'dqn', True),
-#     # ('dqn_fqn/fqn1', 'fqn', True),
-#     # ('dqn_fqn/bigdqn', 'big dqn', True),
+# #     # ('dqn_fqn/dqn1', 'dqn', True),
+# #     # ('dqn_fqn/fqn1', 'fqn', True),
+# #     # ('dqn_fqn/bigdqn', 'big dqn', True),
+#     ('dqn_fqn/lr-dqn-0.0001', 'dqn', False, 0.0001),
 #     ('dqn_fqn/lr-dqn-0.0003', 'dqn', False, 0.0003),
-#     ('dqn_fqn/lr-dqn-0.003', 'dqn', False, 0.003),
 #     ('dqn_fqn/lr-dqn-0.001', 'dqn', False, 0.001),
+#     ('dqn_fqn/lr-dqn-0.003', 'dqn', False, 0.003),
 #     ('dqn_fqn/lr-dqn-0.01', 'dqn', False, 0.01),
 #     ('dqn_fqn/lr-dqn-0.03', 'dqn', False, 0.03),
 #     ('dqn_fqn/lr-dqn-0.1', 'dqn', False, 0.1),
+#     ('dqn_fqn/lr-fqn-0.0001', 'fqn', True, 0.0001),
 #     ('dqn_fqn/lr-fqn-0.0003', 'fqn', True, 0.0003),
-#     ('dqn_fqn/lr-fqn-0.003', 'fqn', True, 0.003),
 #     ('dqn_fqn/lr-fqn-0.001', 'fqn', True, 0.001),
+#     ('dqn_fqn/lr-fqn-0.003', 'fqn', True, 0.003),
 #     ('dqn_fqn/lr-fqn-0.01', 'fqn', True, 0.01),
 #     ('dqn_fqn/lr-fqn-0.03', 'fqn', True, 0.03),
 #     ('dqn_fqn/lr-fqn-0.1', 'fqn', True, 0.1),
+#     ('dqn_fqn/lr-fqni-0.0001', 'fqni', True, 0.0001),
+#     ('dqn_fqn/lr-fqni-0.0003', 'fqni', True, 0.0003),
+#     ('dqn_fqn/lr-fqni-0.001', 'fqni', True, 0.001),
+#     ('dqn_fqn/lr-fqni-0.003', 'fqni', True, 0.003),
+#     ('dqn_fqn/lr-fqni-0.01', 'fqni', True, 0.01),
+#     ('dqn_fqn/lr-fqni-0.03', 'fqni', True, 0.03),
+#     ('dqn_fqn/lr-fqni-0.1', 'fqni', True, 0.1),
 # ]
 labels = ['tag','name','factored','size']
 experiments = [
-    # ('dqn_fqn/dqn1', 'dqn', True),
-    # ('dqn_fqn/fqn1', 'fqn', True),
-    # ('dqn_fqn/bigdqn', 'big dqn', True),
-    ('dqn_fqn/lr-dqn-0.003', 'dqn', False, 6),
-    ('dqn_fqn/lr-dqn-0.003', 'fqn', True, 6),
-    ('dqn_fqn/dqn-size10x10', 'dqn', False, 10),
-    ('dqn_fqn/fqn-size10x10', 'fqn', True, 10),
-    ('dqn_fqn/dqn-size20x20', 'dqn', False, 20),
-    ('dqn_fqn/fqn-size20x20', 'fqn', True, 20),
-    # ('dqn_fqn/dqn-size40x40', 'dqn', False, 40),
-    # ('dqn_fqn/fqn-size40x40', 'fqn', True, 40),
+#     # ('dqn_fqn/dqn1', 'dqn', True),
+#     # ('dqn_fqn/fqn1', 'fqn', True),
+#     # ('dqn_fqn/bigdqn', 'big dqn', True),
+    ('dqn_fqn/lr-dqn-0.003', 'dqn', False, '6x6'),
+    ('dqn_fqn/lr-fqn-0.003', 'fqn', True, '6x6'),
+    ('dqn_fqn/lr-fqni-0.003', 'fqni', True, '6x6'),
+    ('dqn_fqn/dqn-size10x10', 'dqn', False, '10x10'),
+    ('dqn_fqn/fqn-size10x10', 'fqn', True, '10x10'),
+    ('dqn_fqn/fqni-size10x10', 'fqni', True, '10x10'),
+#     ('dqn_fqn/dqn-size20x20', 'dqn', False, 20),
+#     ('dqn_fqn/fqn-size20x20', 'fqn', True, 20),
+#     ('dqn_fqn/dqn-size40x40', 'dqn', False, 40),
+#     ('dqn_fqn/fqn-size40x40', 'fqn', True, 40),
 ]
+# labels = ['tag', 'name', 'lr']
+# experiments = [
+#     ('dqn_fqn/fqn-isolate-lr0.003', 'fqn-isolate', 0.003),
+#     ('dqn_fqn/lr-dqn-0.003', 'dqn', 0.003),
+#     ('dqn_fqn/lr-fqn-0.003', 'fqn', 0.003),
+#     # ('dqn_fqn/lr-fqni-0.03', 'fqn-isolate', 0.03),
+#     # ('dqn_fqn/lr-fqn-0.03', 'fqn', 0.03),
+#     # ('dqn_fqn/lr-dqn-0.03', 'dqn', 0.03),
+#     ('dqn_fqn/fqn-isolate-lr0.001', 'fqn-isolate', 0.001),
+#     ('dqn_fqn/lr-fqn-0.001', 'fqn', 0.001),
+#     ('dqn_fqn/lr-dqn-0.001', 'dqn', 0.001),
+# ]
 data = pd.concat([load_experiment(e[0]) for e in experiments], join='outer', keys=experiments, names=labels).reset_index(level=list(range(len(labels))))
 
 # plt.rcParams.update({'font.size': 10})
-g = sns.relplot(x='episode', y='reward', kind='line', data=data, height=4, alpha=0.2,
+g = sns.relplot(x='episode', y='total_reward', kind='line', data=data, height=4, alpha=0.2,
     hue='name',
     # style='lr',
     # units='trial', estimator=None,
-    col='size', col_wrap=3,
+    col='size', #col_wrap=2,
     # legend=False
 )
 plt.subplots_adjust(top=0.85)
