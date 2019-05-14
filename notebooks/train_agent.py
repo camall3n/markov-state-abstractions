@@ -12,7 +12,7 @@ from gridworlds.nn.nullabstraction import NullAbstraction
 from gridworlds.nn.phinet import PhiNet
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
 from gridworlds.agents.randomagent import RandomAgent
-from gridworlds.agents.dqnagent import DQNAgent
+from gridworlds.agents.dqnagent import DQNAgent, FactoredDQNAgent
 from gridworlds.utils import reset_seeds, get_parser
 from gridworlds.sensors import *
 
@@ -100,9 +100,11 @@ n_actions = 4
 if args.agent == 'random':
     agent = RandomAgent(n_actions=n_actions)
 elif args.agent == 'dqn':
-    agent = DQNAgent(n_features=args.latent_dims, n_actions=n_actions, phi=phinet, lr=args.learning_rate, batch_size=args.batch_size, train_phi=args.train_phi, gamma=gamma)
+    agent = DQNAgent(n_features=args.latent_dims, n_actions=n_actions, phi=phinet, lr=args.learning_rate, batch_size=args.batch_size, train_phi=args.train_phi, gamma=gamma, factored=False)
 elif args.agent == 'fqn':
     agent = DQNAgent(n_features=args.latent_dims, n_actions=n_actions, phi=phinet, lr=args.learning_rate, batch_size=args.batch_size, train_phi=args.train_phi, gamma=gamma, factored=True)
+elif args.agent == 'fqni':
+    agent = FactoredDQNAgent(n_features=args.latent_dims, n_actions=n_actions, phi=phinet, lr=args.learning_rate, batch_size=args.batch_size, train_phi=args.train_phi, gamma=gamma, factored=True)
 else:
     assert False, 'Invalid agent type: {}'.format(args.agent)
 

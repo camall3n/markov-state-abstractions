@@ -141,15 +141,12 @@ class FactoredDQNAgent(DQNAgent):
             zp = self.phi(torch.stack(tch(batch.xp, dtype=torch.float32)))
             # Compute Double-Q targets
             ap = torch.argmax(self.q(zp), dim=-1)
-            vp = self.q_target(zp).gather(-1, ap.unsqueeze(-1)).squeeze(-1)
-            # vp = torch.max(self.q(zp),dim=-1)[0]
+            vp = extract(self.q_target(zp, reduce=False), idx=ap, idx_dim=1)
             not_done_idx = (1-torch.stack(tch(batch.done, dtype=torch.float32)))
-            targets = torch.stack(tch(batch.r, dtype=torch.float32)) + self.gamma*vp*not_done_idx
-
-            a = torch.stack(tch(batch.a, dtype=torch.int64))
-            qi_acted = extract(self.q(z, reduce=False), idx=a, idx_dim=-2)
-            qi_acted_residuals = qi_acted.sum(dim=-1, keepdim=True) - qi_acted
-            qi_targets = targets.unsqueeze(-1) - qi_acted_residuals
+            not_done_idx = not_done_idx.view(-1,1).expand_as(vp)
+            r = torch.stack(tch(batch.r, dtype=torch.float32))
+            r = r.view(-1,1).expand_as(vp)
+            qi_targets = (r + self.gamma*vp*not_done_idx) / self.n_features
         return qi_targets
 
 
