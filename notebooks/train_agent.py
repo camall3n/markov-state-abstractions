@@ -35,7 +35,7 @@ parser.add_argument('-b','--batch_size', type=int, default=16,
                     help='Number of experiences to sample per batch')
 parser.add_argument('-l','--latent_dims', type=int, default=2,
                     help='Number of latent dimensions to use for representation')
-parser.add_argument('-lr','--learning_rate', type=float, default=0.001,
+parser.add_argument('-lr','--learning_rate', type=float, default=0.003,
                     help='Learning rate for Adam optimizer')
 parser.add_argument('-s','--seed', type=int, default=0,
                     help='Random seed')
