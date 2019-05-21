@@ -37,9 +37,9 @@ print(h)
 #%% -------
 
 class EntropyNet(PhiNet):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
+    def __init__(self, input_shape=1, n_latent_dims=1, n_hidden_layers=1, n_units_per_layer=32, lr=1e-3):
+        super().__init__(input_shape=input_shape, n_latent_dims=n_latent_dims, n_hidden_layers=n_hidden_layers, n_units_per_layer=n_units_per_layer)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=lr)
 
     def train_batch(self, x, ascend=False):
         self.train()
