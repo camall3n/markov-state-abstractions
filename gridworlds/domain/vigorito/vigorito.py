@@ -48,11 +48,8 @@ class VigoritoWorld:
             assert len(axes) == n_subplots
             fig = None
         else:
-            gridspec_kws = {
-
-                'width_ratios': [1]*(XY_DIMS//2)+[0.33]*3
-            }
-            fig, axes = plt.subplots(nrows=1, ncols=(XY_DIMS//2+3), gridspec_kw=gridspec_kws, figsize=(6,2))
+            fig, axes = plt.subplots(nrows=1, ncols=(XY_DIMS//2+3), figsize=(6,2),
+                gridspec_kw={'width_ratios': [1]*(XY_DIMS//2)+[0.33]*3})
         for i in range(XY_DIMS//2):
             axes[i].set_xlim([0,1])
             axes[i].set_ylim([0,1])
@@ -79,16 +76,27 @@ def plot_line(y, ax):
     ax.set_yticks([])
     ax.set_xticks([])
 
-env = VigoritoWorld()
-#%%
-fig, axes = env.plot()
-fig.show()
-for _ in range(1000):
-    a = np.random.uniform(-0.1,0.1,size=6)
-    env.step(a)
+def run_agent(n_samples=1000, video=False):
+    env = VigoritoWorld()
+    if video:
+        fig, axes = env.plot()
+        fig.show()
+    states = [env.get_state()]
+    actions = []
+    for _ in range(n_samples):
+        a = np.random.uniform(-0.1,0.1,size=6)
+        env.step(a)
+        actions.append(a)
+        states.append(env.get_state())
 
-    for ax in axes:
-        ax.clear()
-    env.plot(axes)
-    fig.canvas.draw()
-    fig.canvas.flush_events()
+        if video:
+            for ax in axes:
+                ax.clear()
+            env.plot(axes)
+            fig.canvas.draw()
+            fig.canvas.flush_events()
+    return np.stack(states,axis=0), np.stack(actions,axis=0)
+
+#%%
+if __name__ == '__main__':
+    run_agent(1000, video=True)
