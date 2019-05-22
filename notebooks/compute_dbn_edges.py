@@ -10,7 +10,7 @@ from gridworlds.utils import reset_seeds
 import gridworlds.domain.vigorito.vigorito as vigorito
 
 def fit_kde(x, bw=0.03):
-    kde = KernelDensity(bandwidth=bw, kernel='tophat')
+    kde = KernelDensity(bandwidth=bw)
     kde.fit(x)
     return kde
 
@@ -20,7 +20,9 @@ def fit_ckde(x, c, bw=0.03):
     kde.fit(x, sample_weight=pc)
     return kde
 
-def MI(x,y):
+def MI(x,y,c=None):
+    if c is not None:
+        return CMI(x,y,c)
     xy = np.concatenate([x,y], axis=-1)
     log_pxy = fit_kde(xy).score_samples(xy)
     log_px = fit_kde(x).score_samples(x)
@@ -49,70 +51,42 @@ def get_batch(n):
 def extract_col(x, col):
     return np.expand_dims(x[:,col],axis=1)
 
+def list_cond_vars(feature_indices):
+    if feature_indices:
+        return '|f'+'f'.join(map(str,feature_indices))
+    else:
+        return ''
+
 #%%
-N = 3000
+N = 2000
 pred_idx = 0 if len(sys.argv) < 2 else int(sys.argv[1])
 threshold = 0.25
-s, a, sp = get_batch(N)
-f = np.concatenate((s, a), axis=1)
-spi = extract_col(sp,pred_idx)
+n_features = (get_batch(1)[0].shape[-1]+get_batch(1)[1].shape[-1])
+remaining_f = list(range(n_features))
 parents = []
 print('Finding DBN dependencies for s{}’...'.format(pred_idx))
 print()
 
-mi = np.asarray([MI(spi, extract_col(f,i)) for i in range(f.shape[-1])])
-mi /= np.sum(mi)
-print('Parents(s{}’) ='.format(pred_idx), parents)
-print('I(f;s{}’) ~'.format(pred_idx), mi)
-idx = np.argmax(mi)
-print('Best candidate feature at index {} with value {}.'.format(idx, mi[idx]))
-if mi[idx] > threshold:
-    print('Adding f{} to parents of s{}’...'.format(idx, pred_idx))
-    parents.append(idx)
-else:
-    print('Value {} not above threshold... stopping.'.format(mi[idx]))
-    print()
+for i in range(3):
+    s, a, sp = get_batch(N)
+    f = np.concatenate((s, a), axis=1)
+    spi = extract_col(sp, pred_idx)
+    Par_spi = None if not parents else np.concatenate([extract_col(f,i) for i in parents],axis=1)
+    mi = np.asarray([MI(spi, extract_col(f,i), Par_spi) for i in remaining_f])
+    mi /= np.sum(mi)
     print('Parents(s{}’) ='.format(pred_idx), parents)
-    sys.exit()
-print()
-
-#%%
-# Pick s0
-s, a, sp = get_batch(N)
-f = np.concatenate((s, a), axis=1)
-spi = extract_col(sp, pred_idx)
-Par_spi = np.concatenate([extract_col(s,i) for i in parents],axis=1)
-cmi = np.asarray([CMI(spi, extract_col(f,i), Par_spi) for i in range(f.shape[-1])])
-cmi /= np.sum(cmi)
-print('Parents(s{}’) ='.format(pred_idx), parents)
-print('I(f;s{}’|'.format(pred_idx)+'f'+'f'.join(map(str,parents))+') ~', cmi)
-idx = np.argmax(cmi)
-print('Best candidate feature at index {} with value {}.'.format(idx, cmi[idx]))
-if cmi[idx] > threshold:
-    print('Adding f{} to parents of s{}’...'.format(idx, pred_idx))
-    parents.append(idx)
-else:
-    print('Value {} not above threshold... stopping.'.format(cmi[idx]))
-    print()
-    print('Parents(s{}’) ='.format(pred_idx), parents)
-    sys.exit()
-print()
-
-#%%
-# Pick a0
-s, a, sp = get_batch(N)
-f = np.concatenate((s, a), axis=1)
-spi = extract_col(sp,pred_idx)
-Par_spi = np.concatenate([extract_col(f,i) for i in parents], axis=1)
-cmi = np.asarray([CMI(spi, extract_col(f,i), Par_spi) for i in range(f.shape[-1])])
-cmi /= np.sum(cmi)
-print('Parents(s{}’) ='.format(pred_idx), parents)
-print('I(f;s{}’|'.format(pred_idx)+'f'+'f'.join(map(str,parents))+') ~', cmi)
-print('Best candidate feature at index {} with value {}.'.format(idx, cmi[idx]))
-if cmi[idx] > threshold:
-    print('Adding f{} to parents of s{}’...'.format(idx, pred_idx))
-    parents.append(idx)
-else:
-    print('Value {} not above threshold... stopping.'.format(cmi[idx]))
+    print('I(f;s{}’'.format(pred_idx)+list_cond_vars(parents)+') ~', mi)
+    idx = np.argmax(mi)
+    print('Best candidate feature at index {} with value {}.'.format(remaining_f[idx], mi[idx]))
+    if mi[idx] > threshold:
+        print('Adding f{} to parents of s{}’...'.format(remaining_f[idx], pred_idx))
+        print()
+        parents.append(remaining_f[idx])
+        remaining_f.remove(remaining_f[idx])
+    else:
+        print('Value {} not above threshold... stopping.'.format(mi[idx]))
+        print()
+        print('Parents(s{}’) ='.format(pred_idx), parents)
+        sys.exit()
 print()
 print('Parents(s{}’) ='.format(pred_idx), parents)
