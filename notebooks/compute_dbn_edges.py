@@ -14,31 +14,22 @@ def fit_kde(x, bw=0.03):
     kde.fit(x)
     return kde
 
-def fit_ckde(x, c, bw=0.03):
-    pc = np.exp(fit_kde(c, bw=bw).score_samples(c))
-    kde = KernelDensity(bandwidth=bw)
-    kde.fit(x, sample_weight=pc)
-    return kde
-
 def MI(x,y,c=None):
-    if c is not None:
-        return CMI(x,y,c)
-    xy = np.concatenate([x,y], axis=-1)
-    log_pxy = fit_kde(xy).score_samples(xy)
-    log_px = fit_kde(x).score_samples(x)
-    log_py = fit_kde(y).score_samples(y)
-    log_ratio = log_pxy - log_px - log_py
-    return np.mean(log_ratio/np.log(2))
-
-def CMI(x,y,c):
-    xyc = np.concatenate([x,y,c], axis=-1)
-    xc = np.concatenate([x,c], axis=-1)
-    yc = np.concatenate([y,c], axis=-1)
-    log_pxyc = fit_kde(xyc).score_samples(xyc)
-    log_pxc = fit_kde(xc).score_samples(xc)
-    log_pyc = fit_kde(yc).score_samples(yc)
-    log_pc = fit_kde(c).score_samples(c)
-    log_ratio = log_pc + log_pxyc - log_pxc - log_pyc
+    if c is None:
+        xy = np.concatenate([x,y], axis=-1)
+        log_pxy = fit_kde(xy).score_samples(xy)
+        log_px = fit_kde(x).score_samples(x)
+        log_py = fit_kde(y).score_samples(y)
+        log_ratio = log_pxy - log_px - log_py
+    else:
+        xyc = np.concatenate([x,y,c], axis=-1)
+        xc = np.concatenate([x,c], axis=-1)
+        yc = np.concatenate([y,c], axis=-1)
+        log_pxyc = fit_kde(xyc).score_samples(xyc)
+        log_pxc = fit_kde(xc).score_samples(xc)
+        log_pyc = fit_kde(yc).score_samples(yc)
+        log_pc = fit_kde(c).score_samples(c)
+        log_ratio = log_pc + log_pxyc - log_pxc - log_pyc
     return np.mean(log_ratio/np.log(2))
 
 #%%
@@ -53,7 +44,7 @@ def extract_col(x, col):
 
 def list_cond_vars(feature_indices):
     if feature_indices:
-        return '|f'+'f'.join(map(str,feature_indices))
+        return '|f'+'f'.join(map(str, feature_indices))
     else:
         return ''
 
