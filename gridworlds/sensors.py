@@ -4,6 +4,10 @@ import scipy.ndimage
 import scipy.stats
 import torch
 
+class NullSensor:
+    def observe(self, s):
+        return s
+
 class OffsetSensor:
     def __init__(self, offset):
         self.offset = offset
