@@ -76,8 +76,6 @@ for i in range(3):
         remaining_f.remove(remaining_f[idx])
     else:
         print('Value {} not above threshold... stopping.'.format(mi[idx]))
-        print()
-        print('Parents(s{}’) ='.format(pred_idx), parents)
-        sys.exit()
+        break
 print()
 print('Parents(s{}’) ='.format(pred_idx), parents)
