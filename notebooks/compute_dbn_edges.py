@@ -64,7 +64,6 @@ for i in range(3):
     spi = extract_col(sp, pred_idx)
     Par_spi = None if not parents else np.concatenate([extract_col(f,i) for i in parents],axis=1)
     mi = np.asarray([MI(spi, extract_col(f,i), Par_spi) for i in remaining_f])
-    mi /= np.sum(mi)
     print('Parents(s{}’) ='.format(pred_idx), parents)
     print('I(f;s{}’'.format(pred_idx)+list_cond_vars(parents)+') ~', mi)
     idx = np.argmax(mi)
