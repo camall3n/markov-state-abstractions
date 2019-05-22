@@ -12,6 +12,8 @@ SEQUENCE = CONSTANT+1
 class VigoritoWorld:
     def __init__(self):
         self.reset()
+        self.n_actions = XY_DIMS
+        self.n_states = len(self.state)
 
     def reset(self):
         self.state = np.zeros(9)
@@ -76,15 +78,15 @@ def plot_line(y, ax):
     ax.set_yticks([])
     ax.set_xticks([])
 
-def run_agent(n_samples=1000, video=False):
-    env = VigoritoWorld()
+def run_agent(env, n_samples=1000, video=False):
     if video:
         fig, axes = env.plot()
         fig.show()
     states = [env.get_state()]
     actions = []
     for _ in range(n_samples):
-        a = np.random.uniform(-0.1,0.1,size=6)
+        a = np.random.uniform(-0.1,0.1,size=6)# <--- continuous actions
+        # a = np.random.choice([-0.1,0,0.1], size=6)# <--- discrete actions
         env.step(a)
         actions.append(a)
         states.append(env.get_state())
@@ -99,4 +101,5 @@ def run_agent(n_samples=1000, video=False):
 
 #%%
 if __name__ == '__main__':
-    run_agent(1000, video=True)
+    env = VigoritoWorld()
+    run_agent(env, 1000, video=True)
