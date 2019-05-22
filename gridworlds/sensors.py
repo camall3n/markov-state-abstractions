@@ -64,6 +64,20 @@ class BlurSensor:
     def observe(self, s):
         return scipy.ndimage.filters.gaussian_filter(s, sigma=self.sigma, truncate=self.truncate, mode='nearest')
 
+class PermuteAndAverageSensor:
+    def __init__(self, n_features, n_permutations=1):
+        self.n_features = n_features
+        self.permutations = [np.arange(n_features)]+[np.random.permutation(n_features) for _ in range(n_permutations)]
+
+    def observe(self, s):
+        s_flat = s.reshape(-1, self.n_features)
+        output = np.zeros_like(s_flat)
+        for p in self.permutations:
+            sp_flat = np.take(s_flat, p, axis=1)
+            sp = sp_flat.reshape(s.shape)
+            output += sp
+        return output/len(self.permutations)
+
 class TorchSensor:
     def __init__(self, dtype=torch.float32):
         self.dtype = dtype
