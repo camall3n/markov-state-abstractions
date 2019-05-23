@@ -65,13 +65,18 @@ class BlurSensor:
         return scipy.ndimage.filters.gaussian_filter(s, sigma=self.sigma, truncate=self.truncate, mode='nearest')
 
 class PairEntangleSensor:
-    def __init__(self, n_features, index_a=None, index_b=None):
-        # input:     X    Y    Z    Q    R    S    T
-        # output 1: X+Y  X-Y   Z    Q    R    S    T
-        # output 2:  X    Y   Z+S   Q    R   Z-S   T
-        # output 3:  X   Y+R   Z    Q   Y-R   S    T
+    def __init__(self, n_features, index_a=None, index_b=None, amount=1.0):
+        # input:     X     Y     A     Z     S     B     T
+        # output:    X     Y     A'    Z     S     B'    T
+        # where [A',B']^T = R(theta) * [A, B]^T,
+        #        R is a rotation-by-theta matrix,
+        #        and theta = π/4 * amount
         assert n_features > 1, 'n_features must be > 1'
+        assert 0 <= amount and amount <= 1, 'amount must be between 0 and 1'
         self.n_features = n_features
+        self.rotation = np.pi/4 * amount
+        self.rot_matrix = np.asarray([[np.cos(self.rotation), -1 * np.sin(self.rotation)],
+                                      [np.sin(self.rotation),      np.cos(self.rotation)]])
         if index_b is not None:
             assert index_a is not None, 'Must specify index_a when specifying index_b'
             assert index_a != index_b, 'index_b cannot equal index_a (value {})'.format(index_a)
@@ -87,7 +92,9 @@ class PairEntangleSensor:
         s_flat = np.copy(s).reshape(-1, self.n_features)
         a = s_flat[:,self.index_a]
         b = s_flat[:,self.index_b]
-        (a, b) = ((a+b)/2, (a-b)/2)
+        x = np.stack((a,b),axis=0)
+        x_rot = np.matmul(self.rot_matrix, x)
+        a, b = map(lambda a: np.squeeze(a, axis=0),np.split(x_rot, 2, axis=0))
         s_flat[:,self.index_a] = a
         s_flat[:,self.index_b] = b
         return s_flat.reshape(s.shape)
