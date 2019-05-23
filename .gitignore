@@ -3,8 +3,8 @@
 data/
 env/
 images/
-grid/logs/
-grid/scripts/
+cluster/logs/
+cluster/scripts/
 logs/
 models/
 notebooks/unversioned/*
