@@ -64,6 +64,34 @@ class BlurSensor:
     def observe(self, s):
         return scipy.ndimage.filters.gaussian_filter(s, sigma=self.sigma, truncate=self.truncate, mode='nearest')
 
+class PairEntangleSensor:
+    def __init__(self, n_features, index_a=None, index_b=None):
+        # input:     X    Y    Z    Q    R    S    T
+        # output 1: X+Y  X-Y   Z    Q    R    S    T
+        # output 2:  X    Y   Z+S   Q    R   Z-S   T
+        # output 3:  X   Y+R   Z    Q   Y-R   S    T
+        assert n_features > 1, 'n_features must be > 1'
+        self.n_features = n_features
+        if index_b is not None:
+            assert index_a is not None, 'Must specify index_a when specifying index_b'
+            assert index_a != index_b, 'index_b cannot equal index_a (value {})'.format(index_a)
+            self.index_b = index_b
+        if index_a is not None:
+            self.index_a = index_a
+        else:
+            self.index_a = np.random.randint(n_features)
+        if index_b is None:
+            self.index_b = np.random.choice([i for i in range(n_features) if i!=self.index_a])
+
+    def observe(self, s):
+        s_flat = np.copy(s).reshape(-1, self.n_features)
+        a = s_flat[:,self.index_a]
+        b = s_flat[:,self.index_b]
+        (a, b) = ((a+b)/2, (a-b)/2)
+        s_flat[:,self.index_a] = a
+        s_flat[:,self.index_b] = b
+        return s_flat.reshape(s.shape)
+
 class PermuteAndAverageSensor:
     def __init__(self, n_features, n_permutations=1):
         self.n_features = n_features
