@@ -119,6 +119,12 @@ class TorchSensor:
     def observe(self, s):
         return torch.as_tensor(s, dtype=self.dtype)
 
+class UnsqueezeSensor:
+    def __init__(self, dim=-1):
+        self.dim = dim
+    def observe(self, s):
+        return s.unsqueeze(dim=self.dim)
+
 class SensorChain:
     def __init__(self, sensors):
         self.sensors = sensors
