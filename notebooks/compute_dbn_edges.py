@@ -7,7 +7,7 @@ import sys
 import torch
 
 from gridworlds.utils import reset_seeds
-import gridworlds.domain.vigorito.vigorito as vigorito
+import gridworlds.domain.vigorito as vigorito
 import gridworlds.sensors as sensors
 
 def fit_kde(x, bw=0.03):

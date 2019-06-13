@@ -85,8 +85,8 @@ def run_agent(env, n_samples=1000, video=False):
     states = [env.get_state()]
     actions = []
     for _ in range(n_samples):
-        a = np.random.uniform(-0.1,0.1,size=6)# <--- continuous actions
-        # a = np.random.choice([-0.1,0,0.1], size=6)# <--- discrete actions
+        # a = np.random.uniform(-0.1,0.1,size=6)# <--- continuous actions
+        a = np.random.choice([-0.1,0,0.1], size=6)# <--- discrete actions
         env.step(a)
         actions.append(a)
         states.append(env.get_state())
