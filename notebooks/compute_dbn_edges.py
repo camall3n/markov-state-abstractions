@@ -47,12 +47,13 @@ N = 2000
 pred_idx = 0 if len(sys.argv) < 2 else int(sys.argv[1])
 sigma_threshold = 1.65
 
+reset_seeds(0)
 env = vigorito.VigoritoWorld()
 if len(sys.argv) > 2:
     sensor = sensors.SensorChain([
         sensors.PairEntangleSensor(env.n_states, index_a=0, index_b=1),
-        sensors.PairEntangleSensor(env.n_states, index_a=2, index_b=3),
-        sensors.PairEntangleSensor(env.n_states, index_a=0, index_b=2),
+        # sensors.PairEntangleSensor(env.n_states, index_a=2, index_b=3),
+        # sensors.PairEntangleSensor(env.n_states, index_a=0, index_b=2),
     ])
     for s in sensor.sensors:
         print('Entangling f{} and f{}'.format(s.index_a, s.index_b))
