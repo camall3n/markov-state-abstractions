@@ -50,11 +50,12 @@ class ImageSensor:
 
 class ResampleSensor:
     def __init__(self, scale, order=0):
+        assert type(scale) is int
         self.scale = scale
         self.order = order
 
     def observe(self, s):
-        return scipy.ndimage.zoom(s, zoom=self.scale, order=self.order)
+        return np.kron(s, np.ones((self.scale,self.scale)))
 
 class BlurSensor:
     def __init__(self, sigma=0.6, truncate=1.0):
