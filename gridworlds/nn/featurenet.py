@@ -59,28 +59,28 @@ class FeatureNet(Network):
         fakes = self.cpc_model(c, z)
         return self.bce_loss(input=fakes, target=is_fake.float())
 
-    def compute_diversity_loss(self, z0, z1):
-        # Encourage the largest difference to be non-zero
-        return 0.1*torch.mean(torch.exp(-100 * torch.max(torch.pow(z0-z1,2),dim=-1)[0]))
+    # def compute_diversity_loss(self, z0, z1):
+    #     # Encourage the largest difference to be non-zero
+    #     return 0.1*torch.mean(torch.exp(-100 * torch.max(torch.pow(z0-z1,2),dim=-1)[0]))
 
-    def kde_entropy(self, x, sigma=1.0e-2, eps=1.0e-5):
-        sigma = torch.as_tensor(sigma)
-        eps = torch.as_tensor(eps)
-        # pairwise differences
-        dx = (x.unsqueeze(0) - x.unsqueeze(1))
-        K = lambda x: torch.exp(-x**2 / (2*sigma**2)) / torch.as_tensor(sigma * np.sqrt(2*np.pi), dtype=torch.float32)
-        return torch.log(torch.tensor(x.shape[0]-1, dtype=torch.float32)) - 1/len(x) * torch.sum(torch.log(eps + torch.sum(K(dx), dim=1)-K(torch.tensor(0.0))), dim=0)
+    # def kde_entropy(self, x, sigma=1.0e-2, eps=1.0e-5):
+    #     sigma = torch.as_tensor(sigma)
+    #     eps = torch.as_tensor(eps)
+    #     # pairwise differences
+    #     dx = (x.unsqueeze(0) - x.unsqueeze(1))
+    #     K = lambda x: torch.exp(-x**2 / (2*sigma**2)) / torch.as_tensor(sigma * np.sqrt(2*np.pi), dtype=torch.float32)
+    #     return torch.log(torch.tensor(x.shape[0]-1, dtype=torch.float32)) - 1/len(x) * torch.sum(torch.log(eps + torch.sum(K(dx), dim=1)-K(torch.tensor(0.0))), dim=0)
 
-    def compute_entropy_loss(self, z0, z1, a):
-        entropies = []
-        for a_idx in range(self.n_actions):
-            mask = (a==a_idx)
-            if torch.any(mask):
-                dz_a = torch.masked_select((z1-z0), torch.stack([mask]*self.n_latent_dims,dim=-1)).reshape(-1,self.n_latent_dims)
-                h_a = self.kde_entropy(dz_a)
-                entropies.append(h_a)
-        loss = torch.mean(torch.stack(entropies))
-        return loss
+    # def compute_entropy_loss(self, z0, z1, a):
+    #     entropies = []
+    #     for a_idx in range(self.n_actions):
+    #         mask = (a==a_idx)
+    #         if torch.any(mask):
+    #             dz_a = torch.masked_select((z1-z0), torch.stack([mask]*self.n_latent_dims,dim=-1)).reshape(-1,self.n_latent_dims)
+    #             h_a = self.kde_entropy(dz_a)
+    #             entropies.append(h_a)
+    #     loss = torch.mean(torch.stack(entropies))
+    #     return loss
 
     def compute_factored_loss(self, z0, z1):
         eps = 1e-6
@@ -105,10 +105,8 @@ class FeatureNet(Network):
             loss += self.coefs['L_fwd'] * self.compute_fwd_loss(z0, z1, z1_hat)
         if model in ['L_cpc', 'all']:
             loss += self.coefs['L_cpc'] * self.compute_cpc_loss(z1, z1_hat)
-        if model in ['L_fac', 'all']:
-            loss += self.coefs['L_fac'] * self.compute_factored_loss(z0, z1)
-        # if model in ['entropy', 'all']:
-        #     loss += .2 * self.compute_entropy_loss(z0, z1, a)
+        # if model in ['L_fac', 'all']:
+        #     loss += self.coefs['L_fac'] * self.compute_factored_loss(z0, z1)
         return loss
 
     def train_batch(self, x0, x1, a, model='inv'):
