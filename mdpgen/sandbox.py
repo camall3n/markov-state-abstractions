@@ -87,10 +87,3 @@ for i in range(10):
     T = T @ T
 T[0].round(4)
 assert np.allclose(T[0] @ T, T[0])
-
-
-base_mdp = mdp
-state_distr = np.ones(base_mdp.n_states)/base_mdp.n_states
-pi = pi_star
-T = np.stack(base_mdp.T,axis=0)
-np.eye(2)[pi] @ T

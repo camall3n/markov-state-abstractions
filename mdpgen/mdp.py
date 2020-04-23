@@ -32,14 +32,24 @@ def random_reward_matrix(Rmin, Rmax, size):
     return R
 
 def random_observation_fn(n_states, n_obs_per_block):
-    observation_fns = []
-    for s in range(n_states):
-        Ob_s = random_transition_matrix(size=(1,n_obs_per_block))
-        observation_fns.append(Ob_s)
-    obs_fn_stack = np.stack(observation_fns).squeeze()
-    obs_fn_mask = np.kron(np.eye(n_states),np.ones((1,n_obs_per_block)))
-    obs_fn_tiled = np.kron(np.ones((1,n_states)),obs_fn_stack)
-    observation_fn = obs_fn_mask*obs_fn_tiled
+    all_state_splits = [random_transition_matrix(size=(1,n_obs_per_block))
+                        for _ in range(n_states)]
+    all_state_splits = np.stack(all_state_splits).squeeze()
+    #e.g.[[p, 1-p],
+    #     [q, 1-q],
+    #     ...]
+
+    obs_fn_mask = np.kron(np.eye(n_states), np.ones((1,n_obs_per_block)))
+    #e.g.[[1, 1, 0, 0, 0, 0, ...],
+    #     [0, 0, 1, 1, 0, 0, ...],
+    #     ...]
+
+    tiled_split_probs = np.kron(np.ones((1,n_states)), all_state_splits)
+    #e.g.[[p, 1-p, p, 1-p, p, 1-p, ...],
+    #     [q, 1-q, q, 1-q, q, 1-q, ...],
+    #     ...]
+
+    observation_fn = obs_fn_mask*tiled_split_probs
     return observation_fn
 
 def one_hot(x, n):
@@ -83,7 +93,6 @@ class BlockMDP(MDP):
     def __init__(self, base_mdp, n_obs_per_block=2, obs_fn=None):
         super().__init__(base_mdp.T, base_mdp.R, base_mdp.gamma)
         self.base_mdp = copy.deepcopy(base_mdp)
-        self._n_obs_per_block = n_obs_per_block
         self.n_states = base_mdp.n_states*n_obs_per_block
 
         if obs_fn is None:
@@ -98,11 +107,7 @@ class BlockMDP(MDP):
         for a in range(self.n_actions):
             Ta, Ra = base_mdp.T[a], base_mdp.R[a]
             Tx_a = obs_mask.transpose() @ Ta @ obs_fn
-            # Tx_a = np.kron((Ta @ obs_fn), np.ones((n_obs_per_block,1)))
-            # Tx_a = np.kron(Ta, np.ones((n_obs_per_block,n_obs_per_block)))
-            # Tx_a = (obs_fn.transpose() @ Ta) @ obs_fn
             Rx_a = obs_mask.transpose() @ Ra @ obs_mask
-            # Rx_a = np.kron(Ra, np.ones((n_obs_per_block,n_obs_per_block)))
             self.T.append(Tx_a)
             self.R.append(Rx_a)
         self.obs_fn = obs_fn
@@ -137,9 +142,6 @@ class AbstractMDP(MDP):
                 # Assume uniform random policy
                 T = np.mean(np.stack(self.base_mdp.T,axis=0),axis=0)
                 R = np.mean(np.stack(self.base_mdp.R,axis=0),axis=0)
-                # pi_t = np.random.randint(0, self.n_actions, size=(self.base_mdp.n_states,))
-                # T = condition_T_on_pi(self.base_mdp.T, pi_t)
-                # R = condition_T_on_pi(self.base_mdp.R, pi_t)
             else:
                 pi_t = pi
                 T = condition_T_on_pi(self.base_mdp.T, pi_t)
@@ -160,34 +162,22 @@ class AbstractMDP(MDP):
         return np.divide( (belief@(Rx*Tx)@self.phi), Tz,
                          out=np.zeros_like(Tz), where=(Tz!=0) )
 
+def test():
+    # Generate a random base MDP
+    mdp1 = MDP.generate(n_states=3, n_actions=2, sparsity=0.5)
+    assert all([is_stochastic(mdp1.T[a]) for a in range(mdp1.n_actions)])
 
-# p = random_transition_matrix((1,10))
-# phi = random_sparse_mask((10,3),0.9)
-# p.shape
-# phi.shape
-# pz = p @ phi
-# pz.shape
-# B = normalize(p*phi.transpose())
-# B.shape
-# T = random_transition_matrix((10,10))
-# np.round(B,2)
-# np.round(T,2)
-#
-# (B @ T @ phi).shape
+    # Add block structure to the base MDP
+    mdp2 = BlockMDP(mdp1, n_obs_per_block=2)
+    assert all([np.allclose(mdp2.base_mdp.T[a],mdp1.T[a]) for a in range(mdp1.n_actions)])
+    assert all([np.allclose(mdp2.base_mdp.R[a],mdp1.R[a]) for a in range(mdp1.n_actions)])
 
+    # Construct abstract MDP of the block MDP using perfect abstraction function
+    phi = (mdp2.obs_fn.transpose()>0).astype(int)
+    mdp3 = AbstractMDP(mdp2, phi)
+    assert np.allclose(mdp1.T, mdp3.T)
+    assert np.allclose(mdp1.R, mdp3.R)
+    print('All tests passed.')
 
-mdp1 = MDP.generate(n_states=3, n_actions=2, sparsity=0.5)
-mdp2 = BlockMDP(mdp1, n_obs_per_block=2)
-phi = np.asarray(mdp2.obs_fn.transpose()>0,dtype=int)
-mdp3 = AbstractMDP(mdp2, phi)
-assert np.allclose(mdp1.T, mdp3.T)
-assert np.allclose(mdp1.R, mdp3.R)
-
-# np.ceil(mdp.T[0])
-# mdp.R
-# mdp.base_mdp().T[a]
-# np.kron( (mdp.base_mdp().T[a] @ mdp.Ob), np.ones((2,1)))
-#
-# mdp.T[a] @ mdp.Ob
-#
-# assert all([is_stochastic(mdp.T[a]) for a in range(mdp.n_actions)])
+if __name__ == '__main__':
+    test()
