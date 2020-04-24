@@ -142,10 +142,10 @@ class AbstractMDP(MDP):
         self.n_obs = base_mdp.n_states
 
         state_distr = self.base_mdp.stationary_distribution(pi=pi, p0=p0)
-        belief = self.B(state_distr)
-        self.T = [self.compute_Tz(belief,T_a)
+        self.belief = self.B(state_distr)
+        self.T = [self.compute_Tz(self.belief,T_a)
                     for T_a in base_mdp.T]
-        self.R = [self.compute_Rz(belief,Rx_a,Tx_a,Tz_a)
+        self.R = [self.compute_Rz(self.belief,Rx_a,Tx_a,Tz_a)
                     for (Rx_a, Tx_a, Tz_a) in zip(base_mdp.R, base_mdp.T, self.T)]
         self.Rmin = np.min(np.stack(self.R))
         self.Rmax = np.max(np.stack(self.R))

@@ -1,7 +1,7 @@
 import gmpy
 import numpy as np
 
-from mdpgen.mdp import MDP, BlockMDP, AbstractMDP
+from mdpgen.mdp import MDP, BlockMDP, AbstractMDP, normalize
 from mdpgen.vi import vi
 
 def test_vi():
@@ -60,18 +60,18 @@ phi = np.array([
     [0, 1],
     [0, 1],
 ])
-pr_z = (pr_x @ phi)
-obs_fn = (pr_x[:,None] / pr_z) * phi
 
 mdp2 = AbstractMDP(mdp1, phi, p0=pr_x)
 v_phi_star, q_phi_star, pi_phi_star = vi(mdp2)
 v_phi_star
-pi_list = []
+
+# for each ground-state policy
 for i in range(mdp1.n_actions**mdp1.n_states):
     pi_string = gmpy.digits(i, mdp1.n_actions).zfill(mdp1.n_states)
     pi = np.asarray(list(pi_string), dtype=int)
+
     v_pi = vi(mdp1, pi)[0]
-    v_phi_pi = v_pi @ obs_fn
+    v_phi_pi = mdp2.belief @ v_pi
     print(pi, v_pi, v_phi_pi)
 
 # (mdp.T[0] * mdp.R[0]).sum(axis=1)
