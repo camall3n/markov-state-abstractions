@@ -34,14 +34,13 @@ mdp1 = MDP([T1, T2], [R, R], gamma=0.9)
 v_star, q_star, pi_star = vi(mdp1)
 v_star, pi_star
 
-pr_x = mdp1.stationary_distribution()
 phi = np.array([
     [1, 0],
     [0, 1],
     [0, 1],
 ])
 
-mdp2 = AbstractMDP(mdp1, phi, p0=pr_x)
+mdp2 = AbstractMDP(mdp1, phi)
 v_phi_star, q_phi_star, pi_phi_star = vi(mdp2)
 v_phi_star
 
@@ -51,7 +50,9 @@ for i in range(mdp1.n_actions**mdp1.n_states):
     pi = np.asarray(list(pi_string), dtype=int)
 
     v_pi = vi(mdp1, pi)[0]
-    v_phi_pi = mdp2.belief @ v_pi
+    pr_x = mdp1.stationary_distribution(pi=pi)
+    belief = mdp2.B(pr_x)
+    v_phi_pi = belief @ v_pi
     print(pi, v_pi, v_phi_pi)
 
 # (mdp.T[0] * mdp.R[0]).sum(axis=1)
