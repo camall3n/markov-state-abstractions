@@ -73,6 +73,27 @@ class MDP:
         self.R_min = np.min(np.stack(self.R))
         self.R_max = np.max(np.stack(self.R))
 
+    def stationary_distribution(self, pi=None, p0=None, max_steps=200):
+        if p0 is None:
+            state_distr = np.ones(self.n_states)/self.n_states
+        else:
+            state_distr = p0
+        old_distr = state_distr
+        for t in range(max_steps):
+            if pi is None:
+                # Assume uniform random policy
+                T = np.mean(np.stack(self.T,axis=0),axis=0)
+                R = np.mean(np.stack(self.R,axis=0),axis=0)
+            else:
+                pi_t = pi
+                T = condition_T_on_pi(self.T, pi_t)
+                R = condition_T_on_pi(self.R, pi_t)
+            state_distr = state_distr @ T
+            if np.allclose(state_distr, old_distr):
+                break
+            old_distr = state_distr
+        return state_distr
+
     @classmethod
     def generate(cls, n_states, n_actions, sparsity=0, gamma=0.9, Rmin=-1, Rmax=1):
         T = []# List of s -> s transition matrices, one for each action
@@ -120,9 +141,7 @@ class AbstractMDP(MDP):
         self.n_states = phi.shape[-1]
         self.n_obs = base_mdp.n_states
 
-        # compute steady-state distribution in base mdp
-        state_distr = self.compute_steady_state_distr(p0)
-
+        state_distr = self.base_mdp.stationary_distribution(pi=pi, p0=p0)
         belief = self.B(state_distr)
         self.T = [self.compute_Tz(belief,T_a)
                     for T_a in base_mdp.T]
@@ -130,27 +149,6 @@ class AbstractMDP(MDP):
                     for (Rx_a, Tx_a, Tz_a) in zip(base_mdp.R, base_mdp.T, self.T)]
         self.Rmin = np.min(np.stack(self.R))
         self.Rmax = np.max(np.stack(self.R))
-
-    def compute_steady_state_distr(self, pi=None, p0=None, n_steps=200):
-        if p0 is None:
-            state_distr = np.ones(self.base_mdp.n_states)/self.base_mdp.n_states
-        else:
-            state_distr = p0
-        old_distr = state_distr
-        for t in range(n_steps):
-            if pi is None:
-                # Assume uniform random policy
-                T = np.mean(np.stack(self.base_mdp.T,axis=0),axis=0)
-                R = np.mean(np.stack(self.base_mdp.R,axis=0),axis=0)
-            else:
-                pi_t = pi
-                T = condition_T_on_pi(self.base_mdp.T, pi_t)
-                R = condition_T_on_pi(self.base_mdp.R, pi_t)
-            state_distr = T @ state_distr
-            if np.allclose(state_distr, old_distr):
-                break
-            old_distr = state_distr
-        return state_distr
 
     def B(self, p):
         return normalize(p*self.phi.transpose())
@@ -164,7 +162,7 @@ class AbstractMDP(MDP):
 
 def test():
     # Generate a random base MDP
-    mdp1 = MDP.generate(n_states=3, n_actions=2, sparsity=0.5)
+    mdp1 = MDP.generate(n_states=5, n_actions=3, sparsity=0.5)
     assert all([is_stochastic(mdp1.T[a]) for a in range(mdp1.n_actions)])
 
     # Add block structure to the base MDP
