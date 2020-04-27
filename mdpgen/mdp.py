@@ -3,7 +3,7 @@ import numpy as np
 
 def normalize(M):
     denoms = M.sum(axis=1)
-    M = M / denoms[:,None]
+    M = np.divide(M, denoms[:,None], out=np.zeros_like(M), where=(M.sum(axis=1)[:,None]!=0))
     return M
 
 def is_stochastic(M):
@@ -80,19 +80,23 @@ class MDP:
             state_distr = p0
         old_distr = state_distr
         for t in range(max_steps):
-            if pi is None:
-                # Assume uniform random policy
-                T = np.mean(np.stack(self.T,axis=0),axis=0)
-                R = np.mean(np.stack(self.R,axis=0),axis=0)
-            else:
-                pi_t = pi
-                T = condition_T_on_pi(self.T, pi_t)
-                R = condition_T_on_pi(self.R, pi_t)
-            state_distr = state_distr @ T
+            state_distr = self.image(state_distr, pi)
             if np.allclose(state_distr, old_distr):
                 break
             old_distr = state_distr
         return state_distr
+
+    def image(self, pr_x, pi=None):
+        if pi is None:
+            # Assume uniform random policy
+            T = np.mean(np.stack(self.T,axis=0),axis=0)
+            # R = np.mean(np.stack(self.R,axis=0),axis=0)
+        else:
+            pi_t = pi
+            T = condition_T_on_pi(self.T, pi_t)
+            # R = condition_T_on_pi(self.R, pi_t)
+        pr_next_x = pr_x @ T
+        return pr_next_x
 
     @classmethod
     def generate(cls, n_states, n_actions, sparsity=0, gamma=0.9, Rmin=-1, Rmax=1):

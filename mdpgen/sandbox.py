@@ -49,6 +49,7 @@ for i in range(mdp1.n_actions**mdp1.n_states):
     pi_string = gmpy.digits(i, mdp1.n_actions).zfill(mdp1.n_states)
     pi = np.asarray(list(pi_string), dtype=int)
 
+    # compare V^pi vs V_phi^pi
     v_pi = vi(mdp1, pi)[0]
     pr_x = mdp1.stationary_distribution(pi=pi)
     belief = mdp2.B(pr_x)
