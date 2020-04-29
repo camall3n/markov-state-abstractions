@@ -45,7 +45,8 @@ v_phi_star, q_phi_star, pi_phi_star = vi(mdp2)
 v_phi_star
 
 # for each ground-state policy
-for i in range(mdp1.n_actions**mdp1.n_states):
+n_policies = mdp1.n_actions**mdp1.n_states
+for i in range(n_policies):
     pi_string = gmpy.digits(i, mdp1.n_actions).zfill(mdp1.n_states)
     pi = np.asarray(list(pi_string), dtype=int)
 
@@ -54,7 +55,7 @@ for i in range(mdp1.n_actions**mdp1.n_states):
     pr_x = mdp1.stationary_distribution(pi=pi)
     belief = mdp2.B(pr_x)
     v_phi_pi = belief @ v_pi
-    print(pi, v_pi, v_phi_pi)
+    print(i, pi, v_pi, v_phi_pi)
 
 # (mdp.T[0] * mdp.R[0]).sum(axis=1)
 # (mdp.T[1] * mdp.R[1]).sum(axis=1)

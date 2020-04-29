@@ -2,8 +2,12 @@ import copy
 import numpy as np
 
 def normalize(M):
-    denoms = M.sum(axis=1)
-    M = np.divide(M, denoms[:,None], out=np.zeros_like(M), where=(M.sum(axis=1)[:,None]!=0))
+    M = M.astype(float)
+    if M.ndim > 1:
+        denoms = M.sum(axis=1)[:,None]
+    else:
+        denoms = M.sum()
+    M = np.divide(M, denoms.astype(float), out=np.zeros_like(M), where=(denoms!=0))
     return M
 
 def is_stochastic(M):
@@ -55,14 +59,6 @@ def random_observation_fn(n_states, n_obs_per_block):
 def one_hot(x, n):
     return np.eye(n)[x]
 
-def condition_T_on_pi(T, pi):
-    n_actions = len(T)
-    n_states = len(T[0])
-    pi_one_hot = one_hot(pi, n_actions)
-    T_stack = np.stack(T, axis=0)
-    T_pi = np.tensordot(pi_one_hot, T, axes=1)[pi, np.arange(n_states), :]
-    return T_pi
-
 class MDP:
     def __init__(self, T, R, gamma=0.9):
         self.n_states = len(T[0])
@@ -72,6 +68,10 @@ class MDP:
         self.R = copy.deepcopy(R)
         self.R_min = np.min(np.stack(self.R))
         self.R_max = np.max(np.stack(self.R))
+        if not isinstance(self.T, np.ndarray):
+            self.T = np.stack(self.T)
+        if not isinstance(self.R, np.ndarray):
+            self.R = np.stack(self.R)
 
     def stationary_distribution(self, pi=None, p0=None, max_steps=200):
         if p0 is None:
@@ -89,14 +89,17 @@ class MDP:
     def image(self, pr_x, pi=None):
         if pi is None:
             # Assume uniform random policy
-            T = np.mean(np.stack(self.T,axis=0),axis=0)
-            # R = np.mean(np.stack(self.R,axis=0),axis=0)
+            T = np.mean(self.T, axis=0)
+            # R = self.R * T[None,:,:]
         else:
             pi_t = pi
-            T = condition_T_on_pi(self.T, pi_t)
-            # R = condition_T_on_pi(self.R, pi_t)
+            T = self.T_pi(pi_t)
+            # R = self.R * T[None,:,:]
         pr_next_x = pr_x @ T
         return pr_next_x
+
+    def T_pi(self, pi):
+        return self.T[pi, np.arange(self.n_states),:]
 
     @classmethod
     def generate(cls, n_states, n_actions, sparsity=0, gamma=0.9, Rmin=-1, Rmax=1):
@@ -135,6 +138,8 @@ class BlockMDP(MDP):
             Rx_a = obs_mask.transpose() @ Ra @ obs_mask
             self.T.append(Tx_a)
             self.R.append(Rx_a)
+        self.T = np.stack(self.T)
+        self.R = np.stack(self.R)
         self.obs_fn = obs_fn
 
 class AbstractMDP(MDP):
@@ -151,6 +156,8 @@ class AbstractMDP(MDP):
                     for T_a in base_mdp.T]
         self.R = [self.compute_Rz(self.belief,Rx_a,Tx_a,Tz_a)
                     for (Rx_a, Tx_a, Tz_a) in zip(base_mdp.R, base_mdp.T, self.T)]
+        self.T = np.stack(self.T)
+        self.R = np.stack(self.R)
         self.Rmin = np.min(np.stack(self.R))
         self.Rmax = np.max(np.stack(self.R))
 
