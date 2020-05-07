@@ -1,4 +1,5 @@
 import copy
+import gmpy
 import numpy as np
 
 def normalize(M):
@@ -73,6 +74,20 @@ class MDP:
         if not isinstance(self.R, np.ndarray):
             self.R = np.stack(self.R)
 
+    def get_policy(self, i):
+        assert i < self.n_actions**self.n_states
+        pi_string = gmpy.digits(i, self.n_actions).zfill(self.n_states)
+        pi = np.asarray(list(pi_string), dtype=int)
+        return pi
+
+    def all_policies(self):
+        policies = []
+        n_policies = self.n_actions**self.n_states
+        for i in range(n_policies):
+            pi = self.get_policy(i)
+            policies.append(pi)
+        return policies
+
     def stationary_distribution(self, pi=None, p0=None, max_steps=200):
         if p0 is None:
             state_distr = np.ones(self.n_states)/self.n_states
@@ -100,6 +115,15 @@ class MDP:
 
     def T_pi(self, pi):
         return self.T[pi, np.arange(self.n_states),:]
+
+    def get_N(self, pi):
+        return self.T_pi(pi)
+
+    def get_I(self, pi):
+        pi_one_hot = one_hot(pi,self.n_actions).transpose()[:,:,None]
+        N = self.get_N(pi)[None,:,:]
+        I = np.divide(self.T*pi_one_hot, N, out=np.zeros_like(self.T), where=N!=0)
+        return I
 
     @classmethod
     def generate(cls, n_states, n_actions, sparsity=0, gamma=0.9, Rmin=-1, Rmax=1):
@@ -170,6 +194,36 @@ class AbstractMDP(MDP):
     def compute_Rz(self, belief, Rx, Tx, Tz):
         return np.divide( (belief@(Rx*Tx)@self.phi), Tz,
                          out=np.zeros_like(Tz), where=(Tz!=0) )
+
+    def is_abstract_policy(self, pi):
+        agg_states = ((self.phi.sum(axis=0)>1) @ self.phi.transpose()).astype(bool)
+        return np.all(pi[agg_states] == pi[agg_states][0])
+
+    def piecewise_constant_policies(self):
+        return [pi for pi in self.base_mdp.all_policies() if self.is_abstract_policy(pi)]
+
+    def get_abstract_policy(self, pi):
+        assert self.is_abstract_policy(pi)
+        mask = self.phi.transpose()
+        obs_fn = normalize(mask)
+        return (pi @ obs_fn.transpose()).astype(int)
+
+    def abstract_policies(self):
+        pi_list = self.piecewise_constant_policies()
+        return [self.get_abstract_policy(pi) for pi in pi_list]
+
+    def is_markov(self):
+        m_a = self
+        m_g = m_a.base_mdp
+        phi = m_a.phi
+        for pi_g in self.piecewise_constant_policies(m_g, phi):
+            pi_a = self.get_abstract_policy(pi_g, phi)
+            if not markov.matching_I(m_g, m_a, pi_g, pi_a):
+                return False
+            if not markov.matching_ratios(m_g, m_a, pi_g, pi_a):
+                return False
+        return True
+
 
 def test():
     # Generate a random base MDP

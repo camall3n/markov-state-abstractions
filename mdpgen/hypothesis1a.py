@@ -1,52 +1,87 @@
 import gmpy
 import numpy as np
+from tqdm import tqdm
 
-from mdpgen.mdp import MDP, AbstractMDP, one_hot, random_sparse_mask, random_transition_matrix, is_stochastic
+from mdpgen.mdp import MDP, AbstractMDP
 from mdpgen.vi import vi
-from mdpgen.markov import is_markov
+from mdpgen.markov import generate_markov_mdp_pair
+
+from mdpgen.value_fn import compare_value_fns, partial_ordering, sorted_order, sort_value_fns, visualize_order
 
 #%%
-def random_phi(n_abs_states):
-    phi = np.eye(n_abs_states)
-    phi = np.concatenate((phi, random_sparse_mask((1,n_abs_states), sparsity=1)))
-    np.random.shuffle(phi)
-    return phi
+for _ in tqdm(range(100)):
+    # Generate (MDP, abstract MDP) pair
+    mdp1, mdp2 = generate_markov_mdp_pair(
+        n_states=4, n_abs_states=3, n_actions=2,
+        equal_block_rewards=True,
+        equal_block_transitions=True,
+    )
+
+    v_star, q_star, pi_star = vi(mdp1)
+    v_star, pi_star
+
+    pi_g_list = mdp2.piecewise_constant_policies()
+    pi_a_list = mdp2.abstract_policies()
+    v_g_list = [vi(mdp1, pi)[0] for pi in pi_g_list]
+    v_a_list = [vi(mdp2, pi)[0] for pi in pi_a_list]
+
+    order_v_g = sorted_order(v_g_list)
+    order_v_a = sorted_order(v_a_list)
+    assert np.allclose(order_v_a, order_v_g)
+print('All tests passed.')
 
 #%%
-# Generate MDP and markov(?) abstraction
-mdp1 = MDP.generate(n_states=5, n_actions=2, sparsity=0, gamma=0.9)
-phi = random_phi(mdp1.n_states-1)
+visualize_order(v_g_list, 'graphviz/arbitrary_reward/ground_7')
+visualize_order(v_a_list, 'graphviz/arbitrary_reward/abstract_7')
 
-mdp1.T
-np.round(mdp1.R,2)
-
-random_weights = random_transition_matrix((1,2))
-
-agg_states = ((phi.sum(axis=0)>1) @ phi.transpose()).astype(bool)
-other_states = ((phi.sum(axis=0)==1) @ phi.transpose()).astype(bool)
-R = np.copy(mdp1.R)
-T = np.copy(mdp1.T)
-for a in range(mdp1.n_actions):
-    R[a][agg_states[:,None]*agg_states] = np.mean(mdp1.R[a][agg_states[:,None]*agg_states])
-    R[a][other_states[:,None]*agg_states] = np.mean(mdp1.R[a][other_states[:,None]*agg_states])
-    R[a][agg_states[:,None]*other_states] = np.mean(mdp1.R[a][agg_states[:,None]*other_states])
-    # R[a][other_states[:,None]*other_states] = mdp1.R[a][other_states[:,None]*other_states]
-    T[a][:,agg_states] = random_weights * np.sum(mdp1.T[a][:,agg_states],axis=1, keepdims=True)
-    # T[a][:,other_states] = random_transition_matrix((1,mdp1.n_states-2)) * np.sum(mdp1.T[a][:,other_states],axis=1, keepdims=True)
-    assert(is_stochastic(T[a]))
-mdp1.R = R
-mdp1.T = T
-print(random_weights)
-print(phi)
-print(T)
-print(R)
 #%%
+# Try MDP pair with non-Markov belief
+T = np.array([
+    [0, .5, .5, 0, 0, 0],
+    [0, 0, 0, .5, .5, 0],
+    [0, 0, 0, 0, .5, .5],
+    [1, 0, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0, 0],
+])
+R = np.array([
+    [0, 1, 1, 0, 0, 0],
+    [0, 0, 0, 2, 2, 0],
+    [0, 0, 0, 0, 2, 2],
+    [2, 0, 0, 0, 0, 0],
+    [3, 0, 0, 0, 0, 0],
+    [4, 0, 0, 0, 0, 0]
+])/4
+
+mdp1 = MDP([T, T], [R, R], gamma=0.9)
+phi = np.array([
+    [1, 0, 0, 0],
+    [0, 1, 0, 0],
+    [0, 0, 1, 0],
+    [0, 0, 0, 1],
+    [0, 0, 0, 1],
+    [0, 0, 0, 1],
+])
+mdp2 = AbstractMDP(mdp1, phi)
 
 v_star, q_star, pi_star = vi(mdp1)
 v_star, pi_star
 
-mdp2 = AbstractMDP(mdp1, phi)
-assert is_markov(mdp2)
+pi_g_list = mdp2.piecewise_constant_policies()
+pi_a_list = mdp2.abstract_policies()
+v_g_list = [vi(mdp1, pi)[0] for pi in pi_g_list]
+v_a_list = [vi(mdp2, pi)[0] for pi in pi_a_list]
+
+np.allclose(v_g_list, v_g_list[0])
+
+order_v_g = sorted_order(v_g_list)
+order_v_a = sorted_order(v_a_list)
+assert np.allclose(order_v_a, order_v_g)
+
+visualize_order(v_a_list, 'graphviz/foo/bar/non-markov-B')
+
+
+#%%
 v_phi_star, q_phi_star, pi_phi_star = vi(mdp2)
 v_phi_star
 
@@ -92,37 +127,39 @@ for i in range(n_policies):
     v_phi_list.append(v_phi)
 
 #%%
-for i in range(n_policies):
-    pi_i = pi_list[i]
-    v_i = v_list[i]
-    v_phi_i = v_phi_list[i]
-    for j in range(n_policies):
-        if j==i:
+for pi_i, v_i, v_phi_i in zip(pi_list, v_list, v_phi_list):
+    for pi_j, v_j, v_phi_j in zip(pi_list, v_list, v_phi_list):
+        if np.all(pi_j==pi_i):
             continue
-        pi_j = pi_list[j]
-        v_j = v_list[j]
-        v_phi_j = v_phi_list[j]
 
-        for z in range(mdp2.n_states):
-            z_eq_mask = ~np.isclose(v_phi_i,v_phi_j, atol=1e-4)
-            x_eq_mask = ~np.isclose(v_i,v_j,atol=1e-4)
-            if not np.all(((x_eq_mask @ phi)>0) == z_eq_mask):
-                print('incompatible masks??')
-                break
+        # check which values are close to equal in pi_i and pi_j
+        z_eq_mask = ~np.isclose(v_phi_i,v_phi_j, atol=1e-4)
+        x_eq_mask = ~np.isclose(v_i,v_j,atol=1e-4)
+        # such values should be close for all ground states in those abstract states
+        if not np.all(((x_eq_mask @ phi)>0) == z_eq_mask):
+            print('incompatible masks??')
+            break
 
-            v_phi_gt = v_phi_i[z_eq_mask] > v_phi_j[z_eq_mask]
-            v_gt = v_i[x_eq_mask] > v_j[x_eq_mask]
+        # if so, check which remaining state values are greater in pi_i than pi_j
+        v_phi_gt = v_phi_i[z_eq_mask] > v_phi_j[z_eq_mask]
+        v_gt = v_i[x_eq_mask] > v_j[x_eq_mask]
 
-            v_phi_lt = v_phi_i[z_eq_mask] < v_phi_j[z_eq_mask]
-            v_lt = v_i[x_eq_mask] < v_j[x_eq_mask]
-            if (np.all(v_gt) and not np.all(v_phi_gt)) or (np.all(v_lt) and not np.all(v_phi_lt)):
-                print('hypothesis might be wrong!')
-                print(pi_star)
-                print(pi_phi_star @ phi.transpose().astype(int))
-                break
-        else:
-            continue
-        break
+        # and check which are less
+        v_phi_lt = v_phi_i[z_eq_mask] < v_phi_j[z_eq_mask]
+        v_lt = v_i[x_eq_mask] < v_j[x_eq_mask]
+
+        # if all ground values are greater (or lesser) in pi_i than pi_j but
+        # not all abstract values are, then we might have a problem
+        # otherwise, maybe the hypothesis is right...?
+        if (np.all(v_gt) and not np.all(v_phi_gt)) or (np.all(v_lt) and not np.all(v_phi_lt)):
+            print('hypothesis might be wrong!')
+            print(pi_star)
+            print(pi_phi_star @ phi.transpose().astype(int))
+            break
+
+        # what if there's a mix of greater/lesser values?
+        # e.g. V_pi1(x1) > V_pi2(x1), but V_pi1(x2) < V_pi2(x2)
+
     else:
         continue
     break
