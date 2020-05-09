@@ -70,9 +70,9 @@ class MDP:
         self.R_min = np.min(np.stack(self.R))
         self.R_max = np.max(np.stack(self.R))
         if not isinstance(self.T, np.ndarray):
-            self.T = np.stack(self.T)
+            self.T = np.stack(self.T).astype(np.float64)
         if not isinstance(self.R, np.ndarray):
-            self.R = np.stack(self.R)
+            self.R = np.stack(self.R).astype(np.float64)
 
     def get_policy(self, i):
         assert i < self.n_actions**self.n_states
@@ -212,18 +212,13 @@ class AbstractMDP(MDP):
         pi_list = self.piecewise_constant_policies()
         return [self.get_abstract_policy(pi) for pi in pi_list]
 
-    def is_markov(self):
-        m_a = self
-        m_g = m_a.base_mdp
-        phi = m_a.phi
-        for pi_g in self.piecewise_constant_policies(m_g, phi):
-            pi_a = self.get_abstract_policy(pi_g, phi)
-            if not markov.matching_I(m_g, m_a, pi_g, pi_a):
-                return False
-            if not markov.matching_ratios(m_g, m_a, pi_g, pi_a):
-                return False
-        return True
+class UniformAbstractMDP(AbstractMDP):
+    def __init__(self, base_mdp, phi, pi=None, p0=None):
+        base_mdp.stationary_distribution = self._replace_stationary_distribution
+        super().__init__(base_mdp, phi, pi, p0)
 
+    def _replace_stationary_distribution(self, pi=None, p0=None, max_steps=200):
+        return np.ones(self.n_states)/self.n_states
 
 def test():
     # Generate a random base MDP

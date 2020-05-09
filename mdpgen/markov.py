@@ -1,46 +1,46 @@
 import numpy as np
 from mdpgen.mdp import MDP, AbstractMDP, random_sparse_mask, random_transition_matrix, is_stochastic
 
-def matching_I(m_g, m_a, pi_g, pi_a):
+def matching_I(mdp_gnd, mdp_abs, pi_gnd, pi_abs):
     # ground mdp, abstract mdp, ground policy, abstract policy
     # Does I(z',z) = I(x',x)?
-    phi = m_a.phi
-    Ig = m_g.get_I(pi_g)
-    Ia = m_a.get_I(pi_a)
+    phi = mdp_abs.phi
+    Ig = mdp_gnd.get_I(pi_gnd)
+    Ia = mdp_abs.get_I(pi_abs)
     Ia_grounded = np.zeros_like(Ig)
-    for a in range(m_g.n_actions):
+    for a in range(mdp_gnd.n_actions):
         Ia_grounded[a,:,:] = phi @ Ia[a,:,:] @ phi.transpose()
-    Ia_grounded *= (m_g.get_N(pi_g) > 0)
+    Ia_grounded *= (mdp_gnd.get_N(pi_gnd) > 0)
     if not np.all(Ig == Ia_grounded):
         return False
     return True
 
-def matching_ratios(m_g, m_a, pi_g, pi_a):
+def matching_ratios(mdp_gnd, mdp_abs, pi_gnd, pi_abs):
     # ground mdp, abstract mdp, ground policy, abstract policy
-    # does N_phi / P_z = E_B(x|z)[ N / P_x] ?
-    phi = m_a.phi
-    Ng = m_g.get_N(pi_g)
-    Px = m_g.stationary_distribution(pi_g)
-    Na = m_a.get_N(pi_a)
-    Pz = m_a.stationary_distribution(pi_a)
+    # does N_phi(z'|z) / P_z' = E_B(x|z)[ N(x'|x) / P_x'] ?
+    phi = mdp_abs.phi
+    N_gnd = mdp_gnd.get_N(pi_gnd)
+    Px = mdp_gnd.stationary_distribution(pi_gnd)
+    N_abs = mdp_abs.get_N(pi_abs)
+    Pz = mdp_abs.stationary_distribution(pi_abs)
 
-    ratio_a = np.divide(Na, Pz[None,:], out=np.zeros_like(Na), where=Pz!=0)
-    ratio_g = np.divide(Ng, Px[None,:], out=np.zeros_like(Ng), where=Px!=0)
-    E_ratio_g = m_a.B(Px) @ ratio_g
-    if not np.allclose(E_ratio_g, ratio_a @ phi.transpose(), atol=1e-6):
+    ratio_abs = np.divide(N_abs, Pz[None,:], out=np.zeros_like(N_abs), where=Pz!=0)
+    ratio_gnd = np.divide(N_gnd, Px[None,:], out=np.zeros_like(N_gnd), where=Px!=0)
+    E_ratio_gnd = mdp_abs.B(Px) @ ratio_gnd
+    if not np.allclose(E_ratio_gnd, ratio_abs @ phi.transpose(), atol=1e-6):
         return False
     return True
 
 def is_markov(abstract_mdp):
-    m_a = abstract_mdp
-    m_g = m_a.base_mdp
-    phi = m_a.phi
-    for pi_g in m_a.piecewise_constant_policies():
-        pi_a = m_a.get_abstract_policy(pi_g)
-        if not matching_I(m_g, m_a, pi_g, pi_a):
-            return 'I mismatch'
-        if not matching_ratios(m_g, m_a, pi_g, pi_a):
-            return 'R mismatch'
+    mdp_abs = abstract_mdp
+    mdp_gnd = mdp_abs.base_mdp
+    phi = mdp_abs.phi
+    for pi_gnd in mdp_abs.piecewise_constant_policies():
+        pi_abs = mdp_abs.get_abstract_policy(pi_gnd)
+        if not matching_I(mdp_gnd, mdp_abs, pi_gnd, pi_abs):
+            return False
+        if not matching_ratios(mdp_gnd, mdp_abs, pi_gnd, pi_abs):
+            return False
     return True
 
 def random_phi(n_abs_states):
@@ -50,12 +50,24 @@ def random_phi(n_abs_states):
     return phi
 
 #%%
+def generate_non_markov_mdp_pair(n_states, n_abs_states, n_actions):
+    while True:
+        mdp_gnd = MDP.generate(n_states=n_states, n_actions=n_actions, sparsity=0, gamma=0.9)
+        assert n_abs_states < n_states
+        phi = random_phi(n_abs_states)
+        mdp_abs = AbstractMDP(mdp_gnd, phi)
+
+        # Ensure non-markov by checking inverse models and ratios
+        if not is_markov(mdp_abs):
+            break
+    return mdp_gnd, mdp_abs
+
 def generate_markov_mdp_pair(n_states, n_abs_states, n_actions, equal_block_rewards=True, equal_block_transitions=True):
     # Sometimes numerical precision causes the abstract mdp to appear non-Markov
     # so we just keep generating until the problem goes away. Usually it's fine.
     while True:
         # generate an MDP and an abstraction function
-        mdp1 = MDP.generate(n_states=n_states, n_actions=n_actions, sparsity=0, gamma=0.9)
+        mdp_gnd = MDP.generate(n_states=n_states, n_actions=n_actions, sparsity=0, gamma=0.9)
         assert n_abs_states < n_states
         phi = random_phi(n_abs_states)
 
@@ -67,31 +79,29 @@ def generate_markov_mdp_pair(n_states, n_abs_states, n_actions, equal_block_rewa
         other_states = ((phi.sum(axis=0)==1) @ phi.transpose()).astype(bool)
 
         # adjust T and R to achieve desired properties
-        R = np.copy(mdp1.R)
-        T = np.copy(mdp1.T)
-        for a in range(mdp1.n_actions):
+        R = np.copy(mdp_gnd.R)
+        T = np.copy(mdp_gnd.T)
+        for a in range(mdp_gnd.n_actions):
             if equal_block_rewards:
-                R[a][agg_states[:,None]*agg_states] = np.mean(mdp1.R[a][agg_states[:,None]*agg_states])
-                R[a][other_states[:,None]*agg_states] = np.mean(mdp1.R[a][other_states[:,None]*agg_states])
-                R[a][agg_states[:,None]*other_states] = np.mean(mdp1.R[a][agg_states[:,None]*other_states])
+                R[a][agg_states[:,None]*agg_states] = np.mean(mdp_gnd.R[a][agg_states[:,None]*agg_states])
+                R[a][other_states[:,None]*agg_states] = np.mean(mdp_gnd.R[a][other_states[:,None]*agg_states])
+                R[a][agg_states[:,None]*other_states] = np.mean(mdp_gnd.R[a][agg_states[:,None]*other_states])
 
-            T[a][:,agg_states] = random_weights * np.sum(mdp1.T[a][:,agg_states],axis=1, keepdims=True)
+            T[a][:,agg_states] = random_weights * np.sum(mdp_gnd.T[a][:,agg_states],axis=1, keepdims=True)
             if equal_block_transitions:
                 T[a][agg_states] = np.mean(T[a][agg_states,:],axis=0)
                 T[a][agg_states][:,agg_states] = random_weights * np.sum(T[a][agg_states][:,agg_states],axis=1, keepdims=True)
-            # T[a][:,other_states] = random_transition_matrix((1,mdp1.n_states-2)) * np.sum(mdp1.T[a][:,other_states],axis=1, keepdims=True)
+            # T[a][:,other_states] = random_transition_matrix((1,mdp_gnd.n_states-2)) * np.sum(mdp_gnd.T[a][:,other_states],axis=1, keepdims=True)
             assert(is_stochastic(T[a]))
-        mdp1.R = R
-        mdp1.T = T
+        mdp_gnd.R = R
+        mdp_gnd.T = T
 
-        mdp2 = AbstractMDP(mdp1, phi)
+        mdp_abs = AbstractMDP(mdp_gnd, phi)
 
         # Ensure that the abstraction is markov by checking inverse models and ratios
-        if is_markov(mdp2):
+        if is_markov(mdp_abs):
             break
-    return mdp1, mdp2
-
-
+    return mdp_gnd, mdp_abs
 
 #%%
 def test():
@@ -110,14 +120,14 @@ def test():
         [1, 0, 0],
         [1, 0, 0],
     ])
-    m_g = MDP([T1, T2], [R, R], gamma=0.9)
+    mdp_gnd = MDP([T1, T2], [R, R], gamma=0.9)
     phi = np.array([
         [1, 0],
         [0, 1],
         [0, 1],
     ])
-    m_a = AbstractMDP(m_g, phi)
-    assert is_markov(m_a)
+    mdp_abs = AbstractMDP(mdp_gnd, phi)
+    assert is_markov(mdp_abs)
 
 def test_non_markov_B():
     T = np.array([
@@ -129,7 +139,7 @@ def test_non_markov_B():
         [1, 0, 0, 0, 0, 0],
     ])
     R = (T > 0).astype(float)
-    m_g = MDP([T, T], [R, R], gamma=0.9)
+    mdp_gnd = MDP([T, T], [R, R], gamma=0.9)
     phi = np.array([
         [1, 0, 0, 0],
         [0, 1, 0, 0],
@@ -138,10 +148,10 @@ def test_non_markov_B():
         [0, 0, 0, 1],
         [0, 0, 0, 1],
     ])
-    m_a = AbstractMDP(m_g, phi)
+    mdp_abs = AbstractMDP(mdp_gnd, phi)
     # Even though this abstract MDP is Markov, is_markov() will return False,
     # since its conditions (while sufficient) are stricter than necessary
-    assert not is_markov(m_a)
+    assert not is_markov(mdp_abs)
 
 if __name__ == '__main__':
     test()
