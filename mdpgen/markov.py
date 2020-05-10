@@ -1,5 +1,5 @@
 import numpy as np
-from mdpgen.mdp import MDP, AbstractMDP, random_sparse_mask, random_transition_matrix, is_stochastic
+from mdpgen.mdp import MDP, AbstractMDP, UniformAbstractMDP, random_sparse_mask, random_transition_matrix, is_stochastic
 
 def matching_I(mdp_gnd, mdp_abs, pi_gnd, pi_abs):
     # ground mdp, abstract mdp, ground policy, abstract policy
@@ -50,12 +50,15 @@ def random_phi(n_abs_states):
     return phi
 
 #%%
-def generate_non_markov_mdp_pair(n_states, n_abs_states, n_actions):
+def generate_non_markov_mdp_pair(n_states, n_abs_states, n_actions, fixed_w=False):
     while True:
         mdp_gnd = MDP.generate(n_states=n_states, n_actions=n_actions, sparsity=0, gamma=0.9)
         assert n_abs_states < n_states
         phi = random_phi(n_abs_states)
-        mdp_abs = AbstractMDP(mdp_gnd, phi)
+        if fixed_w:
+            mdp_abs = UniformAbstractMDP(mdp_gnd, phi)
+        else:
+            mdp_abs = AbstractMDP(mdp_gnd, phi)
 
         # Ensure non-markov by checking inverse models and ratios
         if not is_markov(mdp_abs):

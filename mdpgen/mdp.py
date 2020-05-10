@@ -208,6 +208,9 @@ class AbstractMDP(MDP):
         obs_fn = normalize(mask)
         return (pi @ obs_fn.transpose()).astype(int)
 
+    def get_ground_policy(self, pi):
+        return (self.phi @ pi).astype(int)
+
     def abstract_policies(self):
         pi_list = self.piecewise_constant_policies()
         return [self.get_abstract_policy(pi) for pi in pi_list]
