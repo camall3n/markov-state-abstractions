@@ -43,6 +43,40 @@ def is_markov(abstract_mdp):
             return False
     return True
 
+def has_block_dynamics(abstract_mdp):
+    # Check that T(x'|a,x)/T(z'|a,x) is constant for all a and all x in z
+    mdp_abs = abstract_mdp
+    mdp_gnd = mdp_abs.base_mdp
+    phi = mdp_abs.phi
+    T_xax = mdp_gnd.T # T(x'|a,x)
+    T_zax = mdp_gnd.T @ phi @ phi.transpose() # T(z'|a,x) in shape of T(x'|a,x)
+    block_dynamics_ratio = np.divide(mdp_gnd.T, T_zax,
+        out=np.zeros_like(mdp_gnd.T), where=T_zax!=0)
+    # average along a,x dimensions where ratio is non-zero
+    mean_ratio = np.average(block_dynamics_ratio, axis=(0,1),
+                            weights=block_dynamics_ratio>0)
+    # block dynamics ratio should be constant for all a,x (unless it's undefined)
+    if not np.all(np.isclose(block_dynamics_ratio, mean_ratio)[block_dynamics_ratio>0]):
+        return False
+    return True
+
+def is_hutter_markov(abstract_mdp):
+    # Check that T(z'|a,x) = T(z'|a,z) for all x in z
+    mdp_abs = abstract_mdp
+    mdp_gnd = mdp_abs.base_mdp
+    phi = mdp_abs.phi
+    T_zax = mdp_gnd.T @ phi # T(z'|a,x)
+    T_zaz = phi @ mdp_abs.T # T(z'|a,z) in shape of T(z'|a,x)
+    if not np.allclose(T_zax, T_zaz):
+        return False
+    return True
+
+def is_gdk_markov(abstract_mdp):
+    # Check that T(x'|a,x) = T(x'|a,z) for all x in z
+    raise NotImplementedError
+    # Need to define some sort of weighting scheme, otherwise T(x'|a,z) is
+    # not defined. It's supposed to be \sum_x T(x'|a,x)w(x|z).
+
 def random_phi(n_states, n_abs_states):
     phi = np.eye(n_abs_states)
     mask = random_sparse_mask((1,n_abs_states), sparsity=1)

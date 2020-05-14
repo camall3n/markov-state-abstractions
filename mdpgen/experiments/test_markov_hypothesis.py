@@ -26,23 +26,23 @@ for _ in tqdm(range(100)):
     pi_g_list = mdp2.piecewise_constant_policies()
     pi_a_list = mdp2.abstract_policies()
 
-    B_list = [AbstractMDP(mdp1, mdp2.phi, p0=np.array([1,0,0,0])).B(pi, t=1).round(3) for pi in pi_g_list]
-    i=5
-    pi_gnd = pi_g_list[i]
-    pi_abs = pi_a_list[i]
-    mdp2.B(pi_gnd)
-    phi = mdp2.phi
-    N_gnd = mdp1.get_N(pi_gnd)
-    phi.transpose() @ phi
-    Px = mdp1.stationary_distribution(pi_gnd)
-    N_abs = mdp2.get_N(pi_abs)
-    Pz = mdp2.stationary_distribution(pi_abs)
-
-    ratio_abs = np.divide(N_abs, Pz[None,:], out=np.zeros_like(N_abs), where=Pz!=0)
-    ratio_gnd = np.divide(N_gnd, Px[None,:], out=np.zeros_like(N_gnd), where=Px!=0)
-    mdp2.B(pi_gnd) @ ratio_gnd
-    ratio_abs @ phi.transpose()
-    is_markov(mdp2)
+    # B_list = [AbstractMDP(mdp1, mdp2.phi, p0=np.array([1,0,0,0])).B(pi, t=1).round(3) for pi in pi_g_list]
+    # i=5
+    # pi_gnd = pi_g_list[i]
+    # pi_abs = pi_a_list[i]
+    # mdp2.B(pi_gnd)
+    # phi = mdp2.phi
+    # N_gnd = mdp1.get_N(pi_gnd)
+    # phi.transpose() @ phi
+    # Px = mdp1.stationary_distribution(pi_gnd)
+    # N_abs = mdp2.get_N(pi_abs)
+    # Pz = mdp2.stationary_distribution(pi_abs)
+    #
+    # ratio_abs = np.divide(N_abs, Pz[None,:], out=np.zeros_like(N_abs), where=Pz!=0)
+    # ratio_gnd = np.divide(N_gnd, Px[None,:], out=np.zeros_like(N_gnd), where=Px!=0)
+    # mdp2.B(pi_gnd) @ ratio_gnd
+    # ratio_abs @ phi.transpose()
+    # is_markov(mdp2)
 
     v_g_list = [vi(mdp1, pi)[0] for pi in pi_g_list]
     v_a_list = [vi(mdp2, pi)[0] for pi in pi_a_list]
@@ -55,6 +55,7 @@ for _ in tqdm(range(100)):
     [mdp2.B(pi, t=1)[agg_state][0] for pi in pi_g_list]
     [mdp2.B(pi, t=3)[agg_state][0] for pi in pi_g_list]
 
+    v_star, _, pi_star = vi(mdp1)
     v_phi_pi_phi_star, _, pi_phi_star = vi(mdp2)
     v_pi_phi_star = vi(mdp1, mdp2.get_ground_policy(pi_phi_star))[0]
 
@@ -63,7 +64,9 @@ for _ in tqdm(range(100)):
             print('Inconsistent value ordering')
             break
     else:
-        pass
+        if compare_value_fns(v_pi_phi_star, v_star) == "<":
+            print('Found example that was non π*-preserving.')
+            break
         continue
     break
 else:

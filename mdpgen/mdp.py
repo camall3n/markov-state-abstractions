@@ -2,10 +2,10 @@ import copy
 import gmpy
 import numpy as np
 
-def normalize(M):
+def normalize(M, axis=-1):
     M = M.astype(float)
     if M.ndim > 1:
-        denoms = M.sum(axis=1)[:,None]
+        denoms = M.sum(axis=axis, keepdims=True)
     else:
         denoms = M.sum()
     M = np.divide(M, denoms.astype(float), out=np.zeros_like(M), where=(denoms!=0))

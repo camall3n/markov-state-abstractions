@@ -4,7 +4,7 @@ from tqdm import tqdm
 
 from mdpgen.mdp import MDP, AbstractMDP, UniformAbstractMDP, random_reward_matrix
 from mdpgen.vi import vi
-from mdpgen.markov import generate_markov_mdp_pair, generate_non_markov_mdp_pair, is_markov, matching_I, matching_ratios
+from mdpgen.markov import generate_markov_mdp_pair, generate_non_markov_mdp_pair, is_markov, matching_I, matching_ratios, is_hutter_markov, has_block_dynamics
 
 from mdpgen.value_fn import compare_value_fns, partial_ordering, sorted_order, sort_value_fns, graph_value_fns
 
@@ -27,7 +27,7 @@ T_list = np.array([
 ])
 equal_block_rewards = False
 markov_abstraction = True
-for i in tqdm(range(200)):
+for i in tqdm(range(20)):
     R_list = random_reward_matrix(0, 1, T_list.shape) * (T_list > 0)
     # If we constrain the rewards so they have block structure, everything
     # is fine. Otherwise it's easy to find examples where the policy ranking
@@ -62,6 +62,8 @@ for i in tqdm(range(200)):
     mdp2 = AbstractMDP(mdp1, phi, p0=np.array([0,0,0,1,0]), t=200)
     mdp2 = AbstractMDP(mdp1, phi)
     is_markov(mdp2)
+    is_hutter_markov(mdp2)
+    has_block_dynamics(mdp2)
 
     pi_g_list = mdp2.piecewise_constant_policies()
     pi_a_list = mdp2.abstract_policies()
@@ -95,6 +97,7 @@ for i in tqdm(range(200)):
     np.stack([mdp2.B(pi, t=6)[agg_state] for pi in pi_g_list])
 
 
+    v_star, _, pi_star = vi(mdp1)
     v_phi_pi_phi_star, _, pi_phi_star = vi(mdp2)
     v_pi_phi_star = vi(mdp1, mdp2.get_ground_policy(pi_phi_star))[0]
 
@@ -104,7 +107,9 @@ for i in tqdm(range(200)):
             print('Found example of order mismatch.')
             break
     else:
-        pass
+        # if compare_value_fns(v_pi_phi_star, v_star) == "<":
+        #     print('Found example that was non π*-preserving.')
+        #     break
         continue
     break
 else:
