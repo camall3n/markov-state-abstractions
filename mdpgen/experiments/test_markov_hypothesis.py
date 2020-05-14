@@ -17,8 +17,8 @@ for _ in tqdm(range(100)):
     # )
     mdp1, mdp2 = generate_markov_mdp_pair(
         n_states=5, n_abs_states=3, n_actions=2, sparsity=.7,
-        equal_block_rewards = False,
-        equal_block_transitions = False,
+        equal_block_rewards = True,
+        equal_block_transitions = True,
     )
     mdp2.phi
     is_markov(mdp2)
@@ -57,7 +57,8 @@ for _ in tqdm(range(100)):
 
     v_star, _, pi_star = vi(mdp1)
     v_phi_pi_phi_star, _, pi_phi_star = vi(mdp2)
-    v_pi_phi_star = vi(mdp1, mdp2.get_ground_policy(pi_phi_star))[0]
+    pi_phi_star_gnd = mdp2.get_ground_policy(pi_phi_star)
+    v_pi_phi_star = vi(mdp1, pi_phi_star_gnd)[0]
 
     for v in v_g_list:
         if compare_value_fns(v_pi_phi_star, v) == "<":
