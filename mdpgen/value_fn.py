@@ -23,16 +23,18 @@ def compare_value_fns(v1, v2):
     else:
         return '?'
 
-def visualize_order(v_list, filename='graph'):
+def graph_value_fns(v_list, filename=None):
     dot = Digraph()
     for i in range(len(v_list)):
-        dot.node('v_'+str(i), 'v_'+str(i))
+        dot.node('π_'+str(i), 'π_'+str(i))
     for i, v_i in enumerate(v_list):
         for j, v_j in enumerate(v_list):
             if compare_value_fns(v_i, v_j) == '<':
-                dot.edge('v_'+str(j),'v_'+str(i))
-    print(dot.source)
-    dot.render(filename, format='png', view=True)
+                dot.edge('π_'+str(j),'π_'+str(i))
+    if filename is not None:
+        dot.render(filename, format='png', view=True)
+    return dot
+
 
 def partial_ordering(v_list):
     # build dependency graph for topological sort

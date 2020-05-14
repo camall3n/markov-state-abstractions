@@ -74,6 +74,9 @@ class MDP:
         if not isinstance(self.R, np.ndarray):
             self.R = np.stack(self.R).astype(np.float64)
 
+    def __repr__(self):
+        return repr(self.T) + '\n' + repr(self.R)
+
     def get_policy(self, i):
         assert i < self.n_actions**self.n_states
         pi_string = gmpy.digits(i, self.n_actions).zfill(self.n_states)
@@ -102,19 +105,16 @@ class MDP:
         return state_distr
 
     def image(self, pr_x, pi=None):
-        if pi is None:
-            # Assume uniform random policy
-            T = np.mean(self.T, axis=0)
-            # R = self.R * T[None,:,:]
-        else:
-            pi_t = pi
-            T = self.T_pi(pi_t)
-            # R = self.R * T[None,:,:]
+        T = self.T_pi(pi)
         pr_next_x = pr_x @ T
         return pr_next_x
 
     def T_pi(self, pi):
-        return self.T[pi, np.arange(self.n_states),:]
+        if pi is None:
+            T_pi = np.mean(self.T, axis=0)
+        else:
+            T_pi = self.T[pi, np.arange(self.n_states),:]
+        return T_pi
 
     def get_N(self, pi):
         return self.T_pi(pi)
@@ -167,15 +167,15 @@ class BlockMDP(MDP):
         self.obs_fn = obs_fn
 
 class AbstractMDP(MDP):
-    def __init__(self, base_mdp, phi, pi=None, p0=None):
+    def __init__(self, base_mdp, phi, pi=None, p0=None, t=200):
         super().__init__(base_mdp.T, base_mdp.R, base_mdp.gamma)
         self.base_mdp = copy.deepcopy(base_mdp)
         self.phi = phi# array: base_mdp.n_states, n_abstract_states
         self.n_states = phi.shape[-1]
         self.n_obs = base_mdp.n_states
+        self.p0 = p0
 
-        state_distr = self.base_mdp.stationary_distribution(pi=pi, p0=p0)
-        self.belief = self.B(state_distr)
+        self.belief = self.B(pi, t=t)
         self.T = [self.compute_Tz(self.belief,T_a)
                     for T_a in base_mdp.T]
         self.R = [self.compute_Rz(self.belief,Rx_a,Tx_a,Tz_a)
@@ -185,7 +185,12 @@ class AbstractMDP(MDP):
         self.Rmin = np.min(np.stack(self.R))
         self.Rmax = np.max(np.stack(self.R))
 
-    def B(self, p):
+    def __repr__(self):
+        base_str = super().__repr__()
+        return base_str + '\n' + repr(self.phi)
+
+    def B(self, pi, t=200):
+        p = self.base_mdp.stationary_distribution(pi=pi, p0=self.p0, max_steps=t)
         return normalize(p*self.phi.transpose())
 
     def compute_Tz(self, belief, Tx):
@@ -196,8 +201,12 @@ class AbstractMDP(MDP):
                          out=np.zeros_like(Tz), where=(Tz!=0) )
 
     def is_abstract_policy(self, pi):
-        agg_states = ((self.phi.sum(axis=0)>1) @ self.phi.transpose()).astype(bool)
-        return np.all(pi[agg_states] == pi[agg_states][0])
+        agg_states = (self.phi.sum(axis=0)>1)
+        for idx, is_agg in enumerate(agg_states):
+            agg_cluster = (one_hot(idx, self.n_states) @ self.phi.transpose()).astype(bool)
+            if not np.all(pi[agg_cluster] == pi[agg_cluster][0]):
+                return False
+        return True
 
     def piecewise_constant_policies(self):
         return [pi for pi in self.base_mdp.all_policies() if self.is_abstract_policy(pi)]

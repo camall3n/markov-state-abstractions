@@ -6,7 +6,7 @@ from mdpgen.mdp import MDP, AbstractMDP, UniformAbstractMDP
 from mdpgen.vi import vi
 from mdpgen.markov import generate_markov_mdp_pair, generate_non_markov_mdp_pair, is_markov
 
-from mdpgen.value_fn import compare_value_fns, partial_ordering, sorted_order, sort_value_fns, visualize_order
+from mdpgen.value_fn import compare_value_fns, partial_ordering, sorted_order, sort_value_fns, graph_value_fns
 
 #%%
 for _ in tqdm(range(100)):
@@ -31,8 +31,8 @@ for _ in tqdm(range(100)):
 print('All tests passed.')
 
 #%%
-visualize_order(v_g_list, 'graphviz/arbitrary_both/ground_10')
-visualize_order(v_a_list, 'graphviz/arbitrary_both/abstract_10')
+graph_value_fns(v_g_list, 'graphviz/arbitrary_both/ground_10')
+graph_value_fns(v_a_list, 'graphviz/arbitrary_both/abstract_10')
 
 
 #%%
@@ -54,8 +54,7 @@ for i in range(n_policies):
 
     # compare V^pi vs V_phi^pi
     v_pi = vi(mdp1, pi)[0]
-    pr_x = mdp1.stationary_distribution(pi=pi)
-    belief = mdp2.B(pr_x)
+    belief = mdp2.B(pi)
     v_phi_pi = belief @ v_pi
     print(i, pi)
     print(v_pi)
@@ -72,8 +71,7 @@ for i in range(n_policies):
 
     v = vi(mdp1, pi)[0]
 
-    pr_x = mdp1.stationary_distribution(pi=pi,max_steps=400)
-    belief = mdp2.B(pr_x)
+    belief = mdp2.B(pi)
     v_phi = belief @ v
 
     pi_list.append(pi)

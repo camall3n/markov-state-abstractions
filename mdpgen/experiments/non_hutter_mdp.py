@@ -60,8 +60,7 @@ for i in range(n_policies):
 
     v = vi(mdp1, pi)[0]
 
-    pr_x = mdp1.stationary_distribution(pi=pi)
-    belief = mdp2.B(pr_x)
+    belief = mdp2.B(pi)
     v_phi = belief @ v
 
     pi_list.append(pi)
@@ -121,8 +120,7 @@ for i in range(n_policies):
 
     v = vi(mdp1, pi)[0]
 
-    pr_x = mdp1.stationary_distribution(pi=pi)
-    belief = mdp2.B(pr_x)
+    belief = mdp2.B(pi)
     v_phi = belief @ v
 
     pi_list.append(pi)

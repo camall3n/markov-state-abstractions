@@ -26,7 +26,7 @@ def matching_ratios(mdp_gnd, mdp_abs, pi_gnd, pi_abs):
 
     ratio_abs = np.divide(N_abs, Pz[None,:], out=np.zeros_like(N_abs), where=Pz!=0)
     ratio_gnd = np.divide(N_gnd, Px[None,:], out=np.zeros_like(N_gnd), where=Px!=0)
-    E_ratio_gnd = mdp_abs.B(Px) @ ratio_gnd
+    E_ratio_gnd = mdp_abs.B(pi_gnd) @ ratio_gnd
     if not np.allclose(E_ratio_gnd, ratio_abs @ phi.transpose(), atol=1e-6):
         return False
     return True
@@ -43,18 +43,20 @@ def is_markov(abstract_mdp):
             return False
     return True
 
-def random_phi(n_abs_states):
+def random_phi(n_states, n_abs_states):
     phi = np.eye(n_abs_states)
-    phi = np.concatenate((phi, random_sparse_mask((1,n_abs_states), sparsity=1)))
+    mask = random_sparse_mask((1,n_abs_states), sparsity=1)
+    mask = np.stack([mask.squeeze()]*(n_states-n_abs_states))
+    phi = np.concatenate((phi, mask))
     np.random.shuffle(phi)
     return phi
 
 #%%
-def generate_non_markov_mdp_pair(n_states, n_abs_states, n_actions, fixed_w=False):
+def generate_non_markov_mdp_pair(n_states, n_abs_states, n_actions, sparsity=0, gamma=0.9, fixed_w=False):
     while True:
-        mdp_gnd = MDP.generate(n_states=n_states, n_actions=n_actions, sparsity=0, gamma=0.9)
+        mdp_gnd = MDP.generate(n_states=n_states, n_actions=n_actions, sparsity=sparsity, gamma=gamma)
         assert n_abs_states < n_states
-        phi = random_phi(n_abs_states)
+        phi = random_phi(n_states, n_abs_states)
         if fixed_w:
             mdp_abs = UniformAbstractMDP(mdp_gnd, phi)
         else:
@@ -65,21 +67,20 @@ def generate_non_markov_mdp_pair(n_states, n_abs_states, n_actions, fixed_w=Fals
             break
     return mdp_gnd, mdp_abs
 
-def generate_markov_mdp_pair(n_states, n_abs_states, n_actions, equal_block_rewards=True, equal_block_transitions=True):
+def generate_markov_mdp_pair(n_states, n_abs_states, n_actions, sparsity=0, gamma=0.9,
+        equal_block_rewards=True, equal_block_transitions=True):
     # Sometimes numerical precision causes the abstract mdp to appear non-Markov
     # so we just keep generating until the problem goes away. Usually it's fine.
     while True:
         # generate an MDP and an abstraction function
-        mdp_gnd = MDP.generate(n_states=n_states, n_actions=n_actions, sparsity=0, gamma=0.9)
+        mdp_gnd = MDP.generate(n_states=n_states, n_actions=n_actions, sparsity=sparsity, gamma=gamma)
         assert n_abs_states < n_states
-        phi = random_phi(n_abs_states)
-
-
-        random_weights = random_transition_matrix((1,2))
-        random_weights = np.ones((1,2))/2
+        phi = random_phi(n_states, n_abs_states)
 
         agg_states = ((phi.sum(axis=0)>1) @ phi.transpose()).astype(bool)
         other_states = ((phi.sum(axis=0)==1) @ phi.transpose()).astype(bool)
+
+        random_weights = random_transition_matrix((1,n_states-n_abs_states+1))
 
         # adjust T and R to achieve desired properties
         R = np.copy(mdp_gnd.R)
@@ -99,7 +100,8 @@ def generate_markov_mdp_pair(n_states, n_abs_states, n_actions, equal_block_rewa
         mdp_gnd.R = R
         mdp_gnd.T = T
 
-        mdp_abs = AbstractMDP(mdp_gnd, phi)
+        p0 = random_transition_matrix((1,n_states)).squeeze()
+        mdp_abs = AbstractMDP(mdp_gnd, phi, p0=p0)
 
         # Ensure that the abstraction is markov by checking inverse models and ratios
         if is_markov(mdp_abs):

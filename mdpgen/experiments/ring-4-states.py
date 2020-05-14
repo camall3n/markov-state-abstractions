@@ -6,7 +6,7 @@ from mdpgen.mdp import MDP, AbstractMDP, UniformAbstractMDP
 from mdpgen.vi import vi
 from mdpgen.markov import generate_markov_mdp_pair, generate_non_markov_mdp_pair, is_markov
 
-from mdpgen.value_fn import compare_value_fns, partial_ordering, sorted_order, sort_value_fns, visualize_order
+from mdpgen.value_fn import compare_value_fns, partial_ordering, sorted_order, sort_value_fns, graph_value_fns
 
 
 #%%
@@ -53,5 +53,5 @@ print(partial_ordering(v_a_list))
 assert np.allclose(order_v_a, order_v_g)
 
 #%%
-visualize_order(v_g_list, 'graphviz/non_markov/ground_11')
-visualize_order(v_a_list, 'graphviz/non_markov/abstract_11')
+graph_value_fns(v_g_list, 'graphviz/non_markov/ground_11')
+graph_value_fns(v_a_list, 'graphviz/non_markov/abstract_11')
