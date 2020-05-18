@@ -1,47 +1,46 @@
 import numpy as np
 from mdpgen.mdp import MDP, AbstractMDP, UniformAbstractMDP, random_sparse_mask, random_transition_matrix, is_stochastic
+from mdpgen.vi import vi
+from mdpgen.value_fn import compare_value_fns, partial_ordering, sorted_order, sort_value_fns, graph_value_fns, preference_map
 
-def matching_I(mdp_gnd, mdp_abs, pi_gnd, pi_abs):
-    # ground mdp, abstract mdp, ground policy, abstract policy
-    # Does I(z',z) = I(x',x)?
-    phi = mdp_abs.phi
-    Ig = mdp_gnd.get_I(pi_gnd)
-    Ia = mdp_abs.get_I(pi_abs)
-    Ia_grounded = np.zeros_like(Ig)
-    for a in range(mdp_gnd.n_actions):
-        Ia_grounded[a,:,:] = phi @ Ia[a,:,:] @ phi.transpose()
-    Ia_grounded *= (mdp_gnd.get_N(pi_gnd) > 0)
-    if not np.all(Ig == Ia_grounded):
-        return False
-    return True
-
-def matching_ratios(mdp_gnd, mdp_abs, pi_gnd, pi_abs):
-    # ground mdp, abstract mdp, ground policy, abstract policy
-    # does N_phi(z'|z) / P_z' = E_B(x|z)[ N(x'|x) / P_x'] ?
-    phi = mdp_abs.phi
-    N_gnd = mdp_gnd.get_N(pi_gnd)
-    Px = mdp_gnd.stationary_distribution(pi_gnd)
-    N_abs = mdp_abs.get_N(pi_abs)
-    Pz = mdp_abs.stationary_distribution(pi_abs)
-
-    ratio_abs = np.divide(N_abs, Pz[None,:], out=np.zeros_like(N_abs), where=Pz!=0)
-    ratio_gnd = np.divide(N_gnd, Px[None,:], out=np.zeros_like(N_gnd), where=Px!=0)
-    E_ratio_gnd = mdp_abs.B(pi_gnd) @ ratio_gnd
-    if not np.allclose(E_ratio_gnd, ratio_abs @ phi.transpose(), atol=1e-6):
-        return False
-    return True
-
-def is_markov(abstract_mdp):
+def matching_I(abstract_mdp):
     mdp_abs = abstract_mdp
     mdp_gnd = mdp_abs.base_mdp
     phi = mdp_abs.phi
+    # Does I(a|z',z) = I(a|x',x) for all policies?
     for pi_gnd in mdp_abs.piecewise_constant_policies():
         pi_abs = mdp_abs.get_abstract_policy(pi_gnd)
-        if not matching_I(mdp_gnd, mdp_abs, pi_gnd, pi_abs):
-            return False
-        if not matching_ratios(mdp_gnd, mdp_abs, pi_gnd, pi_abs):
+        Ig = mdp_gnd.get_I(pi_gnd)
+        Ia = mdp_abs.get_I(pi_abs)
+        Ia_grounded = np.zeros_like(Ig)
+        for a in range(mdp_gnd.n_actions):
+            Ia_grounded[a,:,:] = phi @ Ia[a,:,:] @ phi.transpose()
+        Ia_grounded *= (mdp_gnd.get_N(pi_gnd) > 0)
+        if not np.all(Ig == Ia_grounded):
             return False
     return True
+
+def matching_ratios(abstract_mdp):
+    mdp_abs = abstract_mdp
+    mdp_gnd = mdp_abs.base_mdp
+    phi = mdp_abs.phi
+    # does N_phi(z'|z) / P_z' = E_B(x|z)[ N(x'|x) / P_x'] for all policies?
+    for pi_gnd in mdp_abs.piecewise_constant_policies():
+        pi_abs = mdp_abs.get_abstract_policy(pi_gnd)
+        N_gnd = mdp_gnd.get_N(pi_gnd)
+        Px = mdp_gnd.stationary_distribution(pi_gnd)
+        N_abs = mdp_abs.get_N(pi_abs)
+        Pz = mdp_abs.stationary_distribution(pi_abs)
+
+        ratio_abs = np.divide(N_abs, Pz[None,:], out=np.zeros_like(N_abs), where=Pz!=0)
+        ratio_gnd = np.divide(N_gnd, Px[None,:], out=np.zeros_like(N_gnd), where=Px!=0)
+        E_ratio_gnd = mdp_abs.B(pi_gnd) @ ratio_gnd
+        if not np.allclose(E_ratio_gnd, ratio_abs @ phi.transpose(), atol=1e-6):
+            return False
+    return True
+
+def is_markov(abstract_mdp):
+    return matching_I(abstract_mdp) and matching_ratios(abstract_mdp)
 
 def has_block_dynamics(abstract_mdp):
     # Check that T(x'|a,x)/T(z'|a,x) is constant for all a and all x in z
@@ -77,6 +76,17 @@ def is_gdk_markov(abstract_mdp):
     # Need to define some sort of weighting scheme, otherwise T(x'|a,z) is
     # not defined. It's supposed to be \sum_x T(x'|a,x)w(x|z).
 
+def is_v_order_preserving(v_list1, v_list2):# v2 preserves all preferences in v1
+    gnd_prefs = preference_map(v_list1)
+    abs_prefs = preference_map(v_list2)
+    for i in gnd_prefs.keys():
+        if i not in abs_prefs.keys():
+            return False
+        for worse_j in gnd_prefs[i]:
+            if worse_j not in abs_prefs[i]:
+                return False
+    return True
+
 def random_phi(n_states, n_abs_states):
     phi = np.eye(n_abs_states)
     mask = random_sparse_mask((1,n_abs_states), sparsity=1)
@@ -85,7 +95,6 @@ def random_phi(n_states, n_abs_states):
     np.random.shuffle(phi)
     return phi
 
-#%%
 def generate_non_markov_mdp_pair(n_states, n_abs_states, n_actions, sparsity=0, gamma=0.9, fixed_w=False):
     while True:
         mdp_gnd = MDP.generate(n_states=n_states, n_actions=n_actions, sparsity=sparsity, gamma=gamma)
@@ -166,6 +175,7 @@ def test():
         [0, 1],
     ])
     mdp_abs = AbstractMDP(mdp_gnd, phi)
+    mdp_abs = AbstractMDP(mdp_gnd, mdp_abs.phi)
     assert is_markov(mdp_abs)
 
 def test_non_markov_B():

@@ -35,6 +35,14 @@ def graph_value_fns(v_list, filename=None):
         dot.render(filename, format='png', view=True)
     return dot
 
+def preference_map(v_list):
+    # pref[a] = {b, c} means a is preferred to b or c
+    prefs = defaultdict(set)
+    for i, v_i in enumerate(v_list):
+        for j, v_j in enumerate(v_list):
+            if compare_value_fns(v_i, v_j) == '>':
+                prefs[i].add(j)
+    return prefs
 
 def partial_ordering(v_list):
     # build dependency graph for topological sort

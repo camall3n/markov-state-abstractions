@@ -226,11 +226,14 @@ class AbstractMDP(MDP):
 
 class UniformAbstractMDP(AbstractMDP):
     def __init__(self, base_mdp, phi, pi=None, p0=None):
-        base_mdp.stationary_distribution = self._replace_stationary_distribution
         super().__init__(base_mdp, phi, pi, p0)
 
+    def B(self, pi, t=200):
+        p = self._replace_stationary_distribution(pi=pi, p0=self.p0, max_steps=t)
+        return normalize(p*self.phi.transpose())
+
     def _replace_stationary_distribution(self, pi=None, p0=None, max_steps=200):
-        return np.ones(self.n_states)/self.n_states
+        return np.ones(self.base_mdp.n_states)/self.base_mdp.n_states
 
 def test():
     # Generate a random base MDP

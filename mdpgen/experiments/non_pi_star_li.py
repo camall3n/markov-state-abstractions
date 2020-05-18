@@ -4,7 +4,7 @@ from tqdm import tqdm
 
 from mdpgen.mdp import MDP, AbstractMDP, UniformAbstractMDP, random_reward_matrix
 from mdpgen.vi import vi
-from mdpgen.markov import generate_markov_mdp_pair, generate_non_markov_mdp_pair, is_markov, matching_I, matching_ratios
+from mdpgen.markov import generate_markov_mdp_pair, generate_non_markov_mdp_pair, is_markov
 
 from mdpgen.value_fn import compare_value_fns, partial_ordering, sorted_order, sort_value_fns, graph_value_fns
 
@@ -46,24 +46,6 @@ is_markov(mdp2)
 
 pi_g_list = mdp2.piecewise_constant_policies()
 pi_a_list = mdp2.abstract_policies()
-# [matching_ratios(mdp1, mdp2, pi_g, pi_a) for (pi_g, pi_a) in zip(pi_g_list, pi_a_list)]
-#
-i=
-pi_gnd = pi_g_list[i]
-pi_abs = pi_a_list[i]
-[mdp2.B(pi) for pi in pi_g_list]#range(10)]
-# phi = mdp2.phi
-# N_gnd = mdp1.get_N(pi_gnd)
-# phi.transpose() @ phi
-# Px = mdp1.stationary_distribution(pi_gnd)
-# N_abs = mdp2.get_N(pi_abs)
-# Pz = mdp2.stationary_distribution(pi_abs)
-#
-# ratio_abs = np.divide(N_abs, Pz[None,:], out=np.zeros_like(N_abs), where=Pz!=0)
-# ratio_gnd = np.divide(N_gnd, Px[None,:], out=np.zeros_like(N_gnd), where=Px!=0)
-# mdp2.B(pi_gnd) @ ratio_gnd
-# ratio_abs @ phi.transpose()
-[matching_ratios(mdp1, mdp2, pi_g, pi_a) for (pi_g, pi_a) in zip(pi_g_list, pi_a_list)]
 
 v_g_list = [vi(mdp1, pi)[0] for pi in pi_g_list]
 v_a_list = [vi(mdp2, pi)[0] for pi in pi_a_list]

@@ -32,6 +32,9 @@ R = np.array([
     [1, 0, 0],
 ])
 mdp1 = MDP([T1, T2], [R, R], gamma=0.9)
+mdp2 = AbstractMDP(MDP([T0, T1], [R, R], gamma=0.9), np.array([[1,0],[0,1],[0,1]]))
+is_hutter_markov(mdp2)
+is_markov(mdp2)
 v_star, q_star, pi_star = vi(mdp1)
 v_star, pi_star
 
