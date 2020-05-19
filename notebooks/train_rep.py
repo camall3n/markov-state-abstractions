@@ -24,13 +24,13 @@ parser.add_argument('-c','--cols', type=int, default=4,
 parser.add_argument('-l','--latent_dims', type=int, default=2,
                     help='Number of latent dimensions to use for representation')
 parser.add_argument('--L_inv', type=float, default=1.0,
-                    help='Coefficient for inverse dynamics loss')
-parser.add_argument('--L_fwd', type=float, default=0.1,
-                    help='Coefficient for forward dynamics loss')
-parser.add_argument('--L_cpc', type=float, default=1.0,
-                    help='Coefficient for contrastive predictive coding loss')
-parser.add_argument('--L_fac', type=float, default=0.1,
-                    help='Coefficient for factorization loss')
+                    help='Coefficient for inverse-model-matching loss')
+# parser.add_argument('--L_fwd', type=float, default=0.0,
+#                     help='Coefficient for forward dynamics loss')
+parser.add_argument('--L_rat', type=float, default=1.0,
+                    help='Coefficient for ratio-matching loss')
+# parser.add_argument('--L_fac', type=float, default=0.0,
+#                     help='Coefficient for factorization loss')
 parser.add_argument('-lr','--learning_rate', type=float, default=0.003,
                     help='Learning rate for Adam optimizer')
 parser.add_argument('-s','--seed', type=int, default=0,
@@ -117,13 +117,13 @@ x1 = sensor.observe(s1)
 n_updates_per_frame = 100
 n_frames = args.n_updates // n_updates_per_frame
 
-batch_size = 1024
+batch_size = 2048
 
 coefs = {
     'L_inv': args.L_inv,
-    'L_fwd': args.L_fwd,
-    'L_cpc': args.L_cpc,
-    'L_fac': args.L_fac,
+    # 'L_fwd': args.L_fwd,
+    'L_rat': args.L_rat,
+    # 'L_fac': args.L_fac,
 }
 
 fnet = FeatureNet(n_actions=4, input_shape=x0.shape[1:], n_latent_dims=args.latent_dims, n_hidden_layers=1, n_units_per_layer=32, lr=args.learning_rate, coefs=coefs)
@@ -161,17 +161,17 @@ def test_rep(fnet, step):
         fnet.eval()
         z0 = fnet.phi(test_x0)
         z1 = fnet.phi(test_x1)
-        z1_hat = fnet.fwd_model(z0, test_a)
-        a_hat = fnet.inv_model(z0, z1)
+        # z1_hat = fnet.fwd_model(z0, test_a)
+        # a_hat = fnet.inv_model(z0, z1)
 
         loss_info = {
             'step': step,
-            'L_inv': fnet.compute_inv_loss(a_logits=a_hat, a=test_a).numpy().tolist(),
-            'L_fwd': fnet.compute_fwd_loss(z0, z1, z1_hat).numpy().tolist(),
-            'L_cpc': fnet.compute_cpc_loss(z1, z1_hat).numpy().tolist(),
-            'L_fac': fnet.compute_factored_loss(z0, z1).numpy().tolist(),
+            'L_inv': fnet.inverse_loss(z0,z1,test_a).numpy().tolist(),
+            'L_fwd': 'NaN',#fnet.compute_fwd_loss(z0, z1, z1_hat).numpy().tolist(),
+            'L_rat': fnet.ratio_loss(z0, z1).numpy().tolist(),
+            'L_fac': 'NaN',#fnet.compute_factored_loss(z0, z1).numpy().tolist(),
             'L_ent': 'NaN',#fnet.compute_entropy_loss(z0, z1, test_a).numpy().tolist(),
-            'L': fnet.compute_loss(z0, z1, z1_hat, test_a, 'all').numpy().tolist(),
+            'L': fnet.compute_loss(z0, z1, test_a, 'all').numpy().tolist(),
             'MI': MI(test_s0, z0.numpy())/MI_max
         }
         json_str = json.dumps(loss_info)
@@ -180,7 +180,7 @@ def test_rep(fnet, step):
 
         text = '\n'.join([key+' = '+str(val) for key, val in loss_info.items()])
 
-    results = [z0, z1_hat, z1, test_a, a_hat]
+    results = [z0, z1, z1, test_a, test_a]
     return [r.numpy() for r in results] + [text]
 
 #%% ------------------ Run Experiment ------------------
