@@ -31,8 +31,12 @@ parser.add_argument('--L_rat', type=float, default=1.0,
                     help='Coefficient for ratio-matching loss')
 # parser.add_argument('--L_fac', type=float, default=0.0,
 #                     help='Coefficient for factorization loss')
+parser.add_argument('--L_dis', type=float, default=1.0,
+                    help='Coefficient for planning-distance loss')
 parser.add_argument('-lr','--learning_rate', type=float, default=0.003,
                     help='Learning rate for Adam optimizer')
+parser.add_argument('--batch_size', type=int, default=2048,
+                    help='Mini batch size for training updates')
 parser.add_argument('-s','--seed', type=int, default=0,
                     help='Random seed')
 parser.add_argument('-t','--tag', type=str, required=True,
@@ -117,13 +121,14 @@ x1 = sensor.observe(s1)
 n_updates_per_frame = 100
 n_frames = args.n_updates // n_updates_per_frame
 
-batch_size = 2048
+batch_size = args.batch_size
 
 coefs = {
     'L_inv': args.L_inv,
     # 'L_fwd': args.L_fwd,
     'L_rat': args.L_rat,
     # 'L_fac': args.L_fac,
+    'L_dis': args.L_dis,
 }
 
 fnet = FeatureNet(n_actions=4, input_shape=x0.shape[1:], n_latent_dims=args.latent_dims, n_hidden_layers=1, n_units_per_layer=32, lr=args.learning_rate, coefs=coefs)
@@ -132,9 +137,10 @@ fnet.print_summary()
 n_test_samples = 2000
 test_s0 = s0[-n_test_samples:,:]
 test_s1 = s1[-n_test_samples:,:]
-test_x0 = torch.as_tensor(x0[-n_test_samples:,:], dtype=torch.float32)
-test_x1 = torch.as_tensor(x1[-n_test_samples:,:], dtype=torch.float32)
-test_a  = torch.as_tensor(a[-n_test_samples:], dtype=torch.long)
+test_x0 = torch.as_tensor(x0[-n_test_samples:,:]).float()
+test_x1 = torch.as_tensor(x1[-n_test_samples:,:]).float()
+test_a  = torch.as_tensor(a[-n_test_samples:]).long()
+test_i  = torch.arange(n_test_samples).long()
 test_c  = c0[-n_test_samples:]
 
 env.reset_agent()
@@ -149,10 +155,11 @@ if args.video:
 
 def get_batch(x0, x1, a, batch_size=batch_size):
     idx = np.random.choice(len(a), batch_size, replace=False)
-    tx0 = torch.as_tensor(x0[idx], dtype=torch.float32)
-    tx1 = torch.as_tensor(x1[idx], dtype=torch.float32)
-    ta = torch.as_tensor(a[idx])
-    return tx0, tx1, ta
+    tx0 = torch.as_tensor(x0[idx]).float()
+    tx1 = torch.as_tensor(x1[idx]).float()
+    ta = torch.as_tensor(a[idx]).long()
+    ti = torch.as_tensor(idx).long()
+    return tx0, tx1, ta, ti
 
 get_next_batch = lambda: get_batch(x0[:n_samples//2,:], x1[:n_samples//2,:], a[:n_samples//2])
 
@@ -169,9 +176,10 @@ def test_rep(fnet, step):
             'L_inv': fnet.inverse_loss(z0,z1,test_a).numpy().tolist(),
             'L_fwd': 'NaN',#fnet.compute_fwd_loss(z0, z1, z1_hat).numpy().tolist(),
             'L_rat': fnet.ratio_loss(z0, z1).numpy().tolist(),
+            'L_dis': fnet.distance_loss(z0, z1, test_i).numpy().tolist(),
             'L_fac': 'NaN',#fnet.compute_factored_loss(z0, z1).numpy().tolist(),
-            'L_ent': 'NaN',#fnet.compute_entropy_loss(z0, z1, test_a).numpy().tolist(),
-            'L': fnet.compute_loss(z0, z1, test_a, 'all').numpy().tolist(),
+            # 'L_ent': 'NaN',#fnet.compute_entropy_loss(z0, z1, test_a).numpy().tolist(),
+            'L': fnet.compute_loss(z0, z1, test_a, test_i, 'all').numpy().tolist(),
             'MI': MI(test_s0, z0.numpy())/MI_max
         }
         json_str = json.dumps(loss_info)
@@ -187,8 +195,8 @@ def test_rep(fnet, step):
 data = []
 for frame_idx in tqdm(range(n_frames+1)):
     for _ in range(n_updates_per_frame):
-        tx0, tx1, ta = get_next_batch()
-        fnet.train_batch(tx0, tx1, ta, model='all')
+        tx0, tx1, ta, ti = get_next_batch()
+        fnet.train_batch(tx0, tx1, ta, ti, model='all')
 
     test_results = test_rep(fnet, frame_idx*n_updates_per_frame)
     if args.video:
