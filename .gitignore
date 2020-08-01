@@ -13,4 +13,5 @@ results/
 scores/
 **__pycache__
 **.pyc
+.onager
 
