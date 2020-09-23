@@ -4,12 +4,7 @@ Scalable test domains for quickly running small- to large-scale grid-world exper
 
 ### Installation
 
-Download the repo:
-```
-git clone git@gitlab.com:camallen/gridworlds.git
-```
-
-Install the dependencies:
+Download the repo and install the dependencies:
 ```
 cd gridworlds
 virtualenv env --python=python3
