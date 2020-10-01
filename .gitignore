@@ -2,6 +2,7 @@
 **.ipynb_checkpoints/
 data/
 env/
+venv/
 images/
 cluster/logs/
 cluster/scripts/
