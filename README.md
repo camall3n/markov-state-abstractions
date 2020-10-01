@@ -7,8 +7,8 @@ Scalable test domains for quickly running small- to large-scale grid-world exper
 Download the repo and install the dependencies:
 ```
 cd gridworlds
-virtualenv env --python=python3
-. env/bin/activate
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 
