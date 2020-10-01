@@ -1,6 +1,7 @@
 gmpy
 graphviz
 imageio
+imageio-ffmpeg
 matplotlib
 numpy
 onager
