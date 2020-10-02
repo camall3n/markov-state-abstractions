@@ -41,10 +41,9 @@ parser.add_argument('-s','--seed', type=int, default=0,
                     help='Random seed')
 parser.add_argument('-t','--tag', type=str, required=True,
                     help='Tag for identifying experiment')
-phi_group = parser.add_mutually_exclusive_group(required=True)
-phi_group.add_argument('--phi', type=str,
+parser.add_argument('--phi_path', type=str,
                     help='Load an existing abstraction network by tag')
-phi_group.add_argument('--no_phi', action='store_true',
+parser.add_argument('--no_phi', action='store_true',
                     help='Turn off abstraction and just use observed state; i.e. ϕ(x)=x')
 parser.add_argument('--train_phi', action='store_true',
                     help='Allow simultaneous training of abstraction')
@@ -86,12 +85,14 @@ else:
 
 #%% ------------------ Define abstraction ------------------
 if args.no_phi:
-    phinet = NullAbstraction(-1, args.latent_dims)
+    phinet = NullAbstraction(args.batch_size, -1)
 else:
     x0 = sensor.observe(env.get_state())
-    modelfile = 'models/{}/phi-{}.pytorch'.format(args.phi, args.seed)
-    phinet = PhiNet(input_shape=x0.shape, n_latent_dims=args.latent_dims, n_hidden_layers=1, n_units_per_layer=32)
-    phinet.load(modelfile)
+    phinet = PhiNet(input_shape=x0.shape, n_latent_dims=args.latent_dims, n_hidden_layers=1,
+            n_units_per_layer=32)
+    if args.phi_path:
+        modelfile = 'models/{}/phi-{}.pytorch'.format(args.phi_path, args.seed)
+        phinet.load(modelfile)
 
 reset_seeds(args.seed)
 
