@@ -15,7 +15,7 @@ from gridworlds.sensors import *
 
 parser = get_parser()
 # parser.add_argument('-d','--dims', help='Number of latent dimensions', type=int, default=2)
-parser.add_argument('-n','--n_updates', type=int, default=3000,
+parser.add_argument('-n','--n_updates', type=int, default=10000,
                     help='Number of training updates')
 parser.add_argument('-r','--rows', type=int, default=7,
                     help='Number of gridworld rows')
@@ -31,7 +31,7 @@ parser.add_argument('--L_rat', type=float, default=1.0,
                     help='Coefficient for ratio-matching loss')
 # parser.add_argument('--L_fac', type=float, default=0.0,
 #                     help='Coefficient for factorization loss')
-parser.add_argument('--L_dis', type=float, default=1.0,
+parser.add_argument('--L_dis', type=float, default=0.0,
                     help='Coefficient for planning-distance loss')
 parser.add_argument('-lr','--learning_rate', type=float, default=0.003,
                     help='Learning rate for Adam optimizer')
