@@ -7,5 +7,5 @@ class RandomAgent:
         pass
     def act(self, x):
         return np.random.randint(self.n_actions)
-    def train(self, x, a, r, xp, done, gamma):
+    def train(self, x, a, r, xp, done):
         pass
