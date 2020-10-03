@@ -85,7 +85,7 @@ else:
 
 #%% ------------------ Define abstraction ------------------
 if args.no_phi:
-    phinet = NullAbstraction(args.batch_size, -1)
+    phinet = NullAbstraction(-1, args.latent_dims)
 else:
     x0 = sensor.observe(env.get_state())
     phinet = PhiNet(input_shape=x0.shape, n_latent_dims=args.latent_dims, n_hidden_layers=1,
