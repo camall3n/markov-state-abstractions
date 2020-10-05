@@ -20,7 +20,7 @@ class AutoEncoder(Network):
         self.reverse_phi = PhiNet(input_shape=input_shape, n_latent_dims=n_latent_dims,
                 n_units_per_layer=n_units_per_layer,
                 n_hidden_layers=n_hidden_layers)
-        self.reverse_phi.phi = nn.Sequential(*reversed([Reshape(-1, *input_shape)] +
+        self.reverse_phi.phi = nn.Sequential(*reversed([Reshape(-1, *input_shape), nn.Tanh()] +
             [nn.Linear(l.out_features, l.in_features) if isinstance(l, nn.Linear) else l 
                 for l in self.reverse_phi.layers[1:-1]]))
         self.mse = torch.nn.MSELoss()
