@@ -3,9 +3,11 @@ from glob import glob
 import os
 import pandas as pd
 
+root = 'scores/6x6/train_dqn_'
 size = '6x6'
+time = '3000'
 
-for fname in glob('scores/'+size+'/pretrained/*/*.txt'):
+for fname in glob(root + size + '_' + time + '_*/*.txt'):
     print(fname)
     d = os.path.dirname(fname)
     b = os.path.splitext(os.path.basename(fname))[0]
@@ -16,14 +18,14 @@ for fname in glob('scores/'+size+'/pretrained/*/*.txt'):
         df = pd.DataFrame(df)
     df.to_csv(d + '/reward.csv')
     p = {
-        'agent': 'pretrained-phi-dqn',
+        'agent': 'markov',
         'seed': b.split('-')[-1],
-        'env': 'GridWorld-'+size,
-        }
+        'env': 'GridWorld-' + size,
+    }
     with open(d + '/params.json', 'w') as f:
         json.dump(p, f)
 
-for fname in glob('scores/'+size+'/end-to-end/*/*.txt'):
+for fname in glob(root + size + '_' + time + 'auto*/*.txt'):
     print(fname)
     d = os.path.dirname(fname)
     b = os.path.splitext(os.path.basename(fname))[0]
@@ -34,14 +36,32 @@ for fname in glob('scores/'+size+'/end-to-end/*/*.txt'):
         df = pd.DataFrame(df)
     df.to_csv(d + '/reward.csv')
     p = {
-        'agent': 'end-to-end-dqn',
+        'agent': 'autoencoder',
         'seed': b.split('-')[-1],
-        'env': 'GridWorld-'+size,
-        }
+        'env': 'GridWorld-' + size,
+    }
     with open(d + '/params.json', 'w') as f:
         json.dump(p, f)
 
-for fname in glob('scores/'+size+'/random/*/*.txt'):
+for fname in glob(root + size + '_' + time + 'end_to_end*/*.txt'):
+    print(fname)
+    d = os.path.dirname(fname)
+    b = os.path.splitext(os.path.basename(fname))[0]
+    with open(fname, 'r') as f:
+        df = []
+        for l in f:
+            df.append(json.loads(l))
+        df = pd.DataFrame(df)
+    df.to_csv(d + '/reward.csv')
+    p = {
+        'agent': 'visual',
+        'seed': b.split('-')[-1],
+        'env': 'GridWorld-' + size,
+    }
+    with open(d + '/params.json', 'w') as f:
+        json.dump(p, f)
+
+for fname in glob(root + size + '_' + time + 'random*/*.txt'):
     print(fname)
     d = os.path.dirname(fname)
     b = os.path.splitext(os.path.basename(fname))[0]
@@ -54,12 +74,12 @@ for fname in glob('scores/'+size+'/random/*/*.txt'):
     p = {
         'agent': 'random',
         'seed': b.split('-')[-1],
-        'env': 'GridWorld-'+size,
-        }
+        'env': 'GridWorld-' + size,
+    }
     with open(d + '/params.json', 'w') as f:
         json.dump(p, f)
 
-for fname in glob('scores/'+size+'/truestate/*/*.txt'):
+for fname in glob(root + size + '_' + time + 'truestate*/*.txt'):
     print(fname)
     d = os.path.dirname(fname)
     b = os.path.splitext(os.path.basename(fname))[0]
@@ -70,14 +90,14 @@ for fname in glob('scores/'+size+'/truestate/*/*.txt'):
         df = pd.DataFrame(df)
     df.to_csv(d + '/reward.csv')
     p = {
-        'agent': 'true-state-dqn',
+        'agent': 'xy-position',
         'seed': b.split('-')[-1],
-        'env': 'GridWorld-'+size,
-        }
+        'env': 'GridWorld-' + size,
+    }
     with open(d + '/params.json', 'w') as f:
         json.dump(p, f)
 
-for fname in glob('scores/'+size+'/noLinv/*/*.txt'):
+for fname in glob(root + size + '_' + time + 'noLinv*/*.txt'):
     print(fname)
     d = os.path.dirname(fname)
     b = os.path.splitext(os.path.basename(fname))[0]
@@ -88,15 +108,14 @@ for fname in glob('scores/'+size+'/noLinv/*/*.txt'):
         df = pd.DataFrame(df)
     df.to_csv(d + '/reward.csv')
     p = {
-        'agent': 'no-Linv-dqn',
+        'agent': 'contrastive',
         'seed': b.split('-')[-1],
-        'env': 'GridWorld-'+size,
-        }
+        'env': 'GridWorld-' + size,
+    }
     with open(d + '/params.json', 'w') as f:
         json.dump(p, f)
 
-
-for fname in glob('scores/'+size+'/noLrat/*/*.txt'):
+for fname in glob(root + size + '_' + time + 'noLrat*/*.txt'):
     print(fname)
     d = os.path.dirname(fname)
     b = os.path.splitext(os.path.basename(fname))[0]
@@ -107,9 +126,9 @@ for fname in glob('scores/'+size+'/noLrat/*/*.txt'):
         df = pd.DataFrame(df)
     df.to_csv(d + '/reward.csv')
     p = {
-        'agent': 'no-Lrat-dqn',
+        'agent': 'inverse',
         'seed': b.split('-')[-1],
-        'env': 'GridWorld-'+size,
-        }
+        'env': 'GridWorld-' + size,
+    }
     with open(d + '/params.json', 'w') as f:
         json.dump(p, f)
