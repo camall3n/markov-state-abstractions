@@ -7,6 +7,7 @@ import torch
 from tqdm import tqdm
 
 from gridworlds.nn.featurenet import FeatureNet
+from gridworlds.nn.autoencoder import AutoEncoder
 from notebooks.repvis import RepVisualization, CleanVisualization
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
 from gridworlds.utils import reset_seeds, get_parser, MI
@@ -15,6 +16,8 @@ from gridworlds.sensors import *
 
 parser = get_parser()
 # parser.add_argument('-d','--dims', help='Number of latent dimensions', type=int, default=2)
+parser.add_argument('--type', type=str, default='markov', choices=['markov', 'autoencoder'],
+                    help='Which type of representation learning method')
 parser.add_argument('-n','--n_updates', type=int, default=10000,
                     help='Number of training updates')
 parser.add_argument('-r','--rows', type=int, default=7,
@@ -131,7 +134,11 @@ coefs = {
     'L_dis': args.L_dis,
 }
 
-fnet = FeatureNet(n_actions=4, input_shape=x0.shape[1:], n_latent_dims=args.latent_dims, n_hidden_layers=1, n_units_per_layer=32, lr=args.learning_rate, coefs=coefs)
+if args.type == 'markov':
+    fnet = FeatureNet(n_actions=4, input_shape=x0.shape[1:], n_latent_dims=args.latent_dims, n_hidden_layers=1, n_units_per_layer=32, lr=args.learning_rate, coefs=coefs)
+elif args.type == 'autoencoder':
+    fnet = AutoEncoder(n_actions=4, input_shape=x0.shape[1:], n_latent_dims=args.latent_dims, n_hidden_layers=1, n_units_per_layer=32, lr=args.learning_rate, coefs=coefs)
+
 fnet.print_summary()
 
 n_test_samples = 2000
@@ -166,27 +173,38 @@ get_next_batch = lambda: get_batch(x0[:n_samples//2,:], x1[:n_samples//2,:], a[:
 def test_rep(fnet, step):
     with torch.no_grad():
         fnet.eval()
-        z0 = fnet.phi(test_x0)
-        z1 = fnet.phi(test_x1)
-        # z1_hat = fnet.fwd_model(z0, test_a)
-        # a_hat = fnet.inv_model(z0, z1)
+        if args.type == 'markov':
+            z0 = fnet.phi(test_x0)
+            z1 = fnet.phi(test_x1)
+            # z1_hat = fnet.fwd_model(z0, test_a)
+            # a_hat = fnet.inv_model(z0, z1)
 
-        loss_info = {
-            'step': step,
-            'L_inv': fnet.inverse_loss(z0,z1,test_a).numpy().tolist(),
-            'L_fwd': 'NaN',#fnet.compute_fwd_loss(z0, z1, z1_hat).numpy().tolist(),
-            'L_rat': fnet.ratio_loss(z0, z1).numpy().tolist(),
-            'L_dis': fnet.distance_loss(z0, z1, test_i).numpy().tolist(),
-            'L_fac': 'NaN',#fnet.compute_factored_loss(z0, z1).numpy().tolist(),
-            # 'L_ent': 'NaN',#fnet.compute_entropy_loss(z0, z1, test_a).numpy().tolist(),
-            'L': fnet.compute_loss(z0, z1, test_a, test_i, 'all').numpy().tolist(),
-            'MI': MI(test_s0, z0.numpy())/MI_max
-        }
-        json_str = json.dumps(loss_info)
-        log.write(json_str+'\n')
-        log.flush()
+            loss_info = {
+                'step': step,
+                'L_inv': fnet.inverse_loss(z0,z1,test_a).numpy().tolist(),
+                'L_fwd': 'NaN',#fnet.compute_fwd_loss(z0, z1, z1_hat).numpy().tolist(),
+                'L_rat': fnet.ratio_loss(z0, z1).numpy().tolist(),
+                'L_dis': fnet.distance_loss(z0, z1, test_i).numpy().tolist(),
+                'L_fac': 'NaN',#fnet.compute_factored_loss(z0, z1).numpy().tolist(),
+                # 'L_ent': 'NaN',#fnet.compute_entropy_loss(z0, z1, test_a).numpy().tolist(),
+                'L': fnet.compute_loss(z0, z1, test_a, test_i, 'all').numpy().tolist(),
+                'MI': MI(test_s0, z0.numpy())/MI_max
+            }
+        elif args.type == 'autoencoder':
+            z0 = fnet.encode(test_x0)
+            z1 = fnet.encode(test_x1)
 
-        text = '\n'.join([key+' = '+str(val) for key, val in loss_info.items()])
+            loss_info = {
+                'step': step,
+                'L': fnet.compute_loss(test_x0).numpy().tolist(),
+            }
+
+
+    json_str = json.dumps(loss_info)
+    log.write(json_str+'\n')
+    log.flush()
+
+    text = '\n'.join([key+' = '+str(val) for key, val in loss_info.items()])
 
     results = [z0, z1, z1, test_a, test_a]
     return [r.numpy() for r in results] + [text]
