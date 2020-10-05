@@ -15,14 +15,15 @@ def smooth_and_bin(data, bin_size, window_size):
     numeric_cols = numeric_dtypes.index[numeric_dtypes]
     data[numeric_cols] = data[numeric_cols].rolling(window_size).mean()
     # starting from window_size, get every bin_size row
-    data = data[window_size::bin_size]
+    data = data[::bin_size]
     return data
 
 
 def parse_filepath(fp, filename, bin_size, window_size):
     try:
         data = pd.read_csv(os.path.join(fp, filename))
-        # data = smooth_and_bin(data, bin_size, window_size)
+        if window_size != 0 and bin_size != 0:
+            data = smooth_and_bin(data, bin_size, window_size)
         with open(os.path.join(fp, 'params.json'), "r") as json_file:
             params = json.load(json_file)
         for k, v in params.items():
@@ -51,6 +52,9 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
     print(data.query('episode==99').groupby('agent', as_index=False)['total_reward'].mean())
     print(data.query('episode==99').groupby('agent', as_index=False)['total_reward'].std())
 
+    print(data.groupby('agent', as_index=False)['reward'].mean())
+    print(data.groupby('agent', as_index=False)['reward'].std())
+
     # If asking for multiple envs, use facetgrid and adjust height
     height = 4 if col is not None and len(data[col].unique()) > 1 else 5
     if col:
@@ -58,46 +62,36 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
     else:
         col_wrap = None
 
-    palette = sns.color_palette('Set1', n_colors=len(data[hue].unique()), desat=0.5)
-    # dashes = {
-    #         'RBF-DQN'      : '',
-    #         'ICNN'         : (1, 1),
-    #         'NAF'          : (1, 2, 5, 2),
-    #         'RBF-DDPG'     : (2, 2, 1, 2),
-    #         'DDPG'         : (5, 2, 5, 2),
-    #         'TD3'          : (7, 2, 3, 2),
-    #         'SAC'          : (1, 2, 3, 2),
-    #         }
-
-    # col_order = ['SymbolicProcgen_4x4', 'SymbolicProcgen_4x8', 'SymbolicProcgen_8x16']
-
-    # palette_value = {
-    #         'RBF-DQN'      : 'red',
-    #         'ICNN'         : 'green',
-    #         'NAF'          : 'orange',
-    #         'CAQL'         : 'blue',
-    #     }
-
-    # palette_sota = {
-    #         'RBF-DDPG'     : 'red',
-    #         'RBF-DQN'      : 'red',
-    #         'DDPG'         : 'blue',
-    #         'TD3'          : 'green',
-    #         'SAC'          : 'black',
-    #         'CAQL'         : 'magenta',
-    #     }
-
-    # palette = palette_sota
-    # labels = ['DDPG', 'TD3', 'SAC', 'RBF-DQN']
-    # labels = ['DDPG', 'RBF-DDPG']
+    dashes = {
+            'markov'     : '',
+            'inverse'    : (1, 1),
+            'contrastive': (1, 2, 5, 2),
+            'autoencoder': (2, 2, 1, 2),
+            'visual'     : (5, 2, 5, 2),
+            'xy-position': (7, 2, 3, 2),
+            'random'     : (1, 2, 3, 2),
+            }
     labels = [
-            'true-state-dqn',
-            'pretrained-phi-dqn',
-            'end-to-end-dqn',
+            'markov',
+            'visual',
+            'inverse',
+            'xy-position',
+            'contrastive',
             'random',
-            'no-Linv-dqn',
-            'no-Lrat-dqn',
+            'autoencoder',
             ]
+    palette = sns.color_palette('Set1', n_colors=len(data[hue].unique()), desat=0.5)
+    # palette = {
+    #         'markov'     : 'blue',
+    #         'inverse'    : 'green',
+    #         'contrastive': 'red',
+    #         'autoencoder': 'magenta',
+    #         'visual'     : 'orange',
+    #         'xy-position': 'green',
+    #         'random'     : 'gray'
+    #     }
+    palette = dict(zip(labels, palette))
+    palette['random'] = 'gray'
     if isinstance(seed, list) or seed == 'average':
         g = sns.relplot(x=x,
                         y=y,
@@ -108,7 +102,7 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
                         kind='line',
                         # legend='full',
                         legend=False,
-                        # dashes=dashes,
+                        dashes=dashes,
                         height=height,
                         aspect=1.2,
                         col=col,
@@ -138,41 +132,10 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
 
     g.set_titles('{col_name}')
 
-    # g.axes.flat[-2].legend(labels, bbox_to_anchor=(0.5, -0.5), loc='lower center', ncol=len(labels))
-    # g.axes.flat[-2].legend(labels, loc='lower right')
     g.axes.flat[0].set_ylim((-100,0))
-    g.axes.flat[0].legend(labels, loc='best')
+    g.axes.flat[0].legend(labels, bbox_to_anchor=(0.5, -0.3), loc='lower center', ncol=4)
+    g.axes.flat[0].axhline(-84.8, dashes=dashes['random'], color=palette['random'])
     plt.tight_layout()
-
-    # Adding temp results
-    # line_res = {
-    #     'Ant-v3': {
-    #             'DDPG': 888.77,
-    #             'TD3': 4372.44,
-    #             'SAC': 4000,
-    #         },
-    #     'HalfCheetah-v3': {
-    #             'DDPG': 8577.29,
-    #             'TD3': 9636.95,
-    #             'SAC': 13000,
-    #         },
-    #     'Hopper-v3': {
-    #             'DDPG': 1400,
-    #             'TD3': 3000,
-    #             'SAC': 3200,
-    #         },
-    #     }
-
-    # for env, ax in map(lambda ax: (ax.title.get_text(), ax), g.axes):
-    #     if env in line_res.keys():
-    #         for agent, value in line_res[env].items():
-    #             print(agent, value)
-    #             if agent != 'SAC' and env in ['HalfCheetah-v3']:
-    #                 ax.axhline(value, xmax=0.5, dashes=dashes[agent], color=palette[agent])
-    #             elif agent == 'CAQL' and env in ['Hopper-v3']:
-    #                 ax.axhline(value, xmax=0.5, dashes=dashes[agent], color=palette[agent])
-    #             else:
-    #                 ax.axhline(value, dashes=dashes[agent], color=palette[agent])
 
     if savepath is not None:
         g.savefig(savepath)
@@ -189,8 +152,8 @@ def parse_args():
     # yapf: disable
     parser.add_argument('--results-dirs', help='Directories for results', required=True, nargs='+', type=str)
     parser.add_argument('--filename', help='CSV filename', required=False, type=str, default='reward.csv')
-    parser.add_argument('--bin-size', help='How much to reduce the data by', type=int, default=10)
-    parser.add_argument('--window-size', help='How much to average the data by', type=int, default=10)
+    parser.add_argument('--bin-size', help='How much to reduce the data by', type=int, default=1)
+    parser.add_argument('--window-size', help='How much to average the data by', type=int, default=1)
 
     parser.add_argument('-x', help='Variable to plot on x axis', required=False, type=str, default='episode')
     parser.add_argument('-y', help='Variable to plot on y axis', required=False, type=str, default='reward')

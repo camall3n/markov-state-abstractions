@@ -3,11 +3,11 @@ from glob import glob
 import os
 import pandas as pd
 
-root = 'scores/6x6/train_dqn_'
+root = 'scores/6x6_30k/train_dqn_'
 size = '6x6'
-time = '3000'
+time = '_30000'
 
-for fname in glob(root + size + '_' + time + '_*/*.txt'):
+for fname in glob(root + size + time + '_*/*.txt'):
     print(fname)
     d = os.path.dirname(fname)
     b = os.path.splitext(os.path.basename(fname))[0]
@@ -25,7 +25,7 @@ for fname in glob(root + size + '_' + time + '_*/*.txt'):
     with open(d + '/params.json', 'w') as f:
         json.dump(p, f)
 
-for fname in glob(root + size + '_' + time + 'auto*/*.txt'):
+for fname in glob(root + size + time + 'auto*/*.txt'):
     print(fname)
     d = os.path.dirname(fname)
     b = os.path.splitext(os.path.basename(fname))[0]
@@ -43,7 +43,7 @@ for fname in glob(root + size + '_' + time + 'auto*/*.txt'):
     with open(d + '/params.json', 'w') as f:
         json.dump(p, f)
 
-for fname in glob(root + size + '_' + time + 'end_to_end*/*.txt'):
+for fname in glob(root + size + time + 'end_to_end*/*.txt'):
     print(fname)
     d = os.path.dirname(fname)
     b = os.path.splitext(os.path.basename(fname))[0]
@@ -79,7 +79,7 @@ for fname in glob(root + size + '_' + time + 'random*/*.txt'):
     with open(d + '/params.json', 'w') as f:
         json.dump(p, f)
 
-for fname in glob(root + size + '_' + time + 'truestate*/*.txt'):
+for fname in glob(root + size + time + 'truestate*/*.txt'):
     print(fname)
     d = os.path.dirname(fname)
     b = os.path.splitext(os.path.basename(fname))[0]
@@ -97,7 +97,7 @@ for fname in glob(root + size + '_' + time + 'truestate*/*.txt'):
     with open(d + '/params.json', 'w') as f:
         json.dump(p, f)
 
-for fname in glob(root + size + '_' + time + 'noLinv*/*.txt'):
+for fname in glob(root + size + time + 'noLinv*/*.txt'):
     print(fname)
     d = os.path.dirname(fname)
     b = os.path.splitext(os.path.basename(fname))[0]
@@ -115,7 +115,7 @@ for fname in glob(root + size + '_' + time + 'noLinv*/*.txt'):
     with open(d + '/params.json', 'w') as f:
         json.dump(p, f)
 
-for fname in glob(root + size + '_' + time + 'noLrat*/*.txt'):
+for fname in glob(root + size + time + 'noLrat*/*.txt'):
     print(fname)
     d = os.path.dirname(fname)
     b = os.path.splitext(os.path.basename(fname))[0]
