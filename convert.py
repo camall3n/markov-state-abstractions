@@ -76,3 +76,40 @@ for fname in glob('scores/'+size+'/truestate/*/*.txt'):
         }
     with open(d + '/params.json', 'w') as f:
         json.dump(p, f)
+
+for fname in glob('scores/'+size+'/noLinv/*/*.txt'):
+    print(fname)
+    d = os.path.dirname(fname)
+    b = os.path.splitext(os.path.basename(fname))[0]
+    with open(fname, 'r') as f:
+        df = []
+        for l in f:
+            df.append(json.loads(l))
+        df = pd.DataFrame(df)
+    df.to_csv(d + '/reward.csv')
+    p = {
+        'agent': 'no-Linv-dqn',
+        'seed': b.split('-')[-1],
+        'env': 'GridWorld-'+size,
+        }
+    with open(d + '/params.json', 'w') as f:
+        json.dump(p, f)
+
+
+for fname in glob('scores/'+size+'/noLrat/*/*.txt'):
+    print(fname)
+    d = os.path.dirname(fname)
+    b = os.path.splitext(os.path.basename(fname))[0]
+    with open(fname, 'r') as f:
+        df = []
+        for l in f:
+            df.append(json.loads(l))
+        df = pd.DataFrame(df)
+    df.to_csv(d + '/reward.csv')
+    p = {
+        'agent': 'no-Lrat-dqn',
+        'seed': b.split('-')[-1],
+        'env': 'GridWorld-'+size,
+        }
+    with open(d + '/params.json', 'w') as f:
+        json.dump(p, f)

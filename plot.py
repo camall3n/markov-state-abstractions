@@ -90,7 +90,14 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
     # palette = palette_sota
     # labels = ['DDPG', 'TD3', 'SAC', 'RBF-DQN']
     # labels = ['DDPG', 'RBF-DDPG']
-    labels = ['true-state-dqn', 'pretrained-phi-dqn', 'end-to-end-dqn', 'random']
+    labels = [
+            'true-state-dqn',
+            'pretrained-phi-dqn',
+            'end-to-end-dqn',
+            'random',
+            'no-Linv-dqn',
+            'no-Lrat-dqn',
+            ]
     if isinstance(seed, list) or seed == 'average':
         g = sns.relplot(x=x,
                         y=y,
