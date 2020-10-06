@@ -1,5 +1,4 @@
 import argparse
-import glob
 import os
 import json
 
@@ -13,7 +12,7 @@ import pandas as pd
 def smooth_and_bin(data, bin_size, window_size):
     numeric_dtypes = data.dtypes.apply(pd.api.types.is_numeric_dtype)
     numeric_cols = numeric_dtypes.index[numeric_dtypes]
-    data[numeric_cols] = data[numeric_cols].rolling(window_size).mean()
+    data[numeric_cols] = data[numeric_cols].rolling(window_size, min_periods=1).mean()
     # starting from window_size, get every bin_size row
     data = data[::bin_size]
     return data
@@ -80,6 +79,14 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
             'random',
             'autoencoder',
             ]
+    colormap = [
+            'markov',
+            'inverse',
+            'autoencoder',
+            'visual',
+            'contrastive',
+            'xy-position',
+            ]
     palette = sns.color_palette('Set1', n_colors=len(data[hue].unique()), desat=0.5)
     # palette = {
     #         'markov'     : 'blue',
@@ -90,7 +97,7 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
     #         'xy-position': 'green',
     #         'random'     : 'gray'
     #     }
-    palette = dict(zip(labels, palette))
+    palette = dict(zip(colormap, palette))
     palette['random'] = 'gray'
     if isinstance(seed, list) or seed == 'average':
         g = sns.relplot(x=x,
