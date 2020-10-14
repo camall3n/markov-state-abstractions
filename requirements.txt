@@ -12,4 +12,5 @@ scipy
 seaborn
 torch
 tqdm
+yapf
 
