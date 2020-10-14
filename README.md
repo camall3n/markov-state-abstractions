@@ -16,11 +16,7 @@ pip install -r requirements.txt
 Running one experiment:
 ```
 python -m notebooks.train_rep [args]
-```
-
-Running many experiments:
-```
-./cluster/run.py --command "python -m notebooks.train_rep [cmd args (w/ seed last)]" [cluster args]
+python -m notebooks.train_agent [args]
 ```
 
 Rsync updates from grid:
