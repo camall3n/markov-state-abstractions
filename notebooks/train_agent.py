@@ -80,6 +80,7 @@ if not args.no_sigma:
         ImageSensor(range=((0, env._rows), (0, env._cols)), pixel_density=3),
         # ResampleSensor(scale=2.0),
         BlurSensor(sigma=0.6, truncate=1.),
+        NoisySensor(sigma=0.01)
     ]
 sensor = SensorChain(sensor_list)
 
