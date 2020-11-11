@@ -36,7 +36,7 @@ def parse_filepath(fp, filename, bin_size, window_size):
 def collate_results(results_dirs, filename, bin_size, window_size):
     dfs = []
     for run in results_dirs:
-        print("Found {run}".format(run=run))
+        # print("Found {run}".format(run=run))
         run_df = parse_filepath(run, filename, bin_size, window_size)
         if run_df is None:
             continue
@@ -48,8 +48,8 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
     print("Plotting using hue={hue}, style={style}, {seed}".format(hue=hue, style=style, seed=seed))
     assert not data.empty, "DataFrame is empty, please check query"
 
-    print(data.query('episode==99').groupby('agent', as_index=False)['total_reward'].mean())
-    print(data.query('episode==99').groupby('agent', as_index=False)['total_reward'].std())
+    # print(data.query('episode==99').groupby('agent', as_index=False)['total_reward'].mean())
+    # print(data.query('episode==99').groupby('agent', as_index=False)['total_reward'].std())
 
     print(data.groupby('agent', as_index=False)['reward'].mean())
     print(data.groupby('agent', as_index=False)['reward'].std())
@@ -61,8 +61,11 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
     else:
         col_wrap = None
 
+    data = data.replace('markov', 'Markov')
+    data = data[data['episode'] < 95]
+
     dashes = {
-            'markov'     : '',
+            'Markov'     : '',
             'inverse'    : (1, 1),
             'contrastive': (1, 2, 5, 2),
             'autoencoder': (2, 2, 1, 2),
@@ -71,7 +74,7 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
             'random'     : (1, 2, 3, 2),
             }
     labels = [
-            'markov',
+            'Markov',
             'visual',
             'inverse',
             'xy-position',
@@ -80,7 +83,7 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
             'autoencoder',
             ]
     colormap = [
-            'markov',
+            'Markov',
             'inverse',
             'autoencoder',
             'visual',
@@ -99,6 +102,9 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
     #     }
     palette = dict(zip(colormap, palette))
     palette['random'] = 'gray'
+    data = data.append({'agent': 'random', 'reward': -84.8, 'seed': 0, 'episode': 0},
+            ignore_index=True)
+
     if isinstance(seed, list) or seed == 'average':
         g = sns.relplot(x=x,
                         y=y,
@@ -141,7 +147,7 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
 
     g.axes.flat[0].set_ylim((-100,0))
     g.axes.flat[0].legend(labels, bbox_to_anchor=(0.5, -0.3), loc='lower center', ncol=4)
-    g.axes.flat[0].axhline(-84.8, dashes=dashes['random'], color=palette['random'])
+    g.axes.flat[0].axhline(-84.8, xmax=0.95, dashes=dashes['random'], color=palette['random'])
     plt.tight_layout()
 
     if savepath is not None:
@@ -187,9 +193,10 @@ if __name__ == "__main__":
                                                                      bin_size=args.bin_size))
     assert args.filename is not None, "Must pass filename if creating csv"
     df = collate_results(args.results_dirs, args.filename, args.bin_size, args.window_size)
-    df = df.convert_dtypes(convert_string=False, convert_integer=False)
-    bool_cols = df.dtypes[df.dtypes == 'boolean'].index
-    df = df.replace(to_replace={k: pd.NA for k in bool_cols}, value={k: False for k in bool_cols})
+    # df = df.convert_dtypes(convert_string=False, convert_integer=False)
+
+    # bool_cols = df.dtypes[df.dtypes == 'boolean'].index
+    # df = df.replace(to_replace={k: pd.NA for k in bool_cols}, value={k: False for k in bool_cols})
     if not args.no_plot:
         assert args.x is not None and args.y is not None, "Must pass x, y if creating csv"
         if args.savepath:

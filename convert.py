@@ -3,9 +3,9 @@ from glob import glob
 import os
 import pandas as pd
 
-root = 'scores/6x6_30k/train_dqn_'
+root = 'scores/camera_3k/train_dqn_'
 size = '6x6'
-time = '_30000'
+time = '_3000'
 
 for fname in glob(root + size + time + '_*/*.txt'):
     print(fname)
