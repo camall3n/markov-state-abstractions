@@ -89,10 +89,7 @@ n_samples = 20000
 states = [env.get_state()]
 actions = []
 for t in range(n_samples):
-    while True:
-        a = np.random.choice(env.actions)
-        if env.can_run(a):
-            break
+    a = np.random.choice(env.actions)
     s, _, _ = env.step(a)
     states.append(s)
     actions.append(a)
