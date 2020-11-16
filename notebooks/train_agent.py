@@ -27,9 +27,9 @@ parser.add_argument('-e','--n_episodes', type=int, default=10,
                     help='Number of episodes per trial')
 parser.add_argument('-m','--max_steps', type=int, default=100,
                     help='Maximum number of steps per episode')
-parser.add_argument('-r','--rows', type=int, default=7,
+parser.add_argument('-r','--rows', type=int, default=6,
                     help='Number of gridworld rows')
-parser.add_argument('-c','--cols', type=int, default=4,
+parser.add_argument('-c','--cols', type=int, default=6,
                     help='Number of gridworld columns')
 parser.add_argument('-b','--batch_size', type=int, default=16,
                     help='Number of experiences to sample per batch')
