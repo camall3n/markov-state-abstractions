@@ -30,8 +30,6 @@ parser.add_argument('--L_inv', type=float, default=1.0,
                     help='Coefficient for inverse-model-matching loss')
 parser.add_argument('--L_rat', type=float, default=1.0,
                     help='Coefficient for ratio-matching loss')
-parser.add_argument('--L_dis', type=float, default=0.0,
-                    help='Coefficient for planning-distance loss')
 parser.add_argument('-lr','--learning_rate', type=float, default=0.003,
                     help='Learning rate for Adam optimizer')
 parser.add_argument('--batch_size', type=int, default=2048,
@@ -178,7 +176,6 @@ def test_rep(fnet, step):
                 'step': step,
                 'L_inv': fnet.inverse_loss(z0, z1, test_a).numpy().tolist(),
                 'L_rat': fnet.ratio_loss(z0, z1).numpy().tolist(),
-                'L_dis': fnet.distance_loss(z0, z1, test_i).numpy().tolist(),
                 'L': fnet.compute_loss(z0, z1, test_a, test_i, 'all').numpy().tolist(),
             }
         elif args.type == 'autoencoder':

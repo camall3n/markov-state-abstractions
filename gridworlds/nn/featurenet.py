@@ -40,7 +40,6 @@ class FeatureNet(Network):
 
         self.cross_entropy = torch.nn.CrossEntropyLoss()
         self.bce_loss = torch.nn.BCELoss()
-        self.mse = torch.nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
 
     def inverse_loss(self, z0, z1, a):
@@ -62,16 +61,6 @@ class FeatureNet(Network):
         fakes = self.discriminator(z0_extended, z1_pos_neg)
         return self.bce_loss(input=fakes, target=is_fake.float())
 
-    def distance_loss(self, z0, z1, i):
-        if self.coefs['L_dis'] == 0.0:
-            return torch.tensor(0.0)
-        dz = torch.norm(z0[:, None] - z1, dim=-1, p=2)
-        with torch.no_grad():
-            idx = i.float()
-            max_dz = torch.abs(idx.unsqueeze(-1) - (idx + 1).unsqueeze(-2)) / 50
-        excess = torch.nn.functional.relu(dz - max_dz)
-        return self.mse(excess, torch.tensor(0.))
-
     def forward(self, *args, **kwargs):
         raise NotImplementedError
 
@@ -85,9 +74,6 @@ class FeatureNet(Network):
             loss += self.coefs['L_inv'] * self.inverse_loss(z0, z1, a)
         if model in ['L_rat', 'all']:
             loss += self.coefs['L_rat'] * self.ratio_loss(z0, z1)
-        if model in ['L_dis', 'all']:
-            if self.coefs['L_dis'] > 0.0:
-                loss += self.coefs['L_dis'] * self.distance_loss(z0, z1, i)
         return loss
 
     def train_batch(self, x0, x1, a, i, model='inv'):
