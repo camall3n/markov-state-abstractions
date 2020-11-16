@@ -8,15 +8,14 @@ import pandas as pd
 
 # sns.set(style="darkgrid")
 
-
 def smooth_and_bin(data, bin_size, window_size):
     numeric_dtypes = data.dtypes.apply(pd.api.types.is_numeric_dtype)
     numeric_cols = numeric_dtypes.index[numeric_dtypes]
-    data[numeric_cols] = data[numeric_cols].rolling(window_size, min_periods=1).mean()
+    data[numeric_cols] = data[numeric_cols].rolling(window_size,
+                                                    center=True).mean().fillna(data[numeric_cols])
     # starting from window_size, get every bin_size row
     data = data[::bin_size]
     return data
-
 
 def parse_filepath(fp, filename, bin_size, window_size):
     try:
@@ -32,7 +31,6 @@ def parse_filepath(fp, filename, bin_size, window_size):
         print("Error in parsing filepath {fp}: {e}".format(fp=fp, e=e))
         return None
 
-
 def collate_results(results_dirs, filename, bin_size, window_size):
     dfs = []
     for run in results_dirs:
@@ -43,13 +41,17 @@ def collate_results(results_dirs, filename, bin_size, window_size):
         dfs.append(run_df)
     return pd.concat(dfs, axis=0)
 
-
 def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
-    print("Plotting using hue={hue}, style={style}, {seed}".format(hue=hue, style=style, seed=seed))
+    print("Plotting using hue={hue}, style={style}, {seed}".format(hue=hue, style=style,
+                                                                   seed=seed))
     assert not data.empty, "DataFrame is empty, please check query"
 
     # print(data.query('episode==99').groupby('agent', as_index=False)['total_reward'].mean())
     # print(data.query('episode==99').groupby('agent', as_index=False)['total_reward'].std())
+
+    data = data.replace('markov', 'Markov')
+    data = data.replace('end-to-end', 'visual')
+    data = data.replace('truestate', 'xy-position')
 
     print(data.groupby('agent', as_index=False)['reward'].mean())
     print(data.groupby('agent', as_index=False)['reward'].std())
@@ -61,35 +63,34 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
     else:
         col_wrap = None
 
-    data = data.replace('markov', 'Markov')
-    data = data[data['episode'] < 95]
+    # data = data[data['episode'] < 97]
 
     dashes = {
-            'Markov'     : '',
-            'inverse'    : (1, 1),
-            'contrastive': (1, 2, 5, 2),
-            'autoencoder': (2, 2, 1, 2),
-            'visual'     : (5, 2, 5, 2),
-            'xy-position': (7, 2, 3, 2),
-            'random'     : (1, 2, 3, 2),
-            }
+        'Markov': '',
+        'inv-only': (1, 1),
+        'contr-only': (1, 2, 5, 2),
+        'autoenc': (2, 2, 1, 2),
+        'visual': (5, 2, 5, 2),
+        'xy-position': (7, 2, 3, 2),
+        'random': (1, 2, 3, 2),
+    }
     labels = [
-            'Markov',
-            'visual',
-            'inverse',
-            'xy-position',
-            'contrastive',
-            'random',
-            'autoencoder',
-            ]
+        'Markov',
+        'visual',
+        'inv-only',
+        'xy-position',
+        'contr-only',
+        'random',
+        'autoenc',
+    ]
     colormap = [
-            'Markov',
-            'inverse',
-            'autoencoder',
-            'visual',
-            'contrastive',
-            'xy-position',
-            ]
+        'Markov',
+        'inv-only',
+        'autoenc',
+        'visual',
+        'contr-only',
+        'xy-position',
+    ]
     palette = sns.color_palette('Set1', n_colors=len(data[hue].unique()), desat=0.5)
     # palette = {
     #         'markov'     : 'blue',
@@ -103,26 +104,30 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
     palette = dict(zip(colormap, palette))
     palette['random'] = 'gray'
     data = data.append({'agent': 'random', 'reward': -84.8, 'seed': 0, 'episode': 0},
-            ignore_index=True)
+                       ignore_index=True)# yapf: disable
 
     if isinstance(seed, list) or seed == 'average':
-        g = sns.relplot(x=x,
-                        y=y,
-                        data=data,
-                        hue=hue,
-                        hue_order=labels,
-                        style=style,
-                        kind='line',
-                        # legend='full',
-                        legend=False,
-                        dashes=dashes,
-                        height=height,
-                        aspect=1.2,
-                        col=col,
-                        col_wrap=col_wrap,
-                        # col_order=col_order,
-                        palette=palette,
-                        facet_kws={'sharey': False, 'sharex': False})
+        g = sns.relplot(
+            x=x,
+            y=y,
+            data=data,
+            hue=hue,
+            hue_order=labels,
+            style=style,
+            kind='line',
+            # legend='full',
+            legend=False,
+            dashes=dashes,
+            height=height,
+            aspect=1.2,
+            col=col,
+            col_wrap=col_wrap,
+            # col_order=col_order,
+            palette=palette,
+            facet_kws={
+                'sharey': False,
+                'sharex': False
+            })
 
     elif seed == 'all':
         g = sns.relplot(x=x,
@@ -139,15 +144,19 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
                         col=col,
                         col_wrap=col_wrap,
                         palette=palette,
-                        facet_kws={'sharey': False, 'sharex': False})
+                        facet_kws={
+                            'sharey': False,
+                            'sharex': False
+                        })
     else:
         raise ValueError("{seed} not a recognized choice".format(seed=seed))
 
     g.set_titles('{col_name}')
 
-    g.axes.flat[0].set_ylim((-100,0))
+    g.axes.flat[0].set_ylim((-100, 0))
+    g.axes.flat[0].set_xlim((0, 99))
+    g.axes.flat[0].axhline(-84.8, dashes=dashes['random'], color=palette['random'])
     g.axes.flat[0].legend(labels, bbox_to_anchor=(0.5, -0.3), loc='lower center', ncol=4)
-    g.axes.flat[0].axhline(-84.8, xmax=0.95, dashes=dashes['random'], color=palette['random'])
     plt.tight_layout()
 
     if savepath is not None:
@@ -155,7 +164,6 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
 
     if show:
         plt.show()
-
 
 def parse_args():
     # Parse input arguments
@@ -183,7 +191,6 @@ def parse_args():
     # yapf: enable
 
     return parser.parse_args()
-
 
 if __name__ == "__main__":
     args = parse_args()
