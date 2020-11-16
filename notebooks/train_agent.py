@@ -10,7 +10,7 @@ from tqdm import tqdm
 from gridworlds.nn.nnutils import Reshape
 from gridworlds.nn.nullabstraction import NullAbstraction
 from gridworlds.nn.phinet import PhiNet
-from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
+from gridworlds.domain.gridworld.gridworld import GridWorld
 from gridworlds.agents.randomagent import RandomAgent
 from gridworlds.agents.dqnagent import DQNAgent
 from gridworlds.utils import reset_seeds, get_parser

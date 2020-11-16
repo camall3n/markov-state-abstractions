@@ -9,7 +9,7 @@ from tqdm import tqdm
 from gridworlds.nn.featurenet import FeatureNet
 from gridworlds.nn.autoencoder import AutoEncoder
 from notebooks.repvis import RepVisualization, CleanVisualization
-from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
+from gridworlds.domain.gridworld.gridworld import GridWorld
 from gridworlds.utils import reset_seeds, get_parser
 from gridworlds.sensors import *
 
@@ -72,9 +72,6 @@ reset_seeds(args.seed)
 
 #%% ------------------ Define MDP ------------------
 env = GridWorld(rows=args.rows, cols=args.cols)
-# env = RingWorld(2,4)
-# env = TestWorld()
-# env.add_random_walls(10)
 # env.plot()
 
 # cmap = 'Set3'
