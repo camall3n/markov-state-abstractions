@@ -7,7 +7,7 @@ root = 'scores/loop30k_train_'
 size = ''
 time = ''
 
-for agent in ['markov', 'inv-only', 'contr-only', 'autoenc']:  #, 'truestate', 'end-to-end']:
+for agent in ['markov', 'inv-only', 'contr-only', 'autoenc', 'truestate', 'end-to-end']:
     for fname in glob(root + agent + '_*/*.txt'):
         print(fname)
         d = os.path.dirname(fname)
