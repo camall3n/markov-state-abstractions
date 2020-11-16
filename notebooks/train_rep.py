@@ -18,11 +18,11 @@ parser = get_parser()
 # yapf: disable
 parser.add_argument('--type', type=str, default='markov', choices=['markov', 'autoencoder'],
                     help='Which type of representation learning method')
-parser.add_argument('-n','--n_updates', type=int, default=10000,
+parser.add_argument('-n','--n_updates', type=int, default=3000,
                     help='Number of training updates')
-parser.add_argument('-r','--rows', type=int, default=7,
+parser.add_argument('-r','--rows', type=int, default=6,
                     help='Number of gridworld rows')
-parser.add_argument('-c','--cols', type=int, default=4,
+parser.add_argument('-c','--cols', type=int, default=6,
                     help='Number of gridworld columns')
 parser.add_argument('-l','--latent_dims', type=int, default=2,
                     help='Number of latent dimensions to use for representation')

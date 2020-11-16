@@ -3,9 +3,7 @@ from glob import glob
 import os
 import pandas as pd
 
-root = 'scores/loop30k_train_'
-size = ''
-time = ''
+root = 'scores/train_30k'
 
 for agent in ['markov', 'inv-only', 'contr-only', 'autoenc', 'truestate', 'end-to-end']:
     for fname in glob(root + agent + '_*/*.txt'):

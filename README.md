@@ -18,8 +18,3 @@ Running one experiment:
 python -m notebooks.train_rep [args]
 python -m notebooks.train_agent [args]
 ```
-
-Rsync updates from grid:
-```
-rsync -zurP brown:~/path/to/gridworlds/logs .
-```
