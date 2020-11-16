@@ -12,7 +12,7 @@ from gridworlds.nn.nullabstraction import NullAbstraction
 from gridworlds.nn.phinet import PhiNet
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
 from gridworlds.agents.randomagent import RandomAgent
-from gridworlds.agents.dqnagent import DQNAgent, FactoredDQNAgent
+from gridworlds.agents.dqnagent import DQNAgent
 from gridworlds.utils import reset_seeds, get_parser
 from gridworlds.sensors import *
 
@@ -20,7 +20,7 @@ parser = get_parser()
 # parser.add_argument('-d','--dims', help='Number of latent dimensions', type=int, default=2)
 # yapf: disable
 parser.add_argument('-a','--agent', type=str, required=True,
-                    choices=['random','dqn','fqn'], help='Type of agent to train')
+                    choices=['random','dqn'], help='Type of agent to train')
 parser.add_argument('-n','--n_trials', type=int, default=1,
                     help='Number of trials')
 parser.add_argument('-e','--n_episodes', type=int, default=10,
@@ -110,26 +110,7 @@ elif args.agent == 'dqn':
                      lr=args.learning_rate,
                      batch_size=args.batch_size,
                      train_phi=args.train_phi,
-                     gamma=gamma,
-                     factored=False)
-elif args.agent == 'fqn':
-    agent = DQNAgent(n_features=args.latent_dims,
-                     n_actions=n_actions,
-                     phi=phinet,
-                     lr=args.learning_rate,
-                     batch_size=args.batch_size,
-                     train_phi=args.train_phi,
-                     gamma=gamma,
-                     factored=True)
-elif args.agent == 'fqni':
-    agent = FactoredDQNAgent(n_features=args.latent_dims,
-                             n_actions=n_actions,
-                             phi=phinet,
-                             lr=args.learning_rate,
-                             batch_size=args.batch_size,
-                             train_phi=args.train_phi,
-                             gamma=gamma,
-                             factored=True)
+                     gamma=gamma)
 else:
     assert False, 'Invalid agent type: {}'.format(args.agent)
 
