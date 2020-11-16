@@ -6,7 +6,6 @@ import torch.nn
 from .nnutils import Network
 from .phinet import PhiNet
 from .invnet import InvNet
-from .fwdnet import FwdNet
 from .contrastivenet import ContrastiveNet
 
 class FeatureNet(Network):
@@ -31,7 +30,6 @@ class FeatureNet(Network):
                           n_latent_dims=n_latent_dims,
                           n_units_per_layer=n_units_per_layer,
                           n_hidden_layers=n_hidden_layers)
-        # self.fwd_model = FwdNet(n_actions=n_actions, n_latent_dims=n_latent_dims, n_hidden_layers=n_hidden_layers, n_units_per_layer=n_units_per_layer)
         self.inv_model = InvNet(n_actions=n_actions,
                                 n_latent_dims=n_latent_dims,
                                 n_units_per_layer=n_units_per_layer,
@@ -85,8 +83,6 @@ class FeatureNet(Network):
         loss = 0
         if model in ['L_inv', 'all']:
             loss += self.coefs['L_inv'] * self.inverse_loss(z0, z1, a)
-        # if model in ['L_fwd', 'all']:
-        #     loss += self.coefs['L_fwd'] * self.compute_fwd_loss(z0, z1, z1_hat)
         if model in ['L_rat', 'all']:
             loss += self.coefs['L_rat'] * self.ratio_loss(z0, z1)
         if model in ['L_dis', 'all']:
@@ -99,7 +95,6 @@ class FeatureNet(Network):
         self.optimizer.zero_grad()
         z0 = self.phi(x0)
         z1 = self.phi(x1)
-        # z1_hat = self.fwd_model(z0, a)
         loss = self.compute_loss(z0, z1, a, i, model=model)
         loss.backward()
         self.optimizer.step()

@@ -28,8 +28,6 @@ parser.add_argument('-l','--latent_dims', type=int, default=2,
                     help='Number of latent dimensions to use for representation')
 parser.add_argument('--L_inv', type=float, default=1.0,
                     help='Coefficient for inverse-model-matching loss')
-# parser.add_argument('--L_fwd', type=float, default=0.0,
-#                     help='Coefficient for forward dynamics loss')
 parser.add_argument('--L_rat', type=float, default=1.0,
                     help='Coefficient for ratio-matching loss')
 parser.add_argument('--L_dis', type=float, default=0.0,
@@ -118,7 +116,6 @@ batch_size = args.batch_size
 
 coefs = {
     'L_inv': args.L_inv,
-    # 'L_fwd': args.L_fwd,
     'L_rat': args.L_rat,
     'L_dis': args.L_dis,
 }
@@ -188,13 +185,11 @@ def test_rep(fnet, step):
         if args.type == 'markov':
             z0 = fnet.phi(test_x0)
             z1 = fnet.phi(test_x1)
-            # z1_hat = fnet.fwd_model(z0, test_a)
             # a_hat = fnet.inv_model(z0, z1)
 
             loss_info = {
                 'step': step,
                 'L_inv': fnet.inverse_loss(z0, z1, test_a).numpy().tolist(),
-                'L_fwd': 'NaN',  #fnet.compute_fwd_loss(z0, z1, z1_hat).numpy().tolist(),
                 'L_rat': fnet.ratio_loss(z0, z1).numpy().tolist(),
                 'L_dis': fnet.distance_loss(z0, z1, test_i).numpy().tolist(),
                 'L': fnet.compute_loss(z0, z1, test_a, test_i, 'all').numpy().tolist(),
