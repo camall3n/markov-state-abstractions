@@ -74,58 +74,6 @@ class BlurSensor:
                                                      truncate=self.truncate,
                                                      mode='nearest')
 
-class PairEntangleSensor:
-    def __init__(self, n_features, index_a=None, index_b=None, amount=1.0):
-        # input:     X     Y     A     Z     S     B     T
-        # output:    X     Y     A'    Z     S     B'    T
-        # where [A',B']^T = R(theta) * [A, B]^T,
-        #        R is a rotation-by-theta matrix,
-        #        and theta = π/4 * amount
-        assert n_features > 1, 'n_features must be > 1'
-        assert 0 <= amount and amount <= 1, 'amount must be between 0 and 1'
-        self.n_features = n_features
-        self.rotation = np.pi / 4 * amount
-        self.rot_matrix = np.asarray([[np.cos(self.rotation), -1 * np.sin(self.rotation)],
-                                      [np.sin(self.rotation),
-                                       np.cos(self.rotation)]])
-        if index_b is not None:
-            assert index_a is not None, 'Must specify index_a when specifying index_b'
-            assert index_a != index_b, 'index_b cannot equal index_a (value {})'.format(index_a)
-            self.index_b = index_b
-        if index_a is not None:
-            self.index_a = index_a
-        else:
-            self.index_a = np.random.randint(n_features)
-        if index_b is None:
-            self.index_b = np.random.choice([i for i in range(n_features) if i != self.index_a])
-
-    def observe(self, s):
-        s_flat = np.copy(s).reshape(-1, self.n_features)
-        a = s_flat[:, self.index_a]
-        b = s_flat[:, self.index_b]
-        x = np.stack((a, b), axis=0)
-        x_rot = np.matmul(self.rot_matrix, x)
-        a, b = map(lambda a: np.squeeze(a, axis=0), np.split(x_rot, 2, axis=0))
-        s_flat[:, self.index_a] = a
-        s_flat[:, self.index_b] = b
-        return s_flat.reshape(s.shape)
-
-class PermuteAndAverageSensor:
-    def __init__(self, n_features, n_permutations=1):
-        self.n_features = n_features
-        self.permutations = [np.arange(n_features)] + [
-            np.random.permutation(n_features) for _ in range(n_permutations)
-        ]
-
-    def observe(self, s):
-        s_flat = s.reshape(-1, self.n_features)
-        output = np.zeros_like(s_flat)
-        for p in self.permutations:
-            sp_flat = np.take(s_flat, p, axis=1)
-            sp = sp_flat.reshape(s.shape)
-            output += sp
-        return output / len(self.permutations)
-
 class TorchSensor:
     def __init__(self, dtype=torch.float32):
         self.dtype = dtype
