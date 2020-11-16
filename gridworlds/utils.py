@@ -32,7 +32,6 @@ def load_experiment(tag, coefs=None):
         if coefs is None:
             coefs = {
                 'L_inv': 1.0,
-                'L_cpc': 1.0,
             }
         if 'L' not in fields:
             data['L'] = sum([
