@@ -32,8 +32,6 @@ parser.add_argument('--L_inv', type=float, default=1.0,
 #                     help='Coefficient for forward dynamics loss')
 parser.add_argument('--L_rat', type=float, default=1.0,
                     help='Coefficient for ratio-matching loss')
-# parser.add_argument('--L_fac', type=float, default=0.0,
-#                     help='Coefficient for factorization loss')
 parser.add_argument('--L_dis', type=float, default=0.0,
                     help='Coefficient for planning-distance loss')
 parser.add_argument('-lr','--learning_rate', type=float, default=0.003,
@@ -122,7 +120,6 @@ coefs = {
     'L_inv': args.L_inv,
     # 'L_fwd': args.L_fwd,
     'L_rat': args.L_rat,
-    # 'L_fac': args.L_fac,
     'L_dis': args.L_dis,
 }
 
@@ -200,9 +197,8 @@ def test_rep(fnet, step):
                 'L_fwd': 'NaN',  #fnet.compute_fwd_loss(z0, z1, z1_hat).numpy().tolist(),
                 'L_rat': fnet.ratio_loss(z0, z1).numpy().tolist(),
                 'L_dis': fnet.distance_loss(z0, z1, test_i).numpy().tolist(),
-                'L_fac': 'NaN',  #fnet.compute_factored_loss(z0, z1).numpy().tolist(),
-                # 'L_ent': 'NaN',#fnet.compute_entropy_loss(z0, z1, test_a).numpy().tolist(),
                 'L': fnet.compute_loss(z0, z1, test_a, test_i, 'all').numpy().tolist(),
+                # 'L_ent': 'NaN',#fnet.compute_entropy_loss(z0, z1, test_a).numpy().tolist(),
             }
         elif args.type == 'autoencoder':
             z0 = fnet.encode(test_x0)
