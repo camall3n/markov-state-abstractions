@@ -10,7 +10,7 @@ from gridworlds.nn.featurenet import FeatureNet
 from gridworlds.nn.autoencoder import AutoEncoder
 from notebooks.repvis import RepVisualization, CleanVisualization
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
-from gridworlds.utils import reset_seeds, get_parser, MI
+from gridworlds.utils import reset_seeds, get_parser
 from gridworlds.sensors import *
 
 parser = get_parser()
@@ -98,8 +98,6 @@ s0 = np.asarray(states[:-1, :])
 c0 = s0[:, 0] * env._cols + s0[:, 1]
 s1 = np.asarray(states[1:, :])
 a = np.asarray(actions)
-
-MI_max = MI(s0, s0)
 
 #%% ------------------ Define sensor ------------------
 sensor = SensorChain([
@@ -205,7 +203,6 @@ def test_rep(fnet, step):
                 'L_fac': 'NaN',  #fnet.compute_factored_loss(z0, z1).numpy().tolist(),
                 # 'L_ent': 'NaN',#fnet.compute_entropy_loss(z0, z1, test_a).numpy().tolist(),
                 'L': fnet.compute_loss(z0, z1, test_a, test_i, 'all').numpy().tolist(),
-                'MI': MI(test_s0, z0.numpy()) / MI_max
             }
         elif args.type == 'autoencoder':
             z0 = fnet.encode(test_x0)

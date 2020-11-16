@@ -25,19 +25,6 @@ def get_parser():
     """
     return argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-def fit_kde(x, bw=0.03):
-    p = KernelDensity(bandwidth=bw, kernel='tophat')
-    p.fit(x)
-    return p
-
-def MI(x, y):
-    xy = np.concatenate([x, y], axis=-1)
-    log_pxy = fit_kde(xy).score_samples(xy)
-    log_px = fit_kde(x).score_samples(x)
-    log_py = fit_kde(y).score_samples(y)
-    log_ratio = log_pxy - log_px - log_py
-    return np.mean(log_ratio)
-
 def load_experiment(tag, coefs=None):
     logfiles = sorted(glob.glob(os.path.join('logs', tag + '*', 'train-*.txt')))
     seeds = [f.split('-')[-1].split('.')[0] for f in logfiles]
