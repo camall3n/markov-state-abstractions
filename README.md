@@ -1,12 +1,12 @@
-# Gridworlds
+# Markov State Abstractions
 
-Scalable test domains for quickly running small- to large-scale grid-world experiments.
+Image-based gridworld experiment for learning Markov state abstractions.
 
 ### Installation
 
-Download the repo and install the dependencies:
+Clone the repo and install the dependencies:
 ```
-cd gridworlds
+cd markov-state-abstractions
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -17,4 +17,6 @@ Running one experiment:
 ```
 python -m notebooks.train_rep [args]
 python -m notebooks.train_agent [args]
+python -m notebooks.convert
+python -m notebooks.plot [args]
 ```
