@@ -198,7 +198,6 @@ def test_rep(fnet, step):
                 'L_rat': fnet.ratio_loss(z0, z1).numpy().tolist(),
                 'L_dis': fnet.distance_loss(z0, z1, test_i).numpy().tolist(),
                 'L': fnet.compute_loss(z0, z1, test_a, test_i, 'all').numpy().tolist(),
-                # 'L_ent': 'NaN',#fnet.compute_entropy_loss(z0, z1, test_a).numpy().tolist(),
             }
         elif args.type == 'autoencoder':
             z0 = fnet.encode(test_x0)
