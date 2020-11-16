@@ -10,20 +10,35 @@ from .fwdnet import FwdNet
 from .contrastivenet import ContrastiveNet
 
 class FeatureNet(Network):
-    def __init__(self, n_actions, input_shape=2, n_latent_dims=4, n_hidden_layers=1, n_units_per_layer=32, lr=0.001, coefs=None):
+    def __init__(self,
+                 n_actions,
+                 input_shape=2,
+                 n_latent_dims=4,
+                 n_hidden_layers=1,
+                 n_units_per_layer=32,
+                 lr=0.001,
+                 coefs=None):
         super().__init__()
         self.n_actions = n_actions
         self.n_latent_dims = n_latent_dims
         self.lr = lr
-        self.coefs = defaultdict(lambda:1.0)
+        self.coefs = defaultdict(lambda: 1.0)
         if coefs is not None:
             for k, v in coefs.items():
                 self.coefs[k] = v
 
-        self.phi = PhiNet(input_shape=input_shape, n_latent_dims=n_latent_dims, n_units_per_layer=n_units_per_layer, n_hidden_layers=n_hidden_layers)
+        self.phi = PhiNet(input_shape=input_shape,
+                          n_latent_dims=n_latent_dims,
+                          n_units_per_layer=n_units_per_layer,
+                          n_hidden_layers=n_hidden_layers)
         # self.fwd_model = FwdNet(n_actions=n_actions, n_latent_dims=n_latent_dims, n_hidden_layers=n_hidden_layers, n_units_per_layer=n_units_per_layer)
-        self.inv_model = InvNet(n_actions=n_actions, n_latent_dims=n_latent_dims, n_units_per_layer=n_units_per_layer, n_hidden_layers=n_hidden_layers)
-        self.discriminator = ContrastiveNet(n_latent_dims=n_latent_dims, n_hidden_layers=1, n_units_per_layer=n_units_per_layer)
+        self.inv_model = InvNet(n_actions=n_actions,
+                                n_latent_dims=n_latent_dims,
+                                n_units_per_layer=n_units_per_layer,
+                                n_hidden_layers=n_hidden_layers)
+        self.discriminator = ContrastiveNet(n_latent_dims=n_latent_dims,
+                                            n_hidden_layers=1,
+                                            n_units_per_layer=n_units_per_layer)
 
         self.cross_entropy = torch.nn.CrossEntropyLoss()
         self.bce_loss = torch.nn.BCELoss()
@@ -38,7 +53,7 @@ class FeatureNet(Network):
         N = len(z0)
         # shuffle next states
         idx = torch.randperm(N)
-        z1_neg = z1.view(N,-1)[idx].view(z1.size())
+        z1_neg = z1.view(N, -1)[idx].view(z1.size())
 
         # concatenate positive and negative examples
         z0_extended = torch.cat([z0, z0], dim=0)
@@ -55,7 +70,7 @@ class FeatureNet(Network):
         dz = torch.norm(z0[:, None] - z1, dim=-1, p=2)
         with torch.no_grad():
             idx = i.float()
-            max_dz = torch.abs(idx.unsqueeze(-1)-(idx+1).unsqueeze(-2))/50
+            max_dz = torch.abs(idx.unsqueeze(-1) - (idx + 1).unsqueeze(-2)) / 50
         excess = torch.nn.functional.relu(dz - max_dz)
         return self.mse(excess, torch.tensor(0.))
 

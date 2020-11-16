@@ -11,15 +11,19 @@ class InvNet(Network):
 
         self.layers = []
         if n_hidden_layers == 0:
-            self.layers.extend([torch.nn.Linear(2*n_latent_dims, n_actions)])
+            self.layers.extend([torch.nn.Linear(2 * n_latent_dims, n_actions)])
         else:
-            self.layers.extend([torch.nn.Linear(2*n_latent_dims, n_units_per_layer), torch.nn.Tanh()])
-            self.layers.extend([torch.nn.Linear(n_units_per_layer, n_units_per_layer), torch.nn.Tanh()] * (n_hidden_layers-1))
+            self.layers.extend(
+                [torch.nn.Linear(2 * n_latent_dims, n_units_per_layer),
+                 torch.nn.Tanh()])
+            self.layers.extend(
+                [torch.nn.Linear(n_units_per_layer, n_units_per_layer),
+                 torch.nn.Tanh()] * (n_hidden_layers - 1))
             self.layers.extend([torch.nn.Linear(n_units_per_layer, n_actions)])
 
         self.inv_model = torch.nn.Sequential(*self.layers)
 
     def forward(self, z0, z1):
-        context = torch.cat((z0,z1), -1)
+        context = torch.cat((z0, z1), -1)
         a_logits = self.inv_model(context)
         return a_logits

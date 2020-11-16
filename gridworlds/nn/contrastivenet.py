@@ -11,10 +11,14 @@ class ContrastiveNet(Network):
 
         self.layers = []
         if n_hidden_layers == 0:
-            self.layers.extend([torch.nn.Linear(2*n_latent_dims, 1)])
+            self.layers.extend([torch.nn.Linear(2 * n_latent_dims, 1)])
         else:
-            self.layers.extend([torch.nn.Linear(2*n_latent_dims, n_units_per_layer), torch.nn.Tanh()])
-            self.layers.extend([torch.nn.Linear(n_units_per_layer, n_units_per_layer), torch.nn.Tanh()] * (n_hidden_layers-1))
+            self.layers.extend(
+                [torch.nn.Linear(2 * n_latent_dims, n_units_per_layer),
+                 torch.nn.Tanh()])
+            self.layers.extend(
+                [torch.nn.Linear(n_units_per_layer, n_units_per_layer),
+                 torch.nn.Tanh()] * (n_hidden_layers - 1))
             self.layers.extend([torch.nn.Linear(n_units_per_layer, 1)])
         self.layers.extend([torch.nn.Sigmoid()])
         self.model = torch.nn.Sequential(*self.layers)

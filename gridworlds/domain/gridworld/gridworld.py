@@ -10,13 +10,8 @@ class GridWorld(grid.BaseGrid):
         super().__init__(*args, **kwargs)
         self.agent = Agent()
         self.actions = [i for i in range(4)]
-        self.action_map = {
-            0: grid.LEFT,
-            1: grid.RIGHT,
-            2: grid.UP,
-            3: grid.DOWN
-        }
-        self.agent.position = np.asarray((0,0), dtype=int)
+        self.action_map = {0: grid.LEFT, 1: grid.RIGHT, 2: grid.UP, 3: grid.DOWN}
+        self.agent.position = np.asarray((0, 0), dtype=int)
         self.goal = None
 
     def reset_agent(self):
@@ -32,7 +27,7 @@ class GridWorld(grid.BaseGrid):
         self.reset_agent()
 
     def step(self, action):
-        assert(action in range(4))
+        assert (action in range(4))
         direction = self.action_map[action]
         if not self.has_wall(self.agent.position, direction):
             self.agent.position += direction
@@ -47,7 +42,7 @@ class GridWorld(grid.BaseGrid):
         return s, r, done
 
     def can_run(self, action):
-        assert(action in range(4))
+        assert (action in range(4))
         direction = self.action_map[action]
         return False if self.has_wall(self.agent.position, direction) else True
 
@@ -65,11 +60,11 @@ class GridWorld(grid.BaseGrid):
 class TestWorld(GridWorld):
     def __init__(self):
         super().__init__(rows=3, cols=4)
-        self._grid[1,4] = 1
-        self._grid[2,3] = 1
-        self._grid[3,2] = 1
-        self._grid[5,4] = 1
-        self._grid[4,7] = 1
+        self._grid[1, 4] = 1
+        self._grid[2, 3] = 1
+        self._grid[3, 2] = 1
+        self._grid[5, 4] = 1
+        self._grid[4, 7] = 1
 
         # Should look roughly like this:
         # _______
@@ -80,22 +75,22 @@ class TestWorld(GridWorld):
 class RingWorld(GridWorld):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for r in range(self._rows-2):
-            self._grid[2*r+3, 2] = 1
-            self._grid[2*r+3, 2*self._cols-2] = 1
-        for c in range(self._cols-2):
-            self._grid[2, 2*c+3] = 1
-            self._grid[2*self._rows-2, 2*c+3] = 1
+        for r in range(self._rows - 2):
+            self._grid[2 * r + 3, 2] = 1
+            self._grid[2 * r + 3, 2 * self._cols - 2] = 1
+        for c in range(self._cols - 2):
+            self._grid[2, 2 * c + 3] = 1
+            self._grid[2 * self._rows - 2, 2 * c + 3] = 1
 
 class SnakeWorld(GridWorld):
     def __init__(self):
         super().__init__(rows=3, cols=4)
-        self._grid[1,4] = 1
-        self._grid[2,3] = 1
-        self._grid[2,5] = 1
-        self._grid[3,2] = 1
-        self._grid[3,6] = 1
-        self._grid[5,4] = 1
+        self._grid[1, 4] = 1
+        self._grid[2, 3] = 1
+        self._grid[2, 5] = 1
+        self._grid[3, 2] = 1
+        self._grid[3, 6] = 1
+        self._grid[5, 4] = 1
 
         # Should look roughly like this:
         # _______

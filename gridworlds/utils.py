@@ -10,7 +10,7 @@ import torch
 def manhattan_dist(pos1, pos2):
     x1, y1 = pos1
     x2, y2 = pos2
-    return np.abs(x2-x1) + np.abs(y2-y1)
+    return np.abs(x2 - x1) + np.abs(y2 - y1)
 
 def reset_seeds(seed=0):
     np.random.seed(seed)
@@ -30,19 +30,19 @@ def fit_kde(x, bw=0.03):
     p.fit(x)
     return p
 
-def MI(x,y):
-    xy = np.concatenate([x,y], axis=-1)
+def MI(x, y):
+    xy = np.concatenate([x, y], axis=-1)
     log_pxy = fit_kde(xy).score_samples(xy)
     log_px = fit_kde(x).score_samples(x)
     log_py = fit_kde(y).score_samples(y)
     log_ratio = log_pxy - log_px - log_py
     return np.mean(log_ratio)
 
-
 def load_experiment(tag, coefs=None):
-    logfiles = sorted(glob.glob(os.path.join('logs',tag+'*','train-*.txt')))
+    logfiles = sorted(glob.glob(os.path.join('logs', tag + '*', 'train-*.txt')))
     seeds = [f.split('-')[-1].split('.')[0] for f in logfiles]
-    logs = [open(f,'r').read().splitlines() for f in logfiles]
+    logs = [open(f, 'r').read().splitlines() for f in logfiles]
+
     def read_log(log, coefs=coefs):
         results = [json.loads(item) for item in log]
         fields = results[0].keys()
@@ -55,8 +55,12 @@ def load_experiment(tag, coefs=None):
                 'L_fac': 0.1,
             }
         if 'L' not in fields:
-            data['L'] = sum([coefs[f] * data[f] if f != 'L_fac' else coefs[f] * (data[f]-1) for f in coefs.keys()])
+            data['L'] = sum([
+                coefs[f] * data[f] if f != 'L_fac' else coefs[f] * (data[f] - 1)
+                for f in coefs.keys()
+            ])
         return data
+
     results = [read_log(log) for log in logs]
     data = dict(zip(seeds, results))
     return data

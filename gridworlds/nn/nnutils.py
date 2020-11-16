@@ -14,10 +14,12 @@ class Reshape(torch.nn.Module):
     def __init__(self, *args):
         super().__init__()
         self.shape = args
+
     def __repr__(self):
         s = self.__class__.__name__
         s += '{}'.format(self.shape)
         return s
+
     def forward(self, input):
         return input.view(*self.shape)
 
@@ -29,7 +31,7 @@ class Network(torch.nn.Module):
         self.frozen = False
 
     def __str__(self):
-        s = super().__str__()+'\n'
+        s = super().__str__() + '\n'
         n_params = 0
         for p in self.parameters():
             n_params += np.prod(p.size())
@@ -43,7 +45,7 @@ class Network(torch.nn.Module):
     def save(self, tag, name):
         model_dir = 'models/{}'.format(tag)
         os.makedirs(model_dir, exist_ok=True)
-        model_file = model_dir+'/{}.pytorch'.format(name)
+        model_file = model_dir + '/{}.pytorch'.format(name)
         torch.save(self.state_dict(), model_file)
         print('Model saved to {}'.format(model_file))
 
@@ -103,8 +105,12 @@ Example::
     if idx_dim == batch_dim:
         raise RuntimeError('idx_dim cannot be the same as batch_dim')
     if len(idx) != input.shape[batch_dim]:
-        raise RuntimeError("idx length '{}' not compatible with batch_dim '{}' for input shape '{}'".format(len(idx), batch_dim, list(input.shape)))
-    viewshape = [1,]*input.ndimension()
+        raise RuntimeError(
+            "idx length '{}' not compatible with batch_dim '{}' for input shape '{}'".format(
+                len(idx), batch_dim, list(input.shape)))
+    viewshape = [
+        1,
+    ] * input.ndimension()
     viewshape[batch_dim] = input.shape[batch_dim]
     idx = idx.view(*viewshape).expand_as(input)
     result = torch.gather(input, idx_dim, idx).mean(dim=idx_dim)

@@ -14,7 +14,9 @@ class QNet(Network):
             self.layers.extend([torch.nn.Linear(n_features, n_actions)])
         else:
             self.layers.extend([torch.nn.Linear(n_features, n_units_per_layer), torch.nn.ReLU()])
-            self.layers.extend([torch.nn.Linear(n_units_per_layer, n_units_per_layer), torch.nn.ReLU()] * (n_hidden_layers-1))
+            self.layers.extend(
+                [torch.nn.Linear(n_units_per_layer, n_units_per_layer),
+                 torch.nn.ReLU()] * (n_hidden_layers - 1))
             self.layers.extend([torch.nn.Linear(n_units_per_layer, n_actions)])
 
         self.model = torch.nn.Sequential(*self.layers)
@@ -28,7 +30,8 @@ class FactoredQNet(Network):
         self.n_features = n_features
         self.n_actions = n_actions
 
-        self.q = torch.nn.ModuleList([QNet(1, n_actions, n_hidden_layers, n_units_per_layer) for _ in range(n_features)])
+        self.q = torch.nn.ModuleList(
+            [QNet(1, n_actions, n_hidden_layers, n_units_per_layer) for _ in range(n_features)])
 
     def forward(self, z, mask=None, reduce=True):
         if mask is not None:
@@ -40,7 +43,7 @@ class FactoredQNet(Network):
         if len(z.shape) == 1:
             z = z.unsqueeze(0)
         z = z.unsqueeze(-1)
-        q = torch.stack([self.q[i](z[:,i]) for i in range(self.n_features)],dim=-1)
+        q = torch.stack([self.q[i](z[:, i]) for i in range(self.n_features)], dim=-1)
         masked_q = torch.matmul(q, mask)
         if reduce:
             return masked_q

@@ -15,7 +15,9 @@ class SimpleNet(Network):
             self.layers.extend([torch.nn.Linear(n_inputs, n_outputs)])
         else:
             self.layers.extend([torch.nn.Linear(n_inputs, n_units_per_layer), torch.nn.Tanh()])
-            self.layers.extend([torch.nn.Linear(n_units_per_layer, n_units_per_layer), torch.nn.Tanh()] * (n_hidden_layers-1))
+            self.layers.extend(
+                [torch.nn.Linear(n_units_per_layer, n_units_per_layer),
+                 torch.nn.Tanh()] * (n_hidden_layers - 1))
             self.layers.extend([torch.nn.Linear(n_units_per_layer, n_outputs)])
 
         self.model = torch.nn.Sequential(*self.layers)
