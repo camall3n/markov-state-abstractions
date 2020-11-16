@@ -8,21 +8,6 @@ class NullSensor:
     def observe(self, s):
         return s
 
-class RearrangeXYPositionsSensor:
-    """Rearrange discrete x-y positions to break smoothness
-    """
-    def __init__(self, shape):
-        self.shape = shape
-        coords = np.asarray([[[x, y] for y in range(shape[1])] for x in range(shape[0])])
-        self.encoding = np.random.permutation(coords.reshape(-1, 2)).reshape(coords.shape)
-
-    def observe(self, s):
-        try:
-            obs = np.asarray([self.encoding[tuple(state)] for state in s])
-        except TypeError:
-            obs = self.encoding[tuple(s)]
-        return obs
-
 class OffsetSensor:
     def __init__(self, offset):
         self.offset = offset

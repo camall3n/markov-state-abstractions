@@ -51,8 +51,6 @@ parser.add_argument('--no_sigma', action='store_true',
                     help='Turn off sensors and just use true state; i.e. x=s')
 parser.add_argument('-v','--video', action='store_true',
                     help='Show video of agent training')
-parser.add_argument('--rearrange_xy', action='store_true',
-                    help='Rearrange discrete x-y positions to break smoothness')
 # yapf: enable
 args = parser.parse_args()
 if args.train_phi and args.no_phi:
@@ -71,8 +69,6 @@ gamma = 0.9
 
 #%% ------------------ Define sensor ------------------
 sensor_list = []
-if args.rearrange_xy:
-    sensor_list.append(RearrangeXYPositionsSensor((env._rows, env._cols)))
 if not args.no_sigma:
     sensor_list += [
         OffsetSensor(offset=(0.5, 0.5)),
