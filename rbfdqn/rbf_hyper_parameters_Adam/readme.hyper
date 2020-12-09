@@ -1,0 +1,3 @@
+bringing N down from 5000 to 50, also trying Adam vs RMSprop
+
+wasn't much faster, and it was pretty bad in some cases
