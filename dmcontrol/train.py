@@ -4,8 +4,9 @@ import os
 
 from rbfdqn.rbfdqn import *
 from dmcontrol.gym_wrappers import *
+from dmcontrol.markov import FeatureNet, build_phi_network
 
-logging.basicConfig(level=logging.INFO, handlers=[logging.StreamHandler()])
+logging.basicConfig(level=logging.DEBUG, handlers=[logging.StreamHandler()])
 
 def remove_prefix(text, prefix):
     if text.startswith(prefix):
@@ -14,11 +15,6 @@ def remove_prefix(text, prefix):
 
 def configure_logger(filename):
     logging.getLogger().addHandler(logging.FileHandler(filename, mode='w'))
-
-def make_env(params):
-    env = gym.make(params['env_name'])
-    env = ObservationDictToInfo(env, "observations")
-    params['env'] = env
 
 class DMControlTrial(Trial):
     @staticmethod
@@ -46,6 +42,7 @@ class DMControlTrial(Trial):
                                         hyperparam_name + '.hyper')
         params = utils_for_q_learning.get_hyper_parameters(hyperparams_file, args.alg)
         params['hyper_parameters_name'] = hyperparam_name
+        params['features'] = args.features
         params['alg'] = args.alg
         params['seed_number'] = args.seed
 
@@ -72,10 +69,34 @@ class DMControlTrial(Trial):
             device = torch.device("cpu")
             logging.info("Running on the CPU")
 
-        env = make_env(params)
+        env = gym.make(params['env_name'], environment_kwargs={'flat_observation': True})
         return params, env, device
 
+    def encode(self, state):
+        return self.featurenet(state)
+
+    def setup(self):
+        self.env = FixedDurationHack(self.env)
+        self.env = ObservationDictToInfo(self.env, "observations")
+
+        feature_type = self.params['features']
+        if feature_type == 'expert':
+            self.env = MaxAndSkipEnv(self.env, skip=self.params['action_repeat'], max_pool=False)
+        else:
+            self.env = RenderOpenCV(self.env)
+            self.env = Grayscale(self.env)
+            self.env = ResizeObservation(self.env, (84, 84))
+            self.env = MaxAndSkipEnv(self.env, skip=self.params['action_repeat'], max_pool=False)
+            self.env = FrameStack(self.env, self.params['frame_stack'])
+        self.params['env'] = self.env
+
+        s0 = self.env.reset()
+        self.featurenet = FeatureNet(self.params, self.env.action_space, s0.shape)
+
+        super().setup()
+
     def teardown(self):
+        super().teardown()
         self.Q_object.save(tag=self.params['unique_id'],
                            name='model',
                            model_dir=self.params['models_dir'])

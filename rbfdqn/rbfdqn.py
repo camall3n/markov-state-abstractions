@@ -13,7 +13,7 @@ import numpy
 import pickle
 
 from . import utils_for_q_learning, buffer_class
-from gridworlds.nn import nnutils
+from gridworlds.nn import nnutils, simplenet
 
 def rbf_function_on_action(centroid_locations, action, beta):
     '''
@@ -269,6 +269,9 @@ class Trial:
         self.env = env
         self.device = device
 
+    def encode(self, state):
+        return state
+
     @staticmethod
     def parse_args():
         if torch.cuda.is_available():
@@ -284,10 +287,9 @@ class Trial:
         params['alg'] = alg
         env = gym.make(params['env_name'])
         #env = gym.wrappers.Monitor(env, 'videos/'+params['env_name']+"/", video_callable=lambda episode_id: episode_id%10==0,force = True)
-        params['env'] = env
         params['seed_number'] = int(sys.argv[2])
         params['results_dir'] = 'dmcontrol/results/' + alg
-
+        params['env'] = env
         return params, env, device
 
     def setup(self):
@@ -314,12 +316,16 @@ class Trial:
                                            alpha=self.params['target_network_learning_rate'],
                                            copy=True)
 
-        if self.params['policy_type'] == 'e_greedy':
+        policy_type = self.params['policy_type']
+        if policy_type == 'e_greedy':
             self.get_action = self.Q_object.e_greedy_policy
-        elif self.params['policy_type'] == 'e_greedy_gaussian':
+        elif policy_type == 'e_greedy_gaussian':
             self.get_action = self.Q_object.e_greedy_gaussian_policy
-        elif self.params['policy_type'] == 'gaussian':
+        elif policy_type == 'gaussian':
             self.get_action = self.Q_object.gaussian_policy
+        else:
+            raise NotImplementedError(
+                'No get_action function configured for policy type {}'.format(policy_type))
 
         self.G_li = []
         self.loss_li = []
@@ -336,7 +342,7 @@ class Trial:
             a = self.get_action(s, episode + 1, 'train')
             sp, r, done, _ = self.env.step(numpy.array(a))
             t = t + 1
-            done_p = False if t == self.env._max_episode_steps else done
+            done_p = False if t == self.env.unwrapped._max_episode_steps else done
             self.Q_object.buffer_object.append(s, a, r, done_p, sp)
             s = sp
 

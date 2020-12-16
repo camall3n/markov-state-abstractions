@@ -1,7 +1,7 @@
 from collections import deque
 
 import numpy as np
-import torchvision.transforms as T
+# import torchvision.transforms as T
 import gym
 import cv2
 
@@ -33,7 +33,6 @@ class IndexedObservation(gym.ObservationWrapper):
     def observation(self, observation):
         return observation[self.indices]
 
-
 # Adapted from https://github.com/openai/gym/blob/master/gym/wrappers/resize_observation.py
 class ResizeObservation(gym.ObservationWrapper):
     """
@@ -60,7 +59,6 @@ class ResizeObservation(gym.ObservationWrapper):
     def observation(self, observation):
         observation = cv2.resize(observation, self.shape[::-1], interpolation=cv2.INTER_AREA)
         return observation
-
 
 class ObservationDictToInfo(gym.Wrapper):
     """
@@ -89,6 +87,56 @@ class ObservationDictToInfo(gym.Wrapper):
         info.update(next_state_as_dict)
         return next_state_as_dict[self.state_key], reward, done, info
 
+class RenderOpenCV(gym.Wrapper):
+    """
+    Description:
+        Given an env that can render with the flag 'use_opencv_renderer',
+        call the renderer, and return the rgb_array observation. Also adds
+        the original state as an entry to the info dict.
+
+    Usage:
+        Wraps a dm2gym environment to get visual features
+
+    Notes:
+        - By convention, no info is return on reset, so that state is lost.
+    """
+    def reset(self, **kwargs):
+        _ = self.env.reset(**kwargs)
+        next_ob = self.env.render(mode='rgb_array', use_opencv_renderer=True)
+        return next_ob
+
+    def step(self, action):
+        next_state, reward, done, info = self.env.step(action)
+        info.update({'state', next_state})
+        next_ob = self.env.render(mode='rgb_array', use_opencv_renderer=True)
+        return next_ob, reward, done, info
+
+class FixedDurationHack(gym.Wrapper):
+    """
+    Description:
+        Given a TimeLimit-wrapped environment, copy the _max_episode_steps
+        variable to the unwrapped environment for easier access, in case
+        *this* environment gets wrapped by additional wrappers.
+    """
+    def __init__(self, env):
+        super().__init__(env)
+        self.unwrapped._max_episode_steps = env._max_episode_steps
+
+class Grayscale(gym.Wrapper):
+    """
+    Description:
+        Given an env with RGB image observations, return grayscale frames.
+
+    Usage:
+        Wraps an RGB image-based environment
+    """
+    def reset(self, **kwargs):
+        ob = self.env.reset(**kwargs)
+        return cv2.cvtColor(ob, cv2.COLOR_RGB2GRAY)
+
+    def step(self, action):
+        ob, reward, done, info = self.env.step(action)
+        return cv2.cvtColor(ob, cv2.COLOR_RGB2GRAY), reward, done, info
 
 class ResetARI(gym.Wrapper):
     """
@@ -109,7 +157,7 @@ class ResetARI(gym.Wrapper):
         self.observation_space = gym.spaces.Box(
             0,
             255,  # max value
-            shape=(len(self.env.labels()),),
+            shape=(len(self.env.labels()), ),
             dtype=np.uint8)
 
     def reset(self, **kwargs):
@@ -124,43 +172,41 @@ class ResetARI(gym.Wrapper):
         next_state = np.array(list(info['labels'].values()))
         return next_state, reward, done, info
 
-
 # Adapted from OpenAI Baselines:
 # https://github.com/openai/baselines/blob/master/baselines/common/atari_wrappers.py
-class AtariPreprocess(gym.Wrapper):
-    """
-    Description:
-        Preprocessing as described in the Nature DQN paper (Mnih 2015)
+# class AtariPreprocess(gym.Wrapper):
+#     """
+#     Description:
+#         Preprocessing as described in the Nature DQN paper (Mnih 2015)
 
-    Usage:
-        Wrap env around this. It will use torchvision to transform the image according to Mnih 2015
+#     Usage:
+#         Wrap env around this. It will use torchvision to transform the image according to Mnih 2015
 
-    Notes:
-        - Should be decomposed into using separate envs for each.
-    """
-    def __init__(self, env, shape=(84, 84)):
-        gym.Wrapper.__init__(self, env)
-        self.shape = shape
-        self.transforms = T.Compose([
-            T.ToPILImage(mode='YCbCr'),
-            T.Lambda(lambda img: img.split()[0]),
-            T.Resize(self.shape),
-            T.Lambda(lambda img: np.array(img, copy=False)),
-        ])
-        self.observation_space = gym.spaces.Box(
-            low=0,
-            high=255,
-            shape=self.shape,
-            dtype=np.uint8,
-        )
+#     Notes:
+#         - Should be decomposed into using separate envs for each.
+#     """
+#     def __init__(self, env, shape=(84, 84)):
+#         gym.Wrapper.__init__(self, env)
+#         self.shape = shape
+#         self.transforms = T.Compose([
+#             T.ToPILImage(mode='YCbCr'),
+#             T.Lambda(lambda img: img.split()[0]),
+#             T.Resize(self.shape),
+#             T.Lambda(lambda img: np.array(img, copy=False)),
+#         ])
+#         self.observation_space = gym.spaces.Box(
+#             low=0,
+#             high=255,
+#             shape=self.shape,
+#             dtype=np.uint8,
+#         )
 
-    def reset(self, **kwargs):
-        return self.transforms(self.env.reset(**kwargs))
+#     def reset(self, **kwargs):
+#         return self.transforms(self.env.reset(**kwargs))
 
-    def step(self, action):
-        next_state, reward, done, info = self.env.step(action)
-        return self.transforms(next_state), reward, done, info
-
+#     def step(self, action):
+#         next_state, reward, done, info = self.env.step(action)
+#         return self.transforms(next_state), reward, done, info
 
 class MaxAndSkipEnv(gym.Wrapper):
     """
@@ -177,7 +223,7 @@ class MaxAndSkipEnv(gym.Wrapper):
     def __init__(self, env, skip=4, max_pool=True):
         gym.Wrapper.__init__(self, env)
         # most recent raw observations (for max pooling across time steps)
-        self._obs_buffer = np.zeros((2,) + env.observation_space.shape, dtype=np.uint8)
+        self._obs_buffer = np.zeros((2, ) + env.observation_space.shape, dtype=np.uint8)
         self._skip = skip
         self._max_pool = max_pool
         self.observation_space = env.observation_space
@@ -204,7 +250,6 @@ class MaxAndSkipEnv(gym.Wrapper):
         else:
             frame = self._obs_buffer[1]
         return frame, total_reward, done, info
-
 
 class FrameStack(gym.Wrapper):
     """
@@ -236,7 +281,7 @@ class FrameStack(gym.Wrapper):
         self.action_dtype = env.action_space.dtype
         self.observation_space = gym.spaces.Box(low=0,
                                                 high=255,
-                                                shape=((self.total_k,) + shp),
+                                                shape=((self.total_k, ) + shp),
                                                 dtype=env.observation_space.dtype)
 
     def reset(self):
@@ -244,8 +289,7 @@ class FrameStack(gym.Wrapper):
         for _ in range(self.per_stack):
             self.frames.append(ob)
             if self.actions is not None:
-                self.actions.append(
-                    np.ones_like(ob, dtype=self.action_dtype) * self.reset_action)
+                self.actions.append(np.ones_like(ob, dtype=self.action_dtype) * self.reset_action)
         return self._get_ob()
 
     def step(self, action):
@@ -258,12 +302,10 @@ class FrameStack(gym.Wrapper):
     def _get_ob(self):
         assert len(self.frames) == self.per_stack
         if self.actions is not None:
-            return LazyFrames([
-                item for frame_action in zip(self.frames, self.actions) for item in frame_action
-                ])
+            return LazyFrames(
+                [item for frame_action in zip(self.frames, self.actions) for item in frame_action])
         else:
             return LazyFrames(list(self.frames))
-
 
 class LazyFrames(object):
     """
@@ -280,6 +322,10 @@ class LazyFrames(object):
     """
     def __init__(self, frames):
         self._frames = frames
+
+    @property
+    def shape(self):
+        return self._force().shape
 
     def _force(self):
         return np.stack(self._frames, axis=0)
