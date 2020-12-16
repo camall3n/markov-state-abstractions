@@ -42,7 +42,9 @@ class Network(torch.nn.Module):
         s = str(self)
         print(s)
 
-    def save(self, tag, name):
+    def save(self, tag, name, model_dir=None):
+        if model_dir is None:
+            model_dir = 'models/'
         model_dir = 'models/{}'.format(tag)
         os.makedirs(model_dir, exist_ok=True)
         model_file = model_dir + '/{}.pytorch'.format(name)
