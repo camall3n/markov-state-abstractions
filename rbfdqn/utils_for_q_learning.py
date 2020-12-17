@@ -4,16 +4,16 @@ import os
 import numpy
 import torch
 
-def action_checker(env):
-    for l, h in zip(env.action_space.low, env.action_space.high):
+def action_checker(action_space):
+    for l, h in zip(action_space.low, action_space.high):
         if l != -h:
             print("asymetric action space")
             print("don't know how to deal with it")
             assert False
-    if numpy.max(env.action_space.low) != numpy.min(env.action_space.low):
+    if numpy.max(action_space.low) != numpy.min(action_space.low):
         print("different action range per dimension")
         assert False
-    if numpy.max(env.action_space.high) != numpy.min(env.action_space.high):
+    if numpy.max(action_space.high) != numpy.min(action_space.high):
         print("different action range per dimension")
         assert False
 

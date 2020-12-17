@@ -47,7 +47,7 @@ def build_phi_network(params, input_shape):
         torch.nn.Tanh()
     ])
 
-    return phi, output_size
+    return phi
 
 class InverseModel(torch.nn.Module):
     """
@@ -55,15 +55,12 @@ class InverseModel(torch.nn.Module):
         Network module that captures predicting the action given a state, next_state pair.
 
     Parameters:
-        - args : Namespace
-            See the `markov` folder for information on the argparse.
-        - feature_size : Int
-            The size of the abstract state
-        - num_actions : Int
+        - params
+        - n_actions : Int
             The number of actions in the environment
 
     """
-    def __init__(self, params, num_actions, discrete=False):
+    def __init__(self, params, n_actions, discrete=False):
         super(InverseModel, self).__init__()
         self.discrete = discrete
         self.body = torch.nn.Sequential(
@@ -73,10 +70,10 @@ class InverseModel(torch.nn.Module):
             torch.nn.ReLU(),
         )
         if self.discrete:
-            self.log_pr_linear = torch.nn.Linear(params['layer_size'], num_actions)
+            self.log_pr_linear = torch.nn.Linear(params['layer_size'], n_actions)
         else:
-            self.mean_linear = torch.nn.Linear(params['layer_size'], num_actions)
-            self.log_std_linear = torch.nn.Linear(params['layer_size'], num_actions)
+            self.mean_linear = torch.nn.Linear(params['layer_size'], n_actions)
+            self.log_std_linear = torch.nn.Linear(params['layer_size'], n_actions)
 
     def forward(self, z0, z1):
         context = torch.cat((z0, z1), -1)
@@ -97,8 +94,7 @@ class ContrastiveModel(torch.nn.Module):
         Network module that captures if a given state1, state2 pair belong in the same transition.
 
     Parameters:
-        - params : Namespace
-            See the `markov` folder for information on the argparse.
+        - params
     """
     def __init__(self, params):
         super(ContrastiveModel, self).__init__()
@@ -118,23 +114,21 @@ class MarkovHead(torch.nn.Module):
         Network module that combines contrastive and inverse models.
 
     Parameters:
-        - args : Namespace
-            See the `markov` folder for information on the argparse.
-        - feature_size : Int
-            The size of the abstract state
-        - num_actions : Int
-            The number of actions in the environment
-
-    Notes:
-        - This does not support continuous action spaces right now. TODO
+        - params
+        - action_space : Int
+            The environment's action space
     """
-    def __init__(self, params, feature_size, action_space):
+    def __init__(self, params, action_space):
         super(MarkovHead, self).__init__()
         self.discrete = (action_space is spaces.Discrete)
-        self.n_actions = num_actions
+        if self.discrete:
+            self.n_actions = action_space.n
+        else:
+            assert len(action_space.shape) == 1
+            self.n_actions = action_space.shape[0]
 
-        self.inverse_model = InverseModel(args, feature_size, num_actions, discrete=self.discrete)
-        self.discriminator = ContrastiveModel(args, feature_size)
+        self.inverse_model = InverseModel(params, self.n_actions, discrete=self.discrete)
+        self.discriminator = ContrastiveModel(params)
 
         self.bce = torch.nn.BCEWithLogitsLoss()
         if self.discrete:
@@ -172,12 +166,18 @@ class MarkovHead(torch.nn.Module):
         return markov_loss
 
 class FeatureNet(torch.nn.Module):
-    def __init__(self, params, num_actions, input_shape):
+    def __init__(self, params, action_space, input_shape):
         super(FeatureNet, self).__init__()
         self.phi = build_phi_network(params, input_shape)
-        self.markov_head = MarkovHead(params, params['latent_dim'], num_actions)
+        self.markov_head = MarkovHead(params, action_space)
 
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=args.lr)
+        if params['optimizer'] == 'RMSprop':
+            make_optimizer = optim.RMSprop
+        elif params['optimizer'] == 'Adam':
+            make_optimizer = optim.Adam
+        else:
+            raise NotImplementedError('unknown optimizer')
+        self.optimizer = make_optimizer(self.parameters(), lr=params['learning_rate'])
 
     def forward(self, x):
         return self.phi(x)

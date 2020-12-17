@@ -107,7 +107,7 @@ class RenderOpenCV(gym.Wrapper):
 
     def step(self, action):
         next_state, reward, done, info = self.env.step(action)
-        info.update({'state', next_state})
+        info.update({'state': next_state})
         next_ob = self.env.render(mode='rgb_array', use_opencv_renderer=True)
         return next_ob, reward, done, info
 
@@ -267,7 +267,7 @@ class FrameStack(gym.Wrapper):
         - If you're stacking actions, then k must include the action frames.
         - If you're stacking actions, then k must be even.
     """
-    def __init__(self, env, k, action_stack=False, reset_action=None):
+    def __init__(self, env, k, action_stack=False, reset_action=None, lazy=True):
         gym.Wrapper.__init__(self, env)
         self.total_k = k
         if action_stack:
@@ -276,6 +276,7 @@ class FrameStack(gym.Wrapper):
         self.frames = deque([], maxlen=self.per_stack)
         self.actions = deque([], maxlen=self.per_stack) if action_stack else None
         self.reset_action = reset_action
+        self.lazy = lazy
 
         shp = env.observation_space.shape
         self.action_dtype = env.action_space.dtype
@@ -302,10 +303,14 @@ class FrameStack(gym.Wrapper):
     def _get_ob(self):
         assert len(self.frames) == self.per_stack
         if self.actions is not None:
-            return LazyFrames(
-                [item for frame_action in zip(self.frames, self.actions) for item in frame_action])
+            result = [
+                item for frame_action in zip(self.frames, self.actions) for item in frame_action
+            ]
         else:
-            return LazyFrames(list(self.frames))
+            result = list(self.frames)
+        if self.lazy:
+            return LazyFrames(result)
+        return np.stack(result, axis=0)
 
 class LazyFrames(object):
     """

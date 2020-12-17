@@ -4,9 +4,8 @@ import os
 
 from rbfdqn.rbfdqn import *
 from dmcontrol.gym_wrappers import *
-from dmcontrol.markov import FeatureNet, build_phi_network
 
-logging.basicConfig(level=logging.DEBUG, handlers=[logging.StreamHandler()])
+logging.basicConfig(level=logging.INFO, handlers=[logging.StreamHandler()])
 
 def remove_prefix(text, prefix):
     if text.startswith(prefix):
@@ -73,7 +72,9 @@ class DMControlTrial(Trial):
         return params, env, device
 
     def encode(self, state):
-        return self.featurenet(state)
+        if self.encoder is None:
+            return state
+        return self.encoder(torch.as_tensor(state).float())
 
     def setup(self):
         self.env = FixedDurationHack(self.env)
@@ -87,11 +88,9 @@ class DMControlTrial(Trial):
             self.env = Grayscale(self.env)
             self.env = ResizeObservation(self.env, (84, 84))
             self.env = MaxAndSkipEnv(self.env, skip=self.params['action_repeat'], max_pool=False)
-            self.env = FrameStack(self.env, self.params['frame_stack'])
+            self.env = FrameStack(self.env, self.params['frame_stack'], lazy=False)
         self.params['env'] = self.env
-
-        s0 = self.env.reset()
-        self.featurenet = FeatureNet(self.params, self.env.action_space, s0.shape)
+        self.agent = Agent(self.params, self.env, self.device)
 
         super().setup()
 

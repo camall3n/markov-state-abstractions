@@ -10,10 +10,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import numpy
-import pickle
+from tqdm import tqdm
 
 from . import utils_for_q_learning, buffer_class
-from gridworlds.nn import nnutils, simplenet
+from gridworlds.nn import nnutils
+from dmcontrol.markov import FeatureNet, build_phi_network
 
 def rbf_function_on_action(centroid_locations, action, beta):
     '''
@@ -53,22 +54,19 @@ def rbf_function(centroid_locations, action_set, beta):
     weights = F.softmax(diff_norm, dim=2)  # batch x N x num_act
     return weights
 
-class Net(nnutils.Network):
-    def __init__(self, params, env, state_size, action_size, device):
-        super(Net, self).__init__()
+class RBQFNet(nnutils.Network):
+    def __init__(self, params, action_space, state_size):
+        super().__init__()
 
-        self.env = env
-        self.device = device
+        utils_for_q_learning.action_checker(action_space)
         self.params = params
+        self.action_space = action_space
+        self.action_size = len(action_space.low)
+        self.state_size = state_size
+
         self.N = self.params['num_points']
-        self.max_a = self.env.action_space.high[0]
+        self.max_a = self.action_space.high[0]
         self.beta = self.params['temperature']
-
-        self.buffer_object = buffer_class.buffer_class(max_length=self.params['max_buffer_size'],
-                                                       env=self.env,
-                                                       seed_number=self.params['seed_number'])
-
-        self.state_size, self.action_size = state_size, action_size
 
         self.value_module = nn.Sequential(
             nn.Linear(self.state_size, self.params['layer_size']),
@@ -128,8 +126,6 @@ class Net(nnutils.Network):
         except:
             logging.warning("no optimizer specified ... ")
 
-        self.to(self.device)
-
     def get_centroid_values(self, s):
         '''
         given a batch of s, get all centroid values, [batch x N]
@@ -175,63 +171,104 @@ class Net(nnutils.Network):
         output = output.sum(1, keepdim=True)  # [batch x 1]
         return output
 
-    def e_greedy_policy(self, s, episode, train_or_test):
+    def policy(self, s, epsilon, policy_noise=0):
         '''
-        Given state s, at episode, take random action with p=eps if training
-        Note - epsilon is determined by episode
+        Given state s, at episode, take random action with p=eps
+        Note - epsilon is determined by episode and whether training/testing
         '''
-        epsilon = 1.0 / numpy.power(episode, 1.0 / self.params['policy_parameter'])
-        if train_or_test == 'train' and random.random() < epsilon:
-            a = self.env.action_space.sample()
+        if epsilon > 0 and random.random() < epsilon:
+            a = self.action_space.sample()
             return a.tolist()
         else:
             self.eval()
-            s_matrix = numpy.array(s).reshape(1, self.state_size)
             with torch.no_grad():
-                s = torch.from_numpy(s_matrix).float().to(self.device)
                 _, a = self.get_best_qvalue_and_action(s)
                 a = a.cpu().numpy()
             self.train()
+            if policy_noise > 0:
+                noise = numpy.random.normal(loc=0.0, scale=policy_noise, size=len(a))
+                a = a + noise
             return a
 
-    def e_greedy_gaussian_policy(self, s, episode, train_or_test):
-        '''
-        Given state s, at episode, take random action with p=eps if training
-        Note - epsilon is determined by episode
-        '''
-        epsilon = 1.0 / numpy.power(episode, 1.0 / self.params['policy_parameter'])
-        if train_or_test == 'train' and random.random() < epsilon:
-            a = self.env.action_space.sample()
-            return a.tolist()
-        else:
-            self.eval()
-            s_matrix = numpy.array(s).reshape(1, self.state_size)
-            with torch.no_grad():
-                s = torch.from_numpy(s_matrix).float().to(self.device)
-                _, a = self.get_best_qvalue_and_action(s)
-                a = a.cpu().numpy()
-            self.train()
-            noise = numpy.random.normal(loc=0.0, scale=self.params['noise'], size=len(a))
-            a = a + noise
-            return a
-
-    def gaussian_policy(self, s, episode, train_or_test):
-        '''
-        Given state s, at episode, take random action with p=eps if training
-        Note - epsilon is determined by episode
-        '''
-        self.eval()
-        s_matrix = numpy.array(s).reshape(1, self.state_size)
+    def compute_loss(self, Q_target, s_matrix, a_matrix, r_matrix, done_matrix, sp_matrix):
+        Q_star, _ = Q_target.get_best_qvalue_and_action(sp_matrix)
+        Q_star = Q_star.reshape((self.params['batch_size'], -1))
         with torch.no_grad():
-            s = torch.from_numpy(s_matrix).float().to(self.device)
-            _, a = self.get_best_qvalue_and_action(s)
-            a = a.cpu()
-        self.train()
-        noise = numpy.random.normal(loc=0.0, scale=self.params['noise'], size=len(a))
-        a = a + noise
-        return a
+            y = r_matrix + self.params['gamma'] * (1 - done_matrix) * Q_star
+        y_hat = self.forward(s_matrix, a_matrix)
+        loss = self.criterion(y_hat, y)
+        return loss
 
-    def update(self, target_Q, count):
+class Agent:
+    def __init__(self, params, env, device):
+        self.params = params
+        self.device = device
+        self.buffer_object = buffer_class.buffer_class(max_length=params['max_buffer_size'],
+                                                       env=env,
+                                                       seed_number=params['seed_number'])
+
+        s0 = env.reset()
+        self.state_shape = s0.shape
+        feature_type = self.params['features']
+        if feature_type == 'expert':
+            self.encoder = None
+        elif feature_type == 'visual':
+            self.encoder = build_phi_network(params, self.state_shape).to(device)
+        elif feature_type == 'markov':
+            self.encoder = FeatureNet(params, self.env.action_space, self.state_shape).to(device)
+        if self.encoder is not None:
+            print('Encoder:')
+            print(self.encoder)
+            print()
+
+        s0_matrix = numpy.array(s0).reshape((1, ) + self.state_shape)
+        z0 = self.encode(torch.as_tensor(s0_matrix).float().to(device))
+        self.z_dim = len(z0.squeeze())
+
+        self.Q_object = RBQFNet(params, env.action_space, self.z_dim).to(device)
+        self.Q_object_target = RBQFNet(params, env.action_space, self.z_dim).to(device)
+        self.Q_object_target.eval()
+        print('Q-Network:')
+        print(self.Q_object)
+        print()
+
+        utils_for_q_learning.sync_networks(target=self.Q_object_target,
+                                           online=self.Q_object,
+                                           alpha=params['target_network_learning_rate'],
+                                           copy=True)
+
+        policy_type = params['policy_type']
+        if policy_type not in ['e_greedy', 'e_greedy_gaussian', 'gaussian']:
+            raise NotImplementedError(
+                'No get_action function configured for policy type {}'.format(policy_type))
+        self.epsilon_schedule = lambda episode: 1.0 / numpy.power(
+            episode, 1.0 / self.params['policy_parameter'])
+        self.policy_noise = 0
+        # override policy defaults for specific cases
+        if policy_type == 'gaussian':
+            self.epsilon_schedule = lambda episode: 0
+        if policy_type in ['e_greedy_gaussian', 'gaussian']:
+            self.policy_noise = self.params['noise']
+
+    def encode(self, state):
+        if self.encoder is None:
+            return state
+        return self.encoder(state)
+
+    def act(self, s, episode, train_or_test):
+        if train_or_test == 'train':
+            epsilon = self.epsilon_schedule(episode)
+            policy_noise = self.policy_noise
+        else:
+            epsilon = 0
+            policy_noise = 0
+
+        s_matrix = numpy.array(s).reshape((1, ) + self.state_shape)
+        s = torch.from_numpy(s_matrix).float().to(self.device)
+        z = self.encode(s)
+        return self.Q_object.policy(z, epsilon, policy_noise)
+
+    def update(self):
         if len(self.buffer_object) < self.params['batch_size']:
             return 0
         s_matrix, a_matrix, r_matrix, done_matrix, sp_matrix = self.buffer_object.sample(
@@ -246,18 +283,16 @@ class Net(nnutils.Network):
         done_matrix = torch.from_numpy(done_matrix).float().to(self.device)
         sp_matrix = torch.from_numpy(sp_matrix).float().to(self.device)
 
-        Q_star, _ = target_Q.get_best_qvalue_and_action(sp_matrix)
-        Q_star = Q_star.reshape((self.params['batch_size'], -1))
-        with torch.no_grad():
-            y = r_matrix + self.params['gamma'] * (1 - done_matrix) * Q_star
-        y_hat = self.forward(s_matrix, a_matrix)
-        loss = self.criterion(y_hat, y)
-        self.zero_grad()
+        z_matrix = self.encode(s_matrix)
+        zp_matrix = self.encode(sp_matrix)
+
+        loss = self.Q_object.compute_loss(self.Q_object_target, z_matrix, a_matrix, r_matrix,
+                                          done_matrix, zp_matrix)
+        self.Q_object.zero_grad()
         loss.backward()
-        self.optimizer.step()
-        self.zero_grad()
-        utils_for_q_learning.sync_networks(target=target_Q,
-                                           online=self,
+        self.Q_object.optimizer.step()
+        utils_for_q_learning.sync_networks(target=self.Q_object_target,
+                                           online=self.Q_object,
                                            alpha=self.params['target_network_learning_rate'],
                                            copy=False)
         return loss.cpu().data.numpy()
@@ -268,9 +303,6 @@ class Trial:
         self.params = params
         self.env = env
         self.device = device
-
-    def encode(self, state):
-        return state
 
     @staticmethod
     def parse_args():
@@ -294,41 +326,8 @@ class Trial:
 
     def setup(self):
         utils_for_q_learning.set_random_seed(self.params)
-        s0 = self.env.reset()
-        self.s_dim = len(s0)
-        self.a_dim = len(self.env.action_space.low)
-        utils_for_q_learning.action_checker(self.env)
-
-        self.Q_object = Net(self.params,
-                            self.env,
-                            state_size=self.s_dim,
-                            action_size=self.a_dim,
-                            device=self.device)
-        self.Q_object_target = Net(self.params,
-                                   self.env,
-                                   state_size=self.s_dim,
-                                   action_size=self.a_dim,
-                                   device=self.device)
-        self.Q_object_target.eval()
-
-        utils_for_q_learning.sync_networks(target=self.Q_object_target,
-                                           online=self.Q_object,
-                                           alpha=self.params['target_network_learning_rate'],
-                                           copy=True)
-
-        policy_type = self.params['policy_type']
-        if policy_type == 'e_greedy':
-            self.get_action = self.Q_object.e_greedy_policy
-        elif policy_type == 'e_greedy_gaussian':
-            self.get_action = self.Q_object.e_greedy_gaussian_policy
-        elif policy_type == 'gaussian':
-            self.get_action = self.Q_object.gaussian_policy
-        else:
-            raise NotImplementedError(
-                'No get_action function configured for policy type {}'.format(policy_type))
-
-        self.G_li = []
-        self.loss_li = []
+        self.returns_list = []
+        self.loss_list = []
 
     def teardown(self):
         pass
@@ -339,21 +338,21 @@ class Trial:
     def run_episode(self, episode):
         s, done, t = self.env.reset(), False, 0
         while not done:
-            a = self.get_action(s, episode + 1, 'train')
+            a = self.agent.act(s, episode + 1, 'train')
             sp, r, done, _ = self.env.step(numpy.array(a))
             t = t + 1
             done_p = False if t == self.env.unwrapped._max_episode_steps else done
-            self.Q_object.buffer_object.append(s, a, r, done_p, sp)
+            self.agent.buffer_object.append(s, a, r, done_p, sp)
             s = sp
 
     def post_episode(self, episode):
         logging.debug('episode complete')
         #now update the Q network
         loss = []
-        for count in range(self.params['updates_per_episode']):
-            temp = self.Q_object.update(self.Q_object_target, count)
+        for count in tqdm(range(self.params['updates_per_episode'])):
+            temp = self.agent.update()
             loss.append(temp)
-        self.loss_li.append(numpy.mean(loss))
+        self.loss_list.append(numpy.mean(loss))
 
         self.every_n_episodes(10, self.evaluate_and_archive, episode)
 
@@ -362,14 +361,15 @@ class Trial:
         for ep in range(10):
             s, G, done, t = self.env.reset(), 0, False, 0
             while done == False:
-                a = self.Q_object.e_greedy_policy(s, episode + 1, 'test')
+                a = self.agent.act(s, episode, 'test')
                 sp, r, done, _ = self.env.step(numpy.array(a))
                 s, G, t = sp, G + r, t + 1
             temp.append(G)
         logging.info("after {} episodes, learned policy collects {} average returns".format(
             episode, numpy.mean(temp)))
-        self.G_li.append(numpy.mean(temp))
-        utils_for_q_learning.save(self.params['results_dir'], self.G_li, self.loss_li, self.params)
+        self.returns_list.append(numpy.mean(temp))
+        utils_for_q_learning.save(self.params['results_dir'], self.returns_list, self.loss_list,
+                                  self.params)
 
     def every_n_episodes(self, n, callback, episode, *args):
         if (episode % n == 0) or (episode == self.params['max_episode'] - 1):
