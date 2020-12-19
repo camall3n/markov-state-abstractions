@@ -35,12 +35,8 @@ def get_hyper_parameters(filename, alg):
                 sys.exit(1)
     return meta_params
 
-def save_hyper_parameters(params, unique_id):
-    hyperparams_filename = '{}__{}.hyper'.format(
-        params['hyper_parameters_name'],
-        unique_id,
-    )
-    hyperparams_path = os.path.join(params['hyperparams_dir'], hyperparams_filename)
+def save_hyper_parameters(params, results_dir):
+    hyperparams_path = os.path.join(results_dir, 'hyperparams.csv')
     with open(hyperparams_path, 'w') as file:
         for name, value in sorted(params.items()):
             type_str = defaultdict(lambda: None, {
@@ -60,10 +56,10 @@ def sync_networks(target, online, alpha, copy=False):
             target_param.data.copy_(alpha * online_param.data + (1 - alpha) * target_param.data)
 
 def save(results_dir, li_returns, li_loss, params):
-    directory = results_dir + '/' + params['hyper_parameters_name'] + '/'
-    os.makedirs(directory, exist_ok=True)
-    numpy.savetxt(directory + "{}.txt".format(params['seed_number']), li_returns)
-    numpy.savetxt(directory + 'loss_{}.txt'.format(params['seed_number']), li_loss)
+    os.makedirs(results_dir, exist_ok=True)
+    file_path = os.path.join(results_dir, '{}.csv')
+    numpy.savetxt(file_path.format('scores'), li_returns, delimiter=',')
+    numpy.savetxt(file_path.format('loss'), li_loss, delimiter=',')
 
 def set_random_seed(meta_params):
     seed_number = meta_params['seed_number']

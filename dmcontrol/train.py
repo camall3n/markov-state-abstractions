@@ -27,8 +27,10 @@ class DMControlTrial(Trial):
                             help='Algorithm name')
         parser.add_argument('--seed', '-s', type=int, default=0,
                             help='Random seed')
-        parser.add_argument('--unique-id', required=True,
-                            help='A unique identifier for the experiment')
+        parser.add_argument('--agent_tag', required=True, type=str,
+                            help='A unique identifier for the agent')
+        parser.add_argument('--experiment_name', type=str, default='representation_gap',
+                            help='A name for the experiment')
         args, unknown = parser.parse_known_args()
         other_args = {
             (remove_prefix(key, '--'), val)
@@ -45,21 +47,30 @@ class DMControlTrial(Trial):
         params['alg'] = args.alg
         params['seed_number'] = args.seed
 
-        params['base_dir'] = 'dmcontrol'
-        for subdir in ['logs', 'models', 'results', 'hyperparams']:
-            subdir_path = os.path.join(params['base_dir'], subdir, args.alg)
+        for arg_name, arg_value in other_args:
+            if arg_name in params:
+                raise KeyError("Unknown parameter '{}'".format(arg_value))
+            params[arg_name] = arg_value
+
+        results_dir = os.path.join(
+            'dmcontrol',
+            'experiments',
+            params['env_name'].replace(':', '-').replace('/', '-'),
+            args.experiment_name,
+            args.agent_tag,
+            'seed_{:03d}'.format(args.seed),
+        )
+        os.makedirs(results_dir, exist_ok=True)
+        utils_for_q_learning.save_hyper_parameters(params, results_dir)
+
+        params['results_dir'] = results_dir
+        for subdir in ['models']:
+            subdir_path = os.path.join(results_dir, subdir)
             os.makedirs(subdir_path, exist_ok=True)
             params[subdir + '_dir'] = subdir_path
 
-        log_file = os.path.join(params['logs_dir'], '{}.log'.format(args.seed))
+        log_file = os.path.join(results_dir, 'log.txt')
         configure_logger(log_file)
-
-        for arg_name, arg_value in other_args:
-            if arg_name in params:
-                logging.warning("Unknown parameter '{}'".format(arg_value))
-            params[arg_name] = arg_value
-
-        utils_for_q_learning.save_hyper_parameters(params, args.unique_id)
 
         if torch.cuda.is_available():
             device = torch.device("cuda")
@@ -96,9 +107,7 @@ class DMControlTrial(Trial):
 
     def teardown(self):
         super().teardown()
-        self.Q_object.save(tag=self.params['unique_id'],
-                           name='model',
-                           model_dir=self.params['models_dir'])
+        self.agent.save()
 
 if __name__ == '__main__':
     trial = DMControlTrial()

@@ -215,7 +215,7 @@ class Agent:
         elif feature_type == 'visual':
             self.encoder = build_phi_network(params, self.state_shape).to(device)
         elif feature_type == 'markov':
-            self.encoder = FeatureNet(params, self.env.action_space, self.state_shape).to(device)
+            self.encoder = FeatureNet(params, env.action_space, self.state_shape).to(device)
         if self.encoder is not None:
             print('Encoder:')
             print(self.encoder)
@@ -296,6 +296,11 @@ class Agent:
                                            alpha=self.params['target_network_learning_rate'],
                                            copy=False)
         return loss.cpu().data.numpy()
+
+    def save(self):
+        self.Q_object.save(name='Q_object', model_dir=self.params['models_dir'])
+        if self.encoder is not None:
+            self.encoder.save(name='encoder', model_dir=self.params['models_dir'])
 
 class Trial:
     def __init__(self):

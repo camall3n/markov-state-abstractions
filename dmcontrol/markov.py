@@ -5,7 +5,7 @@ import numpy as np
 
 from gym import spaces
 
-from gridworlds.nn.nnutils import Reshape
+from gridworlds.nn import nnutils
 
 def conv2d_size_out(size, kernel_size, stride):
     ''' Adapted from pytorch tutorials:
@@ -14,7 +14,7 @@ def conv2d_size_out(size, kernel_size, stride):
     return ((size[-2] - (kernel_size[-2] - 1) - 1) // stride + 1,
             (size[-1] - (kernel_size[-1] - 1) - 1) // stride + 1)
 
-def build_phi_network(params, input_shape):
+def build_phi_network(params, input_shape, mode='rainbow-de'):
     """
     Description:
         Construct the appropriate kind of phi network for the pretraining step in the markov
@@ -27,25 +27,57 @@ def build_phi_network(params, input_shape):
             Shape of the input (state generally)
     """
 
-    final_size = conv2d_size_out(input_shape, (3, 3), 2)
-    final_size = conv2d_size_out(final_size, (3, 3), 1)
-    final_size = conv2d_size_out(final_size, (3, 3), 1)
-    final_size = conv2d_size_out(final_size, (3, 3), 1)
-    output_size = final_size[0] * final_size[1] * 32
-    phi = torch.nn.Sequential(*[
-        torch.nn.Conv2d(params['frame_stack'], 32, kernel_size=(4, 4), stride=2),
-        torch.nn.ReLU(),
-        torch.nn.Conv2d(32, 32, kernel_size=(3, 3), stride=1),
-        torch.nn.ReLU(),
-        torch.nn.Conv2d(32, 32, kernel_size=(3, 3), stride=1),
-        torch.nn.ReLU(),
-        torch.nn.Conv2d(32, 32, kernel_size=(3, 3), stride=1),
-        torch.nn.ReLU(),
-        Reshape(-1, output_size),
-        torch.nn.Linear(output_size, params['latent_dim']),
-        torch.nn.LayerNorm(params['latent_dim']),
-        torch.nn.Tanh()
-    ])
+    if mode == 'curl':
+        final_size = conv2d_size_out(input_shape, (3, 3), 2)
+        final_size = conv2d_size_out(final_size, (3, 3), 1)
+        final_size = conv2d_size_out(final_size, (3, 3), 1)
+        final_size = conv2d_size_out(final_size, (3, 3), 1)
+        output_size = final_size[0] * final_size[1] * 32
+        phi = nnutils.Sequential(
+            torch.nn.Conv2d(params['frame_stack'], 32, kernel_size=(4, 4), stride=2),
+            torch.nn.ReLU(),
+            torch.nn.Conv2d(32, 32, kernel_size=(3, 3), stride=1),
+            torch.nn.ReLU(),
+            torch.nn.Conv2d(32, 32, kernel_size=(3, 3), stride=1),
+            torch.nn.ReLU(),
+            torch.nn.Conv2d(32, 32, kernel_size=(3, 3), stride=1),
+            torch.nn.ReLU(),
+            nnutils.Reshape(-1, output_size),
+            torch.nn.Linear(output_size, params['latent_dim']),
+            torch.nn.LayerNorm(params['latent_dim']),
+            torch.nn.Tanh(),
+        )
+    elif mode == 'rainbow':
+        final_size = conv2d_size_out(input_shape, (8, 8), 4)
+        final_size = conv2d_size_out(final_size, (4, 4), 2)
+        final_size = conv2d_size_out(final_size, (3, 3), 1)
+        output_size = final_size[0] * final_size[1] * 64
+        phi = nnutils.Sequential(
+            torch.nn.Conv2d(params['frame_stack'], 32, kernel_size=(8, 8), stride=4),
+            torch.nn.ReLU(),
+            torch.nn.Conv2d(32, 64, kernel_size=(4, 4), stride=2),
+            torch.nn.ReLU(),
+            torch.nn.Conv2d(64, 64, kernel_size=(3, 3), stride=1),
+            torch.nn.ReLU(),
+            nnutils.Reshape(-1, output_size),
+            torch.nn.Linear(output_size, params['latent_dim']),
+            torch.nn.LayerNorm(params['latent_dim']),
+            torch.nn.Tanh(),
+        )
+    elif mode == 'rainbow-de':
+        final_size = conv2d_size_out(input_shape, (5, 5), 5)
+        final_size = conv2d_size_out(final_size, (5, 5), 5)
+        output_size = final_size[0] * final_size[1] * 64
+        phi = nnutils.Sequential(
+            torch.nn.Conv2d(params['frame_stack'], 32, kernel_size=(5, 5), stride=5),
+            torch.nn.ReLU(),
+            torch.nn.Conv2d(32, 64, kernel_size=(5, 5), stride=5),
+            torch.nn.ReLU(),
+            nnutils.Reshape(-1, output_size),
+            torch.nn.Linear(output_size, params['latent_dim']),
+            torch.nn.LayerNorm(params['latent_dim']),
+            torch.nn.Tanh(),
+        )
 
     return phi
 
@@ -165,16 +197,16 @@ class MarkovHead(torch.nn.Module):
         markov_loss = l_inverse + l_ratio
         return markov_loss
 
-class FeatureNet(torch.nn.Module):
+class FeatureNet(nnutils.Network):
     def __init__(self, params, action_space, input_shape):
         super(FeatureNet, self).__init__()
         self.phi = build_phi_network(params, input_shape)
         self.markov_head = MarkovHead(params, action_space)
 
         if params['optimizer'] == 'RMSprop':
-            make_optimizer = optim.RMSprop
+            make_optimizer = torch.optim.RMSprop
         elif params['optimizer'] == 'Adam':
-            make_optimizer = optim.Adam
+            make_optimizer = torch.optim.Adam
         else:
             raise NotImplementedError('unknown optimizer')
         self.optimizer = make_optimizer(self.parameters(), lr=params['learning_rate'])
