@@ -213,7 +213,8 @@ class Agent:
         if feature_type == 'expert':
             self.encoder = None
         elif feature_type == 'visual':
-            self.encoder = build_phi_network(params, self.state_shape).to(device)
+            self.encoder = build_phi_network(params, self.state_shape,
+                                             mode=params['encoder_type']).to(device)
         elif feature_type == 'markov':
             self.encoder = FeatureNet(params, env.action_space, self.state_shape).to(device)
         if self.encoder is not None:
@@ -359,11 +360,11 @@ class Trial:
             loss.append(temp)
         self.loss_list.append(numpy.mean(loss))
 
-        self.every_n_episodes(10, self.evaluate_and_archive, episode)
+        self.every_n_episodes(self.params['eval_period'], self.evaluate_and_archive, episode)
 
     def evaluate_and_archive(self, episode, *args):
         temp = []
-        for ep in range(10):
+        for ep in range(self.params['n_eval_episodes']):
             s, G, done, t = self.env.reset(), 0, False, 0
             while done == False:
                 a = self.agent.act(s, episode, 'test')

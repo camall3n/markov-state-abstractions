@@ -31,6 +31,8 @@ class DMControlTrial(Trial):
                             help='A unique identifier for the agent')
         parser.add_argument('--experiment_name', type=str, default='representation_gap',
                             help='A name for the experiment')
+        parser.add_argument('--test', action='store_true',
+                            help='Runs a very short-duration experiment to test installation.')
         args, unknown = parser.parse_known_args()
         other_args = {
             (remove_prefix(key, '--'), val)
@@ -38,7 +40,10 @@ class DMControlTrial(Trial):
         }
         # yapf: enable
 
-        hyperparam_name = '00'
+        if args.test:
+            hyperparam_name = '01'
+        else:
+            hyperparam_name = '00'
         hyperparams_file = os.path.join('dmcontrol', 'hyperparams', args.alg,
                                         hyperparam_name + '.hyper')
         params = utils_for_q_learning.get_hyper_parameters(hyperparams_file, args.alg)

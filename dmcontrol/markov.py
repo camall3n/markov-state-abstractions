@@ -200,7 +200,7 @@ class MarkovHead(torch.nn.Module):
 class FeatureNet(nnutils.Network):
     def __init__(self, params, action_space, input_shape):
         super(FeatureNet, self).__init__()
-        self.phi = build_phi_network(params, input_shape)
+        self.phi = build_phi_network(params, input_shape, mode=params['encoder_type'])
         self.markov_head = MarkovHead(params, action_space)
 
         if params['optimizer'] == 'RMSprop':
