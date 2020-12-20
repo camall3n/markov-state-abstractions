@@ -90,7 +90,6 @@ class InverseModel(torch.nn.Module):
         - params
         - n_actions : Int
             The number of actions in the environment
-
     """
     def __init__(self, params, n_actions, discrete=False):
         super(InverseModel, self).__init__()

@@ -2,8 +2,14 @@ import argparse
 import logging
 import os
 
-from rbfdqn.rbfdqn import *
-from dmcontrol.gym_wrappers import *
+import gym
+import numpy as np
+import torch
+from tqdm import tqdm
+
+from rbfdqn import utils_for_q_learning
+from rbfdqn.rbfdqn import Agent
+from . import gym_wrappers as wrap
 
 logging.basicConfig(level=logging.INFO, handlers=[logging.StreamHandler()])
 
@@ -15,7 +21,13 @@ def remove_prefix(text, prefix):
 def configure_logger(filename):
     logging.getLogger().addHandler(logging.FileHandler(filename, mode='w'))
 
-class DMControlTrial(Trial):
+class DMControlTrial():
+    def __init__(self):
+        params, env, device = self.parse_args()
+        self.params = params
+        self.env = env
+        self.device = device
+
     @staticmethod
     def parse_args():
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -77,42 +89,94 @@ class DMControlTrial(Trial):
         log_file = os.path.join(results_dir, 'log.txt')
         configure_logger(log_file)
 
-        if torch.cuda.is_available():
-            device = torch.device("cuda")
-            logging.info("Running on the GPU")
-        else:
-            device = torch.device("cpu")
-            logging.info("Running on the CPU")
+        device = utils_for_q_learning.get_torch_device()
 
         env = gym.make(params['env_name'], environment_kwargs={'flat_observation': True})
         return params, env, device
 
-    def encode(self, state):
-        if self.encoder is None:
-            return state
-        return self.encoder(torch.as_tensor(state).float())
-
     def setup(self):
-        self.env = FixedDurationHack(self.env)
-        self.env = ObservationDictToInfo(self.env, "observations")
+        self.env = wrap.FixedDurationHack(self.env)
+        self.env = wrap.ObservationDictToInfo(self.env, "observations")
 
         feature_type = self.params['features']
         if feature_type == 'expert':
-            self.env = MaxAndSkipEnv(self.env, skip=self.params['action_repeat'], max_pool=False)
+            self.env = wrap.MaxAndSkipEnv(self.env,
+                                          skip=self.params['action_repeat'],
+                                          max_pool=False)
         else:
-            self.env = RenderOpenCV(self.env)
-            self.env = Grayscale(self.env)
-            self.env = ResizeObservation(self.env, (84, 84))
-            self.env = MaxAndSkipEnv(self.env, skip=self.params['action_repeat'], max_pool=False)
-            self.env = FrameStack(self.env, self.params['frame_stack'], lazy=False)
+            self.env = wrap.RenderOpenCV(self.env)
+            self.env = wrap.Grayscale(self.env)
+            self.env = wrap.ResizeObservation(self.env, (84, 84))
+            self.env = wrap.MaxAndSkipEnv(self.env,
+                                          skip=self.params['action_repeat'],
+                                          max_pool=False)
+            self.env = wrap.FrameStack(self.env, self.params['frame_stack'], lazy=False)
         self.params['env'] = self.env
         self.agent = Agent(self.params, self.env, self.device)
 
-        super().setup()
+        utils_for_q_learning.set_random_seed(self.params)
+        self.returns_list = []
+        self.loss_list = []
+        self.best_score = -np.Inf
 
     def teardown(self):
-        super().teardown()
-        self.agent.save()
+        pass
+
+    def pre_episode(self, episode):
+        logging.info("episode {}".format(episode))
+
+    def run_episode(self, episode):
+        s, done, t = self.env.reset(), False, 0
+        while not done:
+            a = self.agent.act(s, episode + 1, 'train')
+            sp, r, done, _ = self.env.step(np.array(a))
+            t = t + 1
+            done_p = False if t == self.env.unwrapped._max_episode_steps else done
+            self.agent.buffer_object.append(s, a, r, done_p, sp)
+            s = sp
+
+    def post_episode(self, episode):
+        logging.debug('episode complete')
+        #now update the Q network
+        loss = []
+        for count in tqdm(range(self.params['updates_per_episode'])):
+            temp = self.agent.update()
+            loss.append(temp)
+        self.loss_list.append(np.mean(loss))
+
+        self.every_n_episodes(self.params['eval_period'], self.evaluate_and_archive, episode)
+
+    def evaluate_and_archive(self, episode, *args):
+        episode_scores = []
+        for ep in range(self.params['n_eval_episodes']):
+            s, G, done, t = self.env.reset(), 0, False, 0
+            while done == False:
+                a = self.agent.act(s, episode, 'test')
+                sp, r, done, _ = self.env.step(np.array(a))
+                s, G, t = sp, G + r, t + 1
+            episode_scores.append(G)
+        avg_episode_score = np.mean(episode_scores)
+        logging.info("after {} episodes, learned policy achieved {} average score".format(
+            episode, avg_episode_score))
+        self.returns_list.append(avg_episode_score)
+        utils_for_q_learning.save(self.params['results_dir'], self.returns_list, self.loss_list,
+                                  self.params)
+        is_best = (avg_episode_score > self.best_score)
+        if is_best:
+            self.best_score = avg_episode_score
+        self.agent.save(is_best)
+
+    def every_n_episodes(self, n, callback, episode, *args):
+        if (episode % n == 0) or (episode == self.params['max_episode'] - 1):
+            callback(episode, *args)
+
+    def run(self):
+        self.setup()
+        for episode in range(self.params['max_episode']):
+            self.pre_episode(episode)
+            self.run_episode(episode)
+            self.post_episode(episode)
+        self.teardown()
 
 if __name__ == '__main__':
     trial = DMControlTrial()

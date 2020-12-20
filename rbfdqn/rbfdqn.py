@@ -1,16 +1,13 @@
-import gym
 import logging
+import random
 import sys
 import time
-import numpy
-import random
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import numpy
-from tqdm import tqdm
 
 from . import utils_for_q_learning, buffer_class
 from gridworlds.nn import nnutils
@@ -186,7 +183,7 @@ class RBQFNet(nnutils.Network):
                 a = a.cpu().numpy()
             self.train()
             if policy_noise > 0:
-                noise = numpy.random.normal(loc=0.0, scale=policy_noise, size=len(a))
+                noise = np.random.normal(loc=0.0, scale=policy_noise, size=len(a))
                 a = a + noise
             return a
 
@@ -222,7 +219,7 @@ class Agent:
             print(self.encoder)
             print()
 
-        s0_matrix = numpy.array(s0).reshape((1, ) + self.state_shape)
+        s0_matrix = np.array(s0).reshape((1, ) + self.state_shape)
         z0 = self.encode(torch.as_tensor(s0_matrix).float().to(device))
         self.z_dim = len(z0.squeeze())
 
@@ -242,7 +239,7 @@ class Agent:
         if policy_type not in ['e_greedy', 'e_greedy_gaussian', 'gaussian']:
             raise NotImplementedError(
                 'No get_action function configured for policy type {}'.format(policy_type))
-        self.epsilon_schedule = lambda episode: 1.0 / numpy.power(
+        self.epsilon_schedule = lambda episode: 1.0 / np.power(
             episode, 1.0 / self.params['policy_parameter'])
         self.policy_noise = 0
         # override policy defaults for specific cases
@@ -264,7 +261,7 @@ class Agent:
             epsilon = 0
             policy_noise = 0
 
-        s_matrix = numpy.array(s).reshape((1, ) + self.state_shape)
+        s_matrix = np.array(s).reshape((1, ) + self.state_shape)
         s = torch.from_numpy(s_matrix).float().to(self.device)
         z = self.encode(s)
         return self.Q_object.policy(z, epsilon, policy_noise)
@@ -274,9 +271,9 @@ class Agent:
             return 0
         s_matrix, a_matrix, r_matrix, done_matrix, sp_matrix = self.buffer_object.sample(
             self.params['batch_size'])
-        r_matrix = numpy.clip(r_matrix,
-                              a_min=-self.params['reward_clip'],
-                              a_max=self.params['reward_clip'])
+        r_matrix = np.clip(r_matrix,
+                           a_min=-self.params['reward_clip'],
+                           a_max=self.params['reward_clip'])
 
         s_matrix = torch.from_numpy(s_matrix).float().to(self.device)
         a_matrix = torch.from_numpy(a_matrix).float().to(self.device)
@@ -298,97 +295,7 @@ class Agent:
                                            copy=False)
         return loss.cpu().data.numpy()
 
-    def save(self):
-        self.Q_object.save(name='Q_object', model_dir=self.params['models_dir'])
-        if self.encoder is not None:
-            self.encoder.save(name='encoder', model_dir=self.params['models_dir'])
-
-class Trial:
-    def __init__(self):
-        params, env, device = self.parse_args()
-        self.params = params
-        self.env = env
-        self.device = device
-
-    @staticmethod
-    def parse_args():
-        if torch.cuda.is_available():
-            device = torch.device("cuda")
-            logging.info("Running on the GPU")
-        else:
-            device = torch.device("cpu")
-            logging.info("Running on the CPU")
-        hyper_parameter_name = sys.argv[1]
-        alg = 'rbfdqn'
-        params = utils_for_q_learning.get_hyper_parameters(hyper_parameter_name, alg)
-        params['hyper_parameters_name'] = hyper_parameter_name
-        params['alg'] = alg
-        env = gym.make(params['env_name'])
-        #env = gym.wrappers.Monitor(env, 'videos/'+params['env_name']+"/", video_callable=lambda episode_id: episode_id%10==0,force = True)
-        params['seed_number'] = int(sys.argv[2])
-        params['results_dir'] = 'dmcontrol/results/' + alg
-        params['env'] = env
-        return params, env, device
-
-    def setup(self):
-        utils_for_q_learning.set_random_seed(self.params)
-        self.returns_list = []
-        self.loss_list = []
-
-    def teardown(self):
-        pass
-
-    def pre_episode(self, episode):
-        logging.info("episode {}".format(episode))
-
-    def run_episode(self, episode):
-        s, done, t = self.env.reset(), False, 0
-        while not done:
-            a = self.agent.act(s, episode + 1, 'train')
-            sp, r, done, _ = self.env.step(numpy.array(a))
-            t = t + 1
-            done_p = False if t == self.env.unwrapped._max_episode_steps else done
-            self.agent.buffer_object.append(s, a, r, done_p, sp)
-            s = sp
-
-    def post_episode(self, episode):
-        logging.debug('episode complete')
-        #now update the Q network
-        loss = []
-        for count in tqdm(range(self.params['updates_per_episode'])):
-            temp = self.agent.update()
-            loss.append(temp)
-        self.loss_list.append(numpy.mean(loss))
-
-        self.every_n_episodes(self.params['eval_period'], self.evaluate_and_archive, episode)
-
-    def evaluate_and_archive(self, episode, *args):
-        temp = []
-        for ep in range(self.params['n_eval_episodes']):
-            s, G, done, t = self.env.reset(), 0, False, 0
-            while done == False:
-                a = self.agent.act(s, episode, 'test')
-                sp, r, done, _ = self.env.step(numpy.array(a))
-                s, G, t = sp, G + r, t + 1
-            temp.append(G)
-        logging.info("after {} episodes, learned policy collects {} average returns".format(
-            episode, numpy.mean(temp)))
-        self.returns_list.append(numpy.mean(temp))
-        utils_for_q_learning.save(self.params['results_dir'], self.returns_list, self.loss_list,
-                                  self.params)
-
-    def every_n_episodes(self, n, callback, episode, *args):
-        if (episode % n == 0) or (episode == self.params['max_episode'] - 1):
-            callback(episode, *args)
-
-    def run(self):
-        self.setup()
-        for episode in range(self.params['max_episode']):
-            self.pre_episode(episode)
-            self.run_episode(episode)
-            self.post_episode(episode)
-        self.teardown()
-
-if __name__ == '__main__':
-    trial = Trial()
-    trial.run()
+    def save(self, is_best=False):
+        self.Q_object.save(name='Q_object', model_dir=self.params['models_dir'], is_best=is_best)
+        if self.encoder is not None and not self.encoder.frozen:
+            self.encoder.save(name='encoder', model_dir=self.params['models_dir'], is_best=is_best)

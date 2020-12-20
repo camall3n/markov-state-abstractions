@@ -1,8 +1,18 @@
 from collections import defaultdict
+import logging
 import os
 
 import numpy
 import torch
+
+def get_torch_device():
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        logging.info("Running on the GPU")
+    else:
+        device = torch.device("cpu")
+        logging.info("Running on the CPU")
+    return device
 
 def action_checker(action_space):
     for l, h in zip(action_space.low, action_space.high):
