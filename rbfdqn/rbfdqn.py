@@ -9,9 +9,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from . import utils_for_q_learning, buffer_class
+from . import utils_for_q_learning
 from gridworlds.nn import nnutils
 from dmcontrol.markov import FeatureNet, build_phi_network
+from gridworlds.agents.replaymemory import ReplayMemory
 
 def rbf_function_on_action(centroid_locations, action, beta):
     '''
@@ -200,9 +201,7 @@ class Agent:
     def __init__(self, params, env, device):
         self.params = params
         self.device = device
-        self.buffer_object = buffer_class.buffer_class(max_length=params['max_buffer_size'],
-                                                       env=env,
-                                                       seed_number=params['seed_number'])
+        self.replay_buffer = ReplayMemory(params['max_buffer_size'])
 
         s0 = env.reset()
         self.state_shape = s0.shape
@@ -266,11 +265,14 @@ class Agent:
         z = self.encode(s)
         return self.Q_object.policy(z, epsilon, policy_noise)
 
+    def store_experience(self, state, action, reward, done, next_state):
+        self.replay_buffer.push(state, action, reward, next_state, done)
+
     def update(self):
-        if len(self.buffer_object) < self.params['batch_size']:
+        if len(self.replay_buffer) < self.params['batch_size']:
             return 0
-        s_matrix, a_matrix, r_matrix, done_matrix, sp_matrix = self.buffer_object.sample(
-            self.params['batch_size'])
+        s_matrix, a_matrix, r_matrix, sp_matrix, done_matrix = self.replay_buffer.sample(
+            self.params['batch_size'], itemize=True)
         r_matrix = np.clip(r_matrix,
                            a_min=-self.params['reward_clip'],
                            a_max=self.params['reward_clip'])

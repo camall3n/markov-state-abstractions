@@ -132,7 +132,7 @@ class DMControlTrial():
             sp, r, done, _ = self.env.step(np.array(a))
             t = t + 1
             done_p = False if t == self.env.unwrapped._max_episode_steps else done
-            self.agent.buffer_object.append(s, a, r, done_p, sp)
+            self.agent.store_experience(s, a, r, done_p, sp)
             s = sp
 
     def post_episode(self, episode):

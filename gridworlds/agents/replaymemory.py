@@ -1,6 +1,8 @@
 from collections import namedtuple
 import random
 
+import numpy as np
+
 # Adapted from Pytorch docs
 
 Experience = namedtuple('Experience', ('x', 'a', 'r', 'xp', 'done'))
@@ -21,8 +23,14 @@ class ReplayMemory:
         self.memory[self.position] = Experience(*args)
         self.position = (self.position + 1) % self.capacity
 
-    def sample(self, batch_size):
-        return random.sample(self.memory, batch_size)
+    def sample(self, batch_size, itemize=False):
+        result = random.sample(self.memory, batch_size)
+        if itemize:
+            result = zip(*result)
+            result = map(np.asarray, result)
+            result = Experience(*result)
+            result = tuple(result)
+        return result
 
     def get_last(self, batch_size):
         return self.memory[-batch_size:]
