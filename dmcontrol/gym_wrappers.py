@@ -267,7 +267,7 @@ class FrameStack(gym.Wrapper):
         - If you're stacking actions, then k must include the action frames.
         - If you're stacking actions, then k must be even.
     """
-    def __init__(self, env, k, action_stack=False, reset_action=None, lazy=True):
+    def __init__(self, env, k, action_stack=False, reset_action=None, lazy=True, use_torch=False):
         gym.Wrapper.__init__(self, env)
         self.total_k = k
         if action_stack:
@@ -277,6 +277,7 @@ class FrameStack(gym.Wrapper):
         self.actions = deque([], maxlen=self.per_stack) if action_stack else None
         self.reset_action = reset_action
         self.lazy = lazy
+        self.use_torch = use_torch
 
         shp = env.observation_space.shape
         self.action_dtype = env.action_space.dtype
@@ -309,8 +310,27 @@ class FrameStack(gym.Wrapper):
         else:
             result = list(self.frames)
         if self.lazy:
-            return LazyFrames(result)
-        return np.stack(result, axis=0)
+            return LazyFrames(result, use_torch=self.use_torch)
+        elif self.use_torch:
+            return torch.stack(result, dim=0)
+        else:
+            return np.stack(result, axis=0)
+
+class TorchInterface(gym.Wrapper):
+    def __init__(self, env):
+        gym.Wrapper.__init__(self, env)
+
+    def reset(self):
+        state = self.env.reset()
+        return torch.as_tensor(state)
+
+    def step(self, action):
+        np_action = np.array(action)
+        state, reward, done, info = self.env.step(np_action)
+        state = torch.as_tensor(state)
+        reward = torch.as_tensor(reward)
+        done = torch.as_tensor(done)
+        return state, reward, done, info
 
 class LazyFrames(object):
     """
@@ -325,20 +345,27 @@ class LazyFrames(object):
     Notes:
         - Can be finicky if used without the OpenAI ReplayBuffer
     """
-    def __init__(self, frames):
+    def __init__(self, frames, use_torch=False):
         self._frames = frames
+        self._use_torch = use_torch
 
     @property
     def shape(self):
         return self._force().shape
 
     def _force(self):
-        return np.stack(self._frames, axis=0)
+        if self._use_torch:
+            return torch.stack(self._frames, dim=0)
+        else:
+            return np.stack(self._frames, axis=0)
 
     def __array__(self, dtype=None):
         out = self._force()
         if dtype is not None:
-            out = out.astype(dtype)
+            if self._use_torch:
+                out = out.to(dtype)
+            else:
+                out = out.astype(dtype)
         return out
 
     def __len__(self):
