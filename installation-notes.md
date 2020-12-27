@@ -21,6 +21,11 @@
         alias cc=/usr/local/bin/gcc-10
         ```
     - Re-run `pip install cpprb`
+    - For CCV:
+        ```
+        module load gcc/10.2
+        pip install git+git://github.com/ymd-h/cpprb.git
+        ```
 - Test as follows:
     - Pendulum-v0: `python -m rbfdqn 00 0`
     - LunarLanderContinuous-v2: `python -m rbfdqn 10 0`
@@ -70,3 +75,10 @@
     - `pip install opencv-python`
 - Test with python:
     - `python test/test_dm2gym.py`
+
+## Running on CCV
+- See note above about installing cpprb
+- Mujoco needs an OpenGL backend:
+    - EGL (headless, hardware-accelerated)
+    - GLFW (windowed, hardware-accelerated)
+    - OSMesa (purely software-based)
