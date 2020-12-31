@@ -1,4 +1,5 @@
 import time
+import os
 
 from tqdm import tqdm
 # ---------------------------------------------------------------
@@ -13,6 +14,7 @@ import gym
 
 import imageio
 
+os.environ["MUJOCO_GL"] = "glfw"
 env = gym.make('dm2gym:CartpoleSwingup-v0')
 
 # plt.ion()

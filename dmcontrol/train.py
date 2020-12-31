@@ -179,5 +179,6 @@ class DMControlTrial():
         self.teardown()
 
 if __name__ == '__main__':
+    os.environ["MUJOCO_GL"] = "glfw"
     trial = DMControlTrial()
     trial.run()
