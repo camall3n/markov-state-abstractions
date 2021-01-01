@@ -82,3 +82,30 @@
     - EGL (headless, hardware-accelerated)
     - GLFW (windowed, hardware-accelerated)
     - OSMesa (purely software-based)
+
+-----
+## Singularity
+- https://sylabs.io/guides/3.6/admin-guide/installation.html#mac
+```bash
+brew install --cask virtualbox
+brew install --cask vagrant
+brew install --cask vagrant-manager
+mkdir vm-singularity && cd vm-singularity
+export VM=sylabs/singularity-3.6-ubuntu-bionic64 && \
+    vagrant init $VM && \
+    vagrant up && \
+    vagrant ssh
+exit
+vagrant pluging install vagrant-scp
+vagrant scp headless.def :~/
+vagrant ssh
+sudo vagrant build headless.img headless.def
+exit
+vagrant scp :~/headless.sif .
+scp headless.sif cluster:~/
+```
+
+On cluster:
+```
+singularity shell --nv headless.sif
+```
