@@ -11,7 +11,10 @@ from rbfdqn import utils_for_q_learning
 from rbfdqn.rbfdqn import Agent
 from . import gym_wrappers as wrap
 
-logging.basicConfig(level=logging.INFO, handlers=[logging.StreamHandler()])
+logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S',
+                    level=logging.INFO,
+                    handlers=[logging.StreamHandler()])
 
 def remove_prefix(text, prefix):
     if text.startswith(prefix):
