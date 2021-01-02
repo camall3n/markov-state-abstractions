@@ -21,6 +21,14 @@ def remove_prefix(text, prefix):
         return text[len(prefix):]
     return text
 
+def update_param(params, arg_name, arg_value):
+    if arg_name not in params:
+        raise KeyError(
+            "Parameter '{}' specified, but not found in hyperparams file.".format(arg_name))
+    else:
+        logging.info("Updating parameter '{}' to {}".format(arg_name, arg_value))
+    params[arg_name] = type(params[arg_name])(arg_value)
+
 def configure_logger(filename):
     logging.getLogger().addHandler(logging.FileHandler(filename, mode='w'))
 
@@ -68,11 +76,7 @@ class DMControlTrial():
         params['seed_number'] = args.seed
 
         for arg_name, arg_value in other_args:
-            if arg_name not in params:
-                raise KeyError("Unknown parameter '{}'".format(arg_name))
-            else:
-                logging.info("Overriding parameter '{}' with value {}".format(arg_name, arg_value))
-            params[arg_name] = arg_value
+            update_param(params, arg_name, arg_value)
 
         results_dir = os.path.join(
             'dmcontrol',
