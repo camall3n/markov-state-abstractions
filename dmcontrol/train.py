@@ -68,8 +68,10 @@ class DMControlTrial():
         params['seed_number'] = args.seed
 
         for arg_name, arg_value in other_args:
-            if arg_name in params:
-                raise KeyError("Unknown parameter '{}'".format(arg_value))
+            if arg_name not in params:
+                raise KeyError("Unknown parameter '{}'".format(arg_name))
+            else:
+                logging.info("Overriding parameter '{}' with value {}".format(arg_name, arg_value))
             params[arg_name] = arg_value
 
         results_dir = os.path.join(
