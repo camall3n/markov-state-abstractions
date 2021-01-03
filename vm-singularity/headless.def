@@ -30,11 +30,16 @@ From: ubuntu:18.04
     
     # Reduce the size of the image by deleting the package lists we downloaded,
     # which are useless now.
-    # rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/*
+    
+    cd /usr/bin
+    rm python
+    ln -s python3 python
+    cd 
     
     # Install Pipenv.
     pip3 install wheel setuptools
-    pip3 install pyopengl numpy Cython PyOpenGL_accelerate
+    pip3 install pyopengl numpy Cython PyOpenGL_accelerate onager
     pip3 install pipenv
 
 %environment
