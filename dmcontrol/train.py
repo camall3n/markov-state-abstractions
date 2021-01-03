@@ -100,12 +100,16 @@ class DMControlTrial():
 
         device = utils_for_q_learning.get_torch_device()
 
-        env = gym.make(params['env_name'], environment_kwargs={'flat_observation': True})
+        kwargs = {}
+        if 'dm2gym' in params['env_name']:
+            kwargs.update({'environment_kwargs': {'flat_observation': True}})
+        env = gym.make(params['env_name'], **kwargs)
         return params, env, device
 
     def setup(self):
         self.env = wrap.FixedDurationHack(self.env)
-        self.env = wrap.ObservationDictToInfo(self.env, "observations")
+        if 'dm2gym' in self.params['env_name']:
+            self.env = wrap.ObservationDictToInfo(self.env, "observations")
 
         feature_type = self.params['features']
         if feature_type == 'expert':
