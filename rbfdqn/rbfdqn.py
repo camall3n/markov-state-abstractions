@@ -220,7 +220,7 @@ class Agent:
 
         s0_matrix = np.array(s0).reshape((1, ) + self.state_shape)
         z0 = self.encode(torch.as_tensor(s0_matrix).float().to(device))
-        self.z_dim = len(z0.squeeze())
+        self.z_dim = len(z0.squeeze(dim=0))
 
         self.Q_object = RBQFNet(params, env.action_space, self.z_dim).to(device)
         self.Q_object_target = RBQFNet(params, env.action_space, self.z_dim).to(device)
