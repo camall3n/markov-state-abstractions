@@ -30,6 +30,10 @@ class ReplayMemory:
             result = map(np.asarray, result)
             result = Experience(*result)
             result = tuple(result)
+            x, a, r, xp, d = result
+            r = np.expand_dims(r, axis=-1)
+            d = np.expand_dims(d, axis=-1)
+            result = x, a, r, xp, d
         return result
 
     def get_last(self, batch_size):
