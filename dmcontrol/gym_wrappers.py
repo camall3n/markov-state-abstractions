@@ -223,7 +223,8 @@ class MaxAndSkipEnv(gym.Wrapper):
     def __init__(self, env, skip=4, max_pool=True):
         gym.Wrapper.__init__(self, env)
         # most recent raw observations (for max pooling across time steps)
-        self._obs_buffer = np.zeros((2, ) + env.observation_space.shape, dtype=np.uint8)
+        self._obs_buffer = np.zeros((2, ) + env.observation_space.shape,
+                                    dtype=env.observation_space.dtype)
         self._skip = skip
         self._max_pool = max_pool
         self.observation_space = env.observation_space
