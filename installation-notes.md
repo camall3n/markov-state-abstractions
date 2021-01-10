@@ -109,3 +109,23 @@ On cluster:
 ```
 singularity shell --nv headless.sif
 ```
+
+## Running on CCV with singularity
+
+0. Ensure singularity image ~/headless.sif exists.
+1. Update python packages in normal virtualenv.
+2. Update pipenv packages inside singularity.
+    ```
+    singularity exec ~/headless.sif pipenv install -r requirements.txt
+    ```
+3. Configure onager:
+    .onager/config:
+    ```
+    [slurm]
+    header = singularity exec --nv ~/headless.sif sh -c ". venv/bin/activate && \
+    footer = "
+    ```
+4. When calling prelaunch, prefix the command as follows:
+    ```
+    PIPENV_IGNORE_VIRTUALENVS=1 xvfb-run -a pipenv run python -m some.module
+    ```
