@@ -128,21 +128,24 @@ class DMControlTrial():
         self.agent = Agent(self.params, self.env, self.device)
 
         utils_for_q_learning.set_random_seed(self.params)
+        utils_for_q_learning.init_reward_file(self.params['results_dir'])
         self.returns_list = []
         self.loss_list = []
+        self.steps = 0
         self.best_score = -np.Inf
 
     def teardown(self):
         pass
 
     def pre_episode(self, episode):
-        logging.info("episode {}".format(episode))
+        logging.info("episode {}, steps {}".format(episode, self.steps))
 
     def run_episode(self, episode):
         s, done, t = self.env.reset(), False, 0
         while not done:
             a = self.agent.act(s, episode + 1, 'train')
             sp, r, done, _ = self.env.step(np.array(a))
+            self.steps += 1
             t = t + 1
             done_p = False if t == self.env.unwrapped._max_episode_steps else done
             self.agent.store_experience(s, a, r, done_p, sp)
@@ -172,8 +175,9 @@ class DMControlTrial():
         logging.info("after {} episodes, learned policy achieved {} average score".format(
             episode, avg_episode_score))
         self.returns_list.append(avg_episode_score)
-        utils_for_q_learning.save(self.params['results_dir'], self.returns_list, self.loss_list,
-                                  self.params)
+        utils_for_q_learning.save_loss(self.params['results_dir'], self.loss_list)
+        utils_for_q_learning.save(self.params['results_dir'], episode, self.steps,
+                avg_episode_score)
         is_best = (avg_episode_score > self.best_score)
         if is_best:
             self.best_score = avg_episode_score

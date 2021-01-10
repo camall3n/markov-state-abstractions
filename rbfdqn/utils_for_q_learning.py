@@ -65,11 +65,22 @@ def sync_networks(target, online, alpha, copy=False):
         for online_param, target_param in zip(online.parameters(), target.parameters()):
             target_param.data.copy_(alpha * online_param.data + (1 - alpha) * target_param.data)
 
-def save(results_dir, li_returns, li_loss, params):
+def save_loss(results_dir, li_loss):
     os.makedirs(results_dir, exist_ok=True)
     file_path = os.path.join(results_dir, '{}.csv')
-    numpy.savetxt(file_path.format('scores'), li_returns, delimiter=',')
     numpy.savetxt(file_path.format('loss'), li_loss, delimiter=',')
+
+def init_reward_file(results_dir):
+    os.makedirs(results_dir, exist_ok=True)
+    file_path = os.path.join(results_dir, '{}.csv')
+    with open(file_path.format('scores'), "w") as f:
+        f.write("episode,step,reward\n")
+
+def save(results_dir, episode, step, reward):
+    os.makedirs(results_dir, exist_ok=True)
+    file_path = os.path.join(results_dir, '{}.csv')
+    with open(file_path.format('scores'), "a") as f:
+        f.write("{},{},{}\n".format(episode, step, reward))
 
 def set_random_seed(meta_params):
     seed_number = meta_params['seed_number']
