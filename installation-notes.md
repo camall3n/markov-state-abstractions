@@ -116,7 +116,7 @@ singularity shell --nv headless.sif
 1. Update python packages in normal virtualenv.
 2. Update pipenv packages inside singularity.
     ```
-    singularity exec ~/headless.sif pipenv install -r requirements.txt
+    singularity exec ~/headless.sif sh -c "PIPENV_IGNORE_VIRTUALENVS=1 pipenv install -r requirements.txt --skip-lock --ignore-pipfile"
     ```
 3. Configure onager:
     .onager/config:
