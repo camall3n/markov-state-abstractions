@@ -249,7 +249,7 @@ class MaxAndSkipEnv(gym.Wrapper):
         if self._max_pool:
             frame = self._obs_buffer.max(axis=0)
         else:
-            frame = self._obs_buffer[1]
+            frame = self._obs_buffer[1].copy()
         return frame, total_reward, done, info
 
 class FrameStack(gym.Wrapper):
