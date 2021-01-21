@@ -205,14 +205,16 @@ class Agent:
 
         s0 = env.reset()
         self.state_shape = s0.shape
-        feature_type = self.params['features']
-        if feature_type == 'expert':
+        self.feature_type = self.params['features']
+        if self.feature_type == 'expert':
             self.encoder = None
-        elif feature_type == 'visual':
+        elif self.feature_type == 'visual':
             self.encoder = build_phi_network(params, self.state_shape,
                                              mode=params['encoder_type']).to(device)
-        elif feature_type == 'markov':
+        elif self.feature_type == 'markov':
             self.encoder = FeatureNet(params, env.action_space, self.state_shape).to(device)
+        else:
+            raise NotImplementedError('Unknown feature type')
         if self.encoder is not None:
             print('Encoder:')
             print(self.encoder)
@@ -280,8 +282,8 @@ class Agent:
         s_matrix = torch.from_numpy(s_matrix).float().to(self.device)
         a_matrix = torch.from_numpy(a_matrix).float().to(self.device)
         r_matrix = torch.from_numpy(r_matrix).float().to(self.device)
-        done_matrix = torch.from_numpy(done_matrix).float().to(self.device)
         sp_matrix = torch.from_numpy(sp_matrix).float().to(self.device)
+        done_matrix = torch.from_numpy(done_matrix).float().to(self.device)
 
         z_matrix = self.encode(s_matrix)
         zp_matrix = self.encode(sp_matrix)
