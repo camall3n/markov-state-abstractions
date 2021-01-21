@@ -11,6 +11,7 @@ layer_size,512,integer
 layer_size_action_side,512,integer
 learning_rate,0.001,float
 learning_rate_location_side,0.0001,float
+markov_coef,1.0,float
 max_buffer_size,500000,integer
 max_episode,500,integer
 n_eval_episodes,10,integer
