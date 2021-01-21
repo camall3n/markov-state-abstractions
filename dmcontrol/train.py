@@ -44,7 +44,7 @@ class DMControlTrial():
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         # yapf: disable
         parser.add_argument('--features', type=str, default='expert',
-                            choices=['visual', 'expert', 'markov', 'markov_smooth'],
+                            choices=['visual', 'expert', 'markov'],
                             help='Which type of input features to use')
         parser.add_argument('--alg', type=str, default='rbfdqn',
                             help='Algorithm name')
@@ -177,7 +177,7 @@ class DMControlTrial():
         self.returns_list.append(avg_episode_score)
         utils_for_q_learning.save_loss(self.params['results_dir'], self.loss_list)
         utils_for_q_learning.save(self.params['results_dir'], episode, self.steps,
-                avg_episode_score)
+                                  avg_episode_score)
         is_best = (avg_episode_score > self.best_score)
         if is_best:
             self.best_score = avg_episode_score
