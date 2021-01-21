@@ -81,6 +81,9 @@ def build_phi_network(params, input_shape, mode='rainbow-de'):
 
     return phi
 
+LOG_SIG_MAX = 2
+LOG_SIG_MIN = -20
+
 class InverseModel(torch.nn.Module):
     """
     Description:
