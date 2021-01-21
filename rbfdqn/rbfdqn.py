@@ -288,8 +288,16 @@ class Agent:
         z_matrix = self.encode(s_matrix)
         zp_matrix = self.encode(sp_matrix)
 
-        loss = self.Q_object.compute_loss(self.Q_object_target, z_matrix, a_matrix, r_matrix,
-                                          done_matrix, zp_matrix)
+        rbf_loss = self.Q_object.compute_loss(self.Q_object_target, z_matrix, a_matrix, r_matrix,
+                                              done_matrix, zp_matrix)
+        if self.feature_type == 'markov':
+            batch = (z_matrix, a_matrix, r_matrix, zp_matrix, done_matrix)
+            markov_loss = self.encoder.loss(batch)
+            logging.info('markov_loss = {}'.format(markov_loss.detach().item()))
+        else:
+            markov_loss = 0
+        loss = rbf_loss + self.params['markov_coef'] * markov_loss
+
         self.Q_object.zero_grad()
         loss.backward()
         self.Q_object.optimizer.step()
