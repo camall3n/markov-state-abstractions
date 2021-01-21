@@ -217,12 +217,8 @@ class FeatureNet(nnutils.Network):
         return self.phi(x)
 
     def loss(self, batch):
-        states, actions, _, next_states, _ = batch
-        markov_loss = self.markov_head.compute_markov_loss(
-            z0=self.phi(torch.as_tensor(states.astype(np.float32))),
-            z1=self.phi(torch.as_tensor(next_states.astype(np.float32))),
-            a=torch.as_tensor(actions, dtype=torch.int64),
-        )
+        z_matrix, a_matrix, _, zp_matrix, _ = batch
+        markov_loss = self.markov_head.compute_markov_loss(z0=z_matrix, z1=zp_matrix, a=a_matrix)
         loss = markov_loss
         return loss
 
