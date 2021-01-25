@@ -1,4 +1,4 @@
-import argparse
+from argparse import Namespace
 import glob
 import os
 import json
@@ -28,8 +28,6 @@ def parse_filepath(fp, filename, bin_size, window_size):
         data = pd.read_csv(os.path.join(fp, filename))
         if bin_size != 0 and window_size != 0:
             data = smooth_and_bin(data, bin_size, window_size)
-        # with open(os.path.join(fp, 'params.json'), "r") as json_file:
-        #     params = json.load(json_file)
         params = pd.read_csv(os.path.join(fp, 'hyperparams.csv'),
                 index_col='param',
                 names=['param', 'value', 'type'])
@@ -38,14 +36,12 @@ def parse_filepath(fp, filename, bin_size, window_size):
             data[k] = v
         return data
     except (FileNotFoundError, NotADirectoryError) as e:
-        # print("Error in parsing filepath {fp}: {e}".format(fp=fp, e=e))
         return None
 
 
-def collate_results(results_dirs, filename, bin_size, window_size):
+def collate_results(results_dir, filename, bin_size, window_size):
     dfs = []
-    for run in results_dirs:
-        print("Found {run}".format(run=run))
+    for run in glob.glob(results_dir):
         run_df = parse_filepath(run, filename, bin_size, window_size)
         if run_df is None:
             continue
@@ -110,57 +106,64 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
         plt.show()
 
 
-def parse_args():
-    # Parse input arguments
-    # Use --help to see a pretty description of the arguments
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+def setup():
+    # Default stuff
+    args = Namespace(
+            results_dir='dmcontrol/experiments/*/*/**/*',
+            filename='scores.csv',
+            bin_size=0,
+            window_size=0,
+            no_show=False,
+        )
 
-    # yapf: disable
-    parser.add_argument('--results-dirs', help='Directories for results', required=True, nargs='+', type=str)
-    parser.add_argument('--filename', help='CSV filename', required=False, type=str)
-    parser.add_argument('--bin-size', help='How much to reduce the data by', type=int, default=0)
-    parser.add_argument('--window-size', help='How much to average the data by', type=int, default=0)
-
-    parser.add_argument('-x', help='Variable to plot on x axis', required=False, type=str)
-    parser.add_argument('-y', help='Variable to plot on y axis', required=False, type=str)
-
-    parser.add_argument('--query', help='DF query string', type=str)
-    parser.add_argument('--hue', help='Hue variable', type=str)
-    parser.add_argument('--style', help='Style variable', type=str)
-    parser.add_argument('--col', help='Column variable', type=str)
-    parser.add_argument('--seed', help='How to handle seeds', type=str, default='average')
-
-    parser.add_argument('--no-plot', help='No plots', action='store_true')
-    parser.add_argument('--no-show', help='Does not show plots', action='store_true')
-    parser.add_argument('--savepath', help='Save the plot here', type=str)
-    # yapf: enable
-
-    return parser.parse_args()
+    # Stuff to edit per plot
+    args.query = ' '.join([
+        "(env_name == 'dm2gym:CartpoleSwingup-v0' and temperature == '1.0' and learning_rate == '0.0001' and features == 'expert')",
+        "or (env_name == 'dm2gym:CheetahRun-v0' and temperature == '0.1' and learning_rate == '0.0003' and features == 'expert')",
+        "or (env_name == 'dm2gym:FingerSpin-v0' and temperature == '1.0' and learning_rate == '0.0003' and features == 'expert')",
+        "or (env_name == 'dm2gym:PendulumSwingup-v0' and temperature == '1.0' and learning_rate == '0.001' and features == 'expert')",
+        "or (env_name == 'dm2gym:WalkerWalk-v0' and temperature == '1.0' and learning_rate == '0.0001' and features == 'expert')",
+        "or (env_name == 'dm2gym:CartpoleSwingup-v0' and temperature == '2.0' and learning_rate == '0.0001' and features == 'visual')",
+        "or (env_name == 'dm2gym:CheetahRun-v0' and temperature == '0.5' and learning_rate == '0.0001' and features == 'visual')",
+        "or (env_name == 'dm2gym:FingerSpin-v0' and temperature == '0.5' and learning_rate == '0.0001' and features == 'visual')",
+        "or (env_name == 'dm2gym:PendulumSwingup-v0' and temperature == '0.5' and learning_rate == '0.001' and features == 'visual')",
+        "or (env_name == 'dm2gym:WalkerWalk-v0' and temperature == '0.5' and learning_rate == '0.0001' and features == 'visual')",
+        ])
+    args.savepath = None # './images/' -- change if you want to save
 
 
-if __name__ == "__main__":
-    args = parse_args()
+    # Plotting args
+    args.x = 'episode'
+    args.y = 'reward'
+    args.col = 'env_name'
+    args.hue = 'features'
+    args.style = 'features'
+    args.seed = 'average'
 
+    return args
+
+
+if __name__ == '__main__':
+    args = setup()
+
+    # Now plotting
     print("Looking for logs in results directory")
-    print("Smoothing by {window_size}, binning by {bin_size}".format(window_size=args.window_size,
-                                                                     bin_size=args.bin_size))
-    assert args.filename is not None, "Must pass filename if creating csv"
-    df = collate_results(args.results_dirs, args.filename, args.bin_size, args.window_size)
 
-    if not args.no_plot:
-        assert args.x is not None and args.y is not None, "Must pass x, y if creating csv"
-        if args.savepath:
-            os.makedirs(os.path.split(args.savepath)[0], exist_ok=True)
-#        args.query = "(env_name == 'dm2gym:CartpoleSwingup-v0' and temperature == '1.0' and learning_rate == '0.0001' and features == 'expert') or (env_name == 'dm2gym:CheetahRun-v0' and temperature == '0.1' and learning_rate == '0.0003' and features == 'expert') or (env_name == 'dm2gym:FingerSpin-v0' and temperature == '1.0' and learning_rate == '0.0003' and features == 'expert') or (env_name == 'dm2gym:PendulumSwingup-v0' and temperature == '1.0' and learning_rate == '0.001' and features == 'expert') or (env_name == 'dm2gym:WalkerWalk-v0' and temperature == '1.0' and learning_rate == '0.0001' and features == 'expert') or (env_name == 'dm2gym:CartpoleSwingup-v0' and temperature == '2.0' and learning_rate == '0.0001' and features == 'visual') or (env_name == 'dm2gym:CheetahRun-v0' and temperature == '0.5' and learning_rate == '0.0001' and features == 'visual') or (env_name == 'dm2gym:FingerSpin-v0' and temperature == '0.5' and learning_rate == '0.0001' and features == 'visual') or (env_name == 'dm2gym:PendulumSwingup-v0' and temperature == '0.5' and learning_rate == '0.001' and features == 'visual') or (env_name == 'dm2gym:WalkerWalk-v0' and temperature == '0.5' and learning_rate == '0.0001' and features == 'visual')"
-        if args.query is not None:
-            print("Filtering with {query}".format(query=args.query))
-            df = df.query(args.query)
-        plot(df,
-             args.x,
-             args.y,
-             args.hue,
-             args.style,
-             args.col,
-             args.seed,
-             savepath=args.savepath,
-             show=(not args.no_show))
+    df = collate_results(args.results_dir, args.filename, args.bin_size, args.window_size)
+
+    if args.savepath:
+        os.makedirs(os.path.split(args.savepath)[0], exist_ok=True)
+
+    if args.query is not None:
+        print("Filtering with {query}".format(query=args.query))
+        df = df.query(args.query)
+
+    plot(df,
+         args.x,
+         args.y,
+         args.hue,
+         args.style,
+         args.col,
+         args.seed,
+         savepath=args.savepath,
+         show=(not args.no_show))
