@@ -270,9 +270,12 @@ class Agent:
     def store_experience(self, state, action, reward, done, next_state):
         self.replay_buffer.push(state, action, reward, next_state, done)
 
-    def update(self):
+    def update(self, return_each_loss_info=False):
         if len(self.replay_buffer) < self.params['batch_size']:
-            return 0
+            if return_each_loss_info:
+                return 0.0, 0.0, 0.0
+            else:
+                return 0.0
         s_matrix, a_matrix, r_matrix, sp_matrix, done_matrix = self.replay_buffer.sample(
             self.params['batch_size'], itemize=True)
         r_matrix = np.clip(r_matrix,
@@ -305,7 +308,14 @@ class Agent:
                                            online=self.Q_object,
                                            alpha=self.params['target_network_learning_rate'],
                                            copy=False)
-        return loss.cpu().data.numpy()
+        if return_each_loss_info:
+            return (
+                loss.cpu().data.numpy(),
+                rbf_loss.cpu().data.numpy(),
+                markov_loss.cpu().data.numpy(),
+            )
+        else:
+            return loss.cpu().data.numpy()
 
     def save(self, is_best=False):
         self.Q_object.save(name='Q_object', model_dir=self.params['models_dir'], is_best=is_best)

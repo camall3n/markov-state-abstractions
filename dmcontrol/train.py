@@ -156,9 +156,9 @@ class DMControlTrial():
         #now update the Q network
         loss = []
         for count in tqdm(range(self.params['updates_per_episode'])):
-            temp = self.agent.update()
-            loss.append(temp)
-        self.loss_list.append(np.mean(loss))
+            loss_info = self.agent.update(return_each_loss_info=True)
+            loss.append(loss_info)
+        self.loss_list.append(np.asarray(loss).mean(axis=0))
 
         self.every_n_episodes(self.params['eval_period'], self.evaluate_and_archive, episode)
 
