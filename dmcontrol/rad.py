@@ -3,6 +3,9 @@ import numpy as np
 from skimage.util import view_as_windows
 import numpy as np
 
+# Image augmentations from RAD
+# https://arxiv.org/pdf/2004.14990.pdf
+
 def random_crop(imgs, output_width=84):
     """Vectorized random crop
     args:
