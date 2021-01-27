@@ -298,7 +298,7 @@ class Agent:
             markov_loss = self.encoder.loss(batch)
             logging.info('markov_loss = {}'.format(markov_loss.detach().item()))
         else:
-            markov_loss = 0
+            markov_loss = torch.tensor(0.0)
         loss = rbf_loss + self.params['markov_coef'] * markov_loss
 
         self.Q_object.zero_grad()
