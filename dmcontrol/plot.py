@@ -1,64 +1,17 @@
-import glob
-import logging
-import os
-import json
-
 import matplotlib.pyplot as plt
-import pandas as pd
 import seaborn as sns
 
 from rbfdqn.utils_for_q_learning import get_hyper_parameters
+from dmcontrol import plotkit
 
-logging.basicConfig(level=logging.INFO)
-
-#%%
-
-def load_runs(path, results_file='scores.csv', params_file='hyperparams.csv'):
-    dfs = []
-    for trial_path in glob.glob(os.path.join(path, "seed_*")):
-        _, subdirs, subfiles = next(os.walk(trial_path))
-        if results_file not in subfiles:
-            logging.warning("Results file '{}' missing from {}".format(results_file, trial_path))
-            continue
-        if params_file not in subfiles:
-            logging.warning("Params file '{}' missing from {}".format(params_file, trial_path))
-            continue
-
-        data = pd.read_csv(os.path.join(trial_path, results_file))
-        data.index.name = 'episode (x10)'
-        params = get_hyper_parameters(os.path.join(trial_path, params_file), None)
-        for k, v in params.items():
-            data[k] = v
-        dfs.append(data)
-    return pd.concat(dfs, axis=0)
-
-def load_experiment(path, tag_list=None):
-    dfs = []
-    if tag_list is None:
-        tag_list = next(os.walk(path))[1]
-    for tag in tag_list:
-        tag_path = os.path.join(path, tag)
-        data = load_runs(tag_path)
-        if data is not None:
-            dfs.append(data)
-    return pd.concat(dfs, axis=0)
-
-def load_globbed_experiments(*glob_strs):
-    dfs = []
-    for glob_str in glob_strs:
-        for path in glob.glob(glob_str):
-            data = load_runs(path)
-            if data is not None:
-                dfs.append(data)
-    return pd.concat(dfs, axis=0)
-
+#%% Test loading experiments
 experiment_path = 'dmcontrol/experiments/dm2gym-CartpoleSwingup-v0/representation_gap/'
 experiment_path = 'dmcontrol/experiments/dm2gym-FingerSpin-v0/representation_gap/'
 # d = load_experiment(experiment_path, tag_list=['expert_3447aa9_5__learningrate_0.00075'])
 # d = load_experiment(experiment_path, tag_list=['*_5__*', '*_6__*'])
 # d = load_experiment(experiment_path)
 # d = load_experiment(experiment_path, tag_list=['tuning-*'])
-d = load_experiment(experiment_path, tag_list=['tuning-*'])
+d = plotkit.load_experiment(experiment_path, tag_list=['tuning-*'])
 d = d.query(
     "(temperature == '0.5' and learning_rate == '0.0001' and features == 'markov' and markov_coef in ['100.0'])"
 )
@@ -67,13 +20,7 @@ d.temperature.unique()
 d.seed_number.unique()
 sorted(d.columns)
 
-def save_plot(experiment, domain):
-    plot_path = os.path.join('dmcontrol/plots', experiment)
-    os.makedirs(plot_path, exist_ok=True)
-    plt.savefig(os.path.join(plot_path, domain.lower() + '.png'))
-
-
-#%%
+#%% Filter and plot the data
 sns.set(rc={
     'axes.facecolor': 'white',
     'axes.edgecolor': 'black',
@@ -83,9 +30,9 @@ sns.set(rc={
 domains = [
     # 'CartpoleSwingup',
     # 'CheetahRun',
-    'FingerSpin',
+    # 'FingerSpin',
     # 'PendulumSwingup',
-    # 'WalkerWalk',
+    'WalkerWalk',
 ]
 experiments = [
     'representation_gap',
@@ -95,22 +42,54 @@ experiments = [
     'curl-*',
 ]
 
-for domain, ax in zip(domains, axes):
-    domain_path = 'dm2gym-' + domain + '-v0'
-    run_paths = ['dmcontrol/experiments/{}/{}/*'.format(domain_path, experiment) for experiment in experiments]
+take_all = [
+    {'features': 'curl'},
+    {'features': 'markov'}
+]
+best_of = {
+    # env_name: [(features, temperature, learning_rate), ...]
+    'CartpoleSwingup': [('expert', 1.0, 0.0001), ('visual', 2.0, 0.0001)],
+    'CheetahRun': [('expert', 0.1, 0.0003), ('visual', 0.5, 0.0001)],
+    'FingerSpin': [('expert', 1.0, 0.0003), ('visual', 0.5, 0.0001)],
+    'PendulumSwingup': [('expert', 1.0, 0.001), ('visual', 0.5, 0.001)],
+    'WalkerWalk': [('expert', 1.0, 0.0001), ('visual', 0.5, 0.0001)],
+}
+for domain in best_of.keys():
+    best_of[domain] = [{
+            'features': features,
+            'temperature': temperature,
+            'learning_rate': learning_rate,
+        } for (features, temperature, learning_rate) in best_of[domain]
+    ] + take_all
+
+def build_query(filters):
+    query = ' or '.join(['(' +
+        ' and '.join([
+            field + ' == "{}"'.format(value)
+            for (field, value) in filter_.items()
+        ])
+        + ')' for filter_ in filters
+    ])
+    return query
+
+
+# Plot the data
+for domain in domains:
+    full_domain = 'dm2gym-' + domain + '-v0'
+    run_paths = ['dmcontrol/experiments/{}/{}/*'.format(full_domain, experiment)
+                    for experiment in experiments]
 
     try:
-        data = load_globbed_experiments(*run_paths)
+        data = plotkit.load_globbed_experiments(*run_paths)
         data.seed_number.unique()
     except ValueError:
         continue
-    q = """
-    (features == 'curl') or
-    (features == 'visual' and temperature == 0.5 and learning_rate == 0.0001) or
-    (features == 'expert' and temperature == 1.0 and learning_rate == 0.0003) or
-    (features == 'markov' and temperature == 0.5 and learning_rate == 0.0001)
-    """.replace('\n', '')
+    filters = best_of[domain]
+    q = build_query(filters)
+
     data = data.query(q)
+    data.groupby(['learning_rate','features']).size().reset_index()
+    # set defaults
     data.loc[((data['features'] == 'curl')
               | (data['features'] == 'expert')
               | (data['features'] == 'visual')), 'markov_coef'] = 0
