@@ -207,7 +207,7 @@ class Agent:
 
         s0 = env.reset()
         if self.params['data_aug'] == 'crop':
-            s0 = rad.center_crop_image(s0)
+            s0 = rad.center_crop_one_image(s0)
         self.state_shape = s0.shape
         self.feature_type = self.params['features']
         if self.feature_type == 'expert':
@@ -260,7 +260,7 @@ class Agent:
 
     def act(self, s, episode, train_or_test):
         if s.shape != self.state_shape:
-            s = rad.center_crop_image(s, self.state_shape[-1])
+            s = rad.center_crop_one_image(s, self.state_shape[-1])
 
         if train_or_test == 'train':
             epsilon = self.epsilon_schedule(episode)
@@ -291,8 +291,8 @@ class Agent:
 
         if self.params['data_aug'] is not None:
             if self.params['data_aug'] == 'crop':
-                s_matrix = rad.random_crop(s_matrix)
-                sp_matrix = rad.random_crop(sp_matrix)
+                s_matrix = rad.random_crop_image_batch(s_matrix)
+                sp_matrix = rad.random_crop_image_batch(sp_matrix)
             else:
                 raise NotImplementedError('Unknown data augmentation {}'.format(
                     params['data_aug']))

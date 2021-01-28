@@ -2,7 +2,7 @@ import numpy as np
 
 # Image augmentations from RAD paper: https://arxiv.org/pdf/2004.14990.pdf
 # Code from here: https://github.com/MishaLaskin/rad/blob/1246bfd6e716669126e12c1f02f393801e1692c1/data_augs.py
-def random_crop(imgs, out=84):
+def random_crop_image_batch(imgs, out=84):
     """
         args:
         imgs: np.array shape (B,C,H,W)
@@ -19,7 +19,7 @@ def random_crop(imgs, out=84):
         cropped[i] = img[:, h11:h11 + out, w11:w11 + out]
     return cropped
 
-def center_crop_images(images, output_size=(84, 84)):
+def center_crop_image_batch(images, output_size=84):
     h, w = images.shape[2:]
     new_h, new_w = output_size, output_size
 
@@ -29,7 +29,7 @@ def center_crop_images(images, output_size=(84, 84)):
     images = images[:, :, top:top + new_h, left:left + new_w]
     return images
 
-def center_crop_image(image, output_size=84):
+def center_crop_one_image(image, output_size=84):
     h, w = image.shape[1:]
     new_h, new_w = output_size, output_size
 
