@@ -14,6 +14,8 @@ from gridworlds.nn import nnutils
 from dmcontrol.markov import FeatureNet, build_phi_network
 from gridworlds.agents.replaymemory import ReplayMemory
 
+from dmcontrol import rad
+
 def rbf_function_on_action(centroid_locations, action, beta):
     '''
     centroid_locations: Tensor [batch x num_centroids (N) x a_dim (action_size)]
@@ -204,6 +206,8 @@ class Agent:
         self.replay_buffer = ReplayMemory(params['max_buffer_size'])
 
         s0 = env.reset()
+        if self.params['data_aug'] == 'crop':
+            s0 = rad.center_crop_image(s0)
         self.state_shape = s0.shape
         self.feature_type = self.params['features']
         if self.feature_type == 'expert':
@@ -255,6 +259,9 @@ class Agent:
         return self.encoder(state)
 
     def act(self, s, episode, train_or_test):
+        if s.shape != self.state_shape:
+            s = rad.center_crop_image(s, self.state_shape[-1])
+
         if train_or_test == 'train':
             epsilon = self.epsilon_schedule(episode)
             policy_noise = self.policy_noise
@@ -281,6 +288,14 @@ class Agent:
         r_matrix = np.clip(r_matrix,
                            a_min=-self.params['reward_clip'],
                            a_max=self.params['reward_clip'])
+
+        if self.params['data_aug'] is not None:
+            if self.params['data_aug'] == 'crop':
+                s_matrix = rad.random_crop(s_matrix)
+                sp_matrix = rad.random_crop(sp_matrix)
+            else:
+                raise NotImplementedError('Unknown data augmentation {}'.format(
+                    params['data_aug']))
 
         s_matrix = torch.from_numpy(s_matrix).float().to(self.device)
         a_matrix = torch.from_numpy(a_matrix).float().to(self.device)

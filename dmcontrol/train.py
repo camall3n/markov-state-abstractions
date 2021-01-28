@@ -48,6 +48,9 @@ class DMControlTrial():
                             help='Which type of input features to use')
         parser.add_argument('--alg', type=str, default='rbfdqn',
                             help='Algorithm name')
+        parser.add_argument('--data_aug', type=str, default=None,
+                            choices=['crop'],
+                            help='Data augmentation mode')
         parser.add_argument('--seed', '-s', type=int, default=0,
                             help='Random seed')
         parser.add_argument('--agent_tag', required=True, type=str,
@@ -73,6 +76,7 @@ class DMControlTrial():
         params['hyper_parameters_name'] = hyperparam_name
         params['features'] = args.features
         params['alg'] = args.alg
+        params['data_aug'] = args.data_aug
         params['seed_number'] = args.seed
 
         for arg_name, arg_value in other_args:
@@ -119,7 +123,11 @@ class DMControlTrial():
         else:
             self.env = wrap.RenderOpenCV(self.env)
             self.env = wrap.Grayscale(self.env)
-            self.env = wrap.ResizeObservation(self.env, (84, 84))
+            if self.params['data_aug'] is not None and self.params['data_aug'] == 'crop':
+                img_size = (100, 100)
+            else:
+                img_size = (84, 84)
+            self.env = wrap.ResizeObservation(self.env, img_size)
             self.env = wrap.MaxAndSkipEnv(self.env,
                                           skip=self.params['action_repeat'],
                                           max_pool=False)
