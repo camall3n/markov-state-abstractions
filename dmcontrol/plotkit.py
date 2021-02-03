@@ -46,7 +46,11 @@ def load_globbed_experiments(*glob_strs, results_file='scores.csv', header=None)
     dfs = []
     for glob_str in glob_strs:
         for path in glob.glob(glob_str):
-            data = load_runs(path, results_file=results_file, header=header)
+            try:
+                data = load_runs(path, results_file=results_file, header=header)
+            except ValueError:
+                logging.warning('load_runs failed for results_file')
+                continue
             if data is not None:
                 dfs.append(data)
     return pd.concat(dfs, axis=0)

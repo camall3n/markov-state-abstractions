@@ -97,6 +97,8 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
     else:
         raise ValueError("{seed} not a recognized choice".format(seed=seed))
 
+    plt.tight_layout()
+
     if savepath is not None:
         g.savefig(savepath)
 
@@ -109,7 +111,7 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
 def setup():
     # Default stuff
     args = Namespace(
-            results_dir='dmcontrol/experiments/*/*/**/*',
+            results_dir='dmcontrol/experiments/*/curl-*/**/*',
             filename='scores.csv',
             bin_size=0,
             window_size=0,
@@ -117,18 +119,19 @@ def setup():
         )
 
     # Stuff to edit per plot
-    args.query = ' '.join([
-        "(env_name == 'dm2gym:CartpoleSwingup-v0' and temperature == '1.0' and learning_rate == '0.0001' and features == 'expert')",
-        "or (env_name == 'dm2gym:CheetahRun-v0' and temperature == '0.1' and learning_rate == '0.0003' and features == 'expert')",
-        "or (env_name == 'dm2gym:FingerSpin-v0' and temperature == '1.0' and learning_rate == '0.0003' and features == 'expert')",
-        "or (env_name == 'dm2gym:PendulumSwingup-v0' and temperature == '1.0' and learning_rate == '0.001' and features == 'expert')",
-        "or (env_name == 'dm2gym:WalkerWalk-v0' and temperature == '1.0' and learning_rate == '0.0001' and features == 'expert')",
-        "or (env_name == 'dm2gym:CartpoleSwingup-v0' and temperature == '2.0' and learning_rate == '0.0001' and features == 'visual')",
-        "or (env_name == 'dm2gym:CheetahRun-v0' and temperature == '0.5' and learning_rate == '0.0001' and features == 'visual')",
-        "or (env_name == 'dm2gym:FingerSpin-v0' and temperature == '0.5' and learning_rate == '0.0001' and features == 'visual')",
-        "or (env_name == 'dm2gym:PendulumSwingup-v0' and temperature == '0.5' and learning_rate == '0.001' and features == 'visual')",
-        "or (env_name == 'dm2gym:WalkerWalk-v0' and temperature == '0.5' and learning_rate == '0.0001' and features == 'visual')",
-        ])
+    args.query = None
+    # args.query = ' '.join([
+    #     "(env_name == 'dm2gym:CartpoleSwingup-v0' and temperature == '1.0' and learning_rate == '0.0001' and features == 'expert')",
+    #     "or (env_name == 'dm2gym:CheetahRun-v0' and temperature == '0.1' and learning_rate == '0.0003' and features == 'expert')",
+    #     "or (env_name == 'dm2gym:FingerSpin-v0' and temperature == '1.0' and learning_rate == '0.0003' and features == 'expert')",
+    #     "or (env_name == 'dm2gym:PendulumSwingup-v0' and temperature == '1.0' and learning_rate == '0.001' and features == 'expert')",
+    #     "or (env_name == 'dm2gym:WalkerWalk-v0' and temperature == '1.0' and learning_rate == '0.0001' and features == 'expert')",
+    #     "or (env_name == 'dm2gym:CartpoleSwingup-v0' and temperature == '2.0' and learning_rate == '0.0001' and features == 'visual')",
+    #     "or (env_name == 'dm2gym:CheetahRun-v0' and temperature == '0.5' and learning_rate == '0.0001' and features == 'visual')",
+    #     "or (env_name == 'dm2gym:FingerSpin-v0' and temperature == '0.5' and learning_rate == '0.0001' and features == 'visual')",
+    #     "or (env_name == 'dm2gym:PendulumSwingup-v0' and temperature == '0.5' and learning_rate == '0.001' and features == 'visual')",
+    #     "or (env_name == 'dm2gym:WalkerWalk-v0' and temperature == '0.5' and learning_rate == '0.0001' and features == 'visual')",
+    #     ])
     args.savepath = None # './images/' -- change if you want to save
 
 
@@ -136,8 +139,8 @@ def setup():
     args.x = 'episode'
     args.y = 'reward'
     args.col = 'env_name'
-    args.hue = 'features'
-    args.style = 'features'
+    args.hue = 'alg'
+    args.style = 'alg'
     args.seed = 'average'
 
     return args

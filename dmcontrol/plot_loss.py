@@ -21,8 +21,10 @@ domains = [
     'WalkerWalk',
 ]
 experiments = [
-    'representation_gap',
+    'tuning-visual-features',
 ]
+
+
 
 # Plot the data
 for domain in domains:
@@ -31,28 +33,30 @@ for domain in domains:
         'dmcontrol/experiments/{}/{}/*'.format(full_domain, experiment)
         for experiment in experiments
     ]
-
+    # for path in glob.glob(run_paths[0]):pass
     try:
         data = plotkit.load_globbed_experiments(*run_paths,
                                                 results_file='loss.csv',
                                                 header=['total_loss', 'rbf_loss', 'markov_loss'])
     except ValueError:
         continue
-    data = data.query('ep > 0')
-    p = sns.color_palette('viridis', n_colors=len(data['markov_coef'].unique()), desat=0.5)
-    p[0] = (0, 0, 0)
+    subset = data.query('temperature == 0.5 and learning_rate == 0.0001')
+
+    # subset = data.query('markov_coef == 1e-5')
+    p = sns.color_palette('viridis', n_colors=len(subset['seed_number'].unique()), desat=0.5)
     sns.relplot(
-        data=data,
+        data=subset,
         x='ep',
-        y='markov_loss',
-        hue='markov_coef',
-        # style='',
+        y='total_loss',
+        hue='seed_number',
+        # style='markov_coef',
         kind='line',
-        # units='seed_number',
-        # estimator=None,
+        units='seed_number',
+        estimator=None,
         palette=p)
     plt.title(domain)
     # plt.ylim([0, 1000])
     plt.tight_layout()
     # save_plot('representation_gap/', domain)
+    plt.yscale('log')
     plt.show()

@@ -9,8 +9,8 @@ gamma,0.99,float
 latent_dim,50,integer
 layer_size,512,integer
 layer_size_action_side,512,integer
-learning_rate,0.001,float
-learning_rate_location_side,0.0001,float
+learning_rate,0.0001,float
+learning_rate_location_side,0.00001,float
 markov_coef,1.0,float
 max_buffer_size,500000,integer
 max_episode,500,integer
@@ -24,5 +24,5 @@ policy_parameter,2.75,float
 policy_type,e_greedy,string
 reward_clip,20,float
 target_network_learning_rate,0.005,float
-temperature,1,float
+temperature,0.5,float
 updates_per_episode,1000,integer

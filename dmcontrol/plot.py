@@ -28,31 +28,38 @@ sns.set(rc={
 })
 
 domains = [
-    # 'CartpoleSwingup',
-    # 'CheetahRun',
-    # 'FingerSpin',
-    # 'PendulumSwingup',
+    'Ball_in_cupCatch',
+    'CartpoleSwingup',
+    'CheetahRun',
+    'FingerSpin',
+    'ReacherEasy',
     'WalkerWalk',
+    # 'PendulumSwingup',
 ]
 experiments = [
-    'representation_gap',
+    # 'representation_gap',
     # 'tuning-expert-*',
-    # 'tuning-visual-*',
+    # 'tuning-visual-large',
+    'tuning-visual-features',
     # 'tuning-markov-*',
-    'curl-*',
+    'tuning-rad-small',
+    # 'tuning-rad-markov',
+    # 'curl-*',
 ]
 
 take_all = [
-    {'features': 'curl'},
-    {'features': 'markov'}
+    # {'features': 'curl'},
+    {'features': 'markov'},
+    # {'features': 'visual'},
+    # {'features': 'expert'},
 ]
 best_of = {
     # env_name: [(features, temperature, learning_rate), ...]
-    'CartpoleSwingup': [('expert', 1.0, 0.0001), ('visual', 2.0, 0.0001)],
-    'CheetahRun': [('expert', 0.1, 0.0003), ('visual', 0.5, 0.0001)],
-    'FingerSpin': [('expert', 1.0, 0.0003), ('visual', 0.5, 0.0001)],
-    'PendulumSwingup': [('expert', 1.0, 0.001), ('visual', 0.5, 0.001)],
-    'WalkerWalk': [('expert', 1.0, 0.0001), ('visual', 0.5, 0.0001)],
+    'CartpoleSwingup': [('expert', 1.0, 0.0001), ('visual', 0.5, 0.0001)],
+    'CheetahRun':      [('expert', 0.1, 0.0003), ('visual', 0.5, 0.0001)],
+    'FingerSpin':      [('expert', 1.0, 0.0003), ('visual', 0.5, 0.0001)],
+    'PendulumSwingup': [('expert', 1.0,  0.001), ('visual', 0.5,  0.001)],
+    'WalkerWalk':      [('expert', 1.0, 0.0001), ('visual', 0.5, 0.0001)],
 }
 for domain in best_of.keys():
     best_of[domain] = [{
@@ -72,7 +79,6 @@ def build_query(filters):
     ])
     return query
 
-
 # Plot the data
 for domain in domains:
     full_domain = 'dm2gym-' + domain + '-v0'
@@ -81,26 +87,29 @@ for domain in domains:
 
     try:
         data = plotkit.load_globbed_experiments(*run_paths)
-        data.seed_number.unique()
     except ValueError:
         continue
     filters = best_of[domain]
     q = build_query(filters)
-
+    # q = 'temperature == 0.5 and learning_rate == 0.0001'
     data = data.query(q)
-    data.groupby(['learning_rate','features']).size().reset_index()
+
     # set defaults
     data.loc[((data['features'] == 'curl')
               | (data['features'] == 'expert')
               | (data['features'] == 'visual')), 'markov_coef'] = 0
+    data.loc[(data['data_aug'] != 'crop'), 'data_aug'] = 'None'
+    data = data.query("features != 'markov' or markov_coef in [0.003, 0.03, 0.3]")
     p = sns.color_palette('viridis', n_colors=len(data['markov_coef'].unique()), desat=0.5)
-    p[0] = (0, 0, 0)
+    # p[0] = (0, 0, 0)
     sns.relplot(
         data=data,
         x='episode',
         y='reward',
         hue='markov_coef',
-        style='features',
+        style='data_aug',
+        # col='data_aug',
+        # style_order=['markov', 'expert', 'visual'],
         kind='line',
         # units='seed_number',
         # estimator=None,

@@ -13,7 +13,7 @@ import imageio
 import numpy as np
 
 from dmcontrol import gym_wrappers as wrap
-from dmcontrol import curl
+from dmcontrol import rad
 
 #%%
 
@@ -50,8 +50,6 @@ for i in tqdm(range(n_steps)):
     if done:
         break
 
-imageio.mimwrite('file.mp4', imgs)
-
 #%% CURL testing
 env = gym.make('dm2gym:WalkerWalk-v0', environment_kwargs={'flat_observation': True})
 env = wrap_env(env, size=(100, 100))
@@ -66,9 +64,9 @@ state = states[0]
 
 plt.imshow((state * weights).sum(axis=0))
 
-crop = curl.center_crop(states)[0]
+crop = rad.center_crop_one_image(states[0])
 plt.imshow((crop * weights).sum(axis=0))
 
 
-crop = curl.random_crop(states)[0]
+crop = rad.random_crop_image_batch(states)[0]
 plt.imshow((crop * weights).sum(axis=0))
