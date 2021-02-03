@@ -64,6 +64,8 @@ state = states[0]
 
 plt.imshow((state * weights).sum(axis=0))
 
+assert (rad.center_crop_one_image(states[0]) == rad.center_crop_image_batch(states)[0]).all()
+
 crop = rad.center_crop_one_image(states[0])
 plt.imshow((crop * weights).sum(axis=0))
 
