@@ -106,6 +106,42 @@ class DMCPendulumAnnotated(gym.Wrapper):
         state['energy'] = state['potential_energy'] + state['kinetic_energy']
         return state
 
+class Annotate(gym.Wrapper):
+    """
+    Description:
+        Converts a 3-D pendulum state (y, x, theta_dot) to an annotated state
+
+    Usage:
+        Wraps a Pendulum environment to get compressed state information
+    """
+    def reset(self, **kwargs):
+        state = self.env.reset(**kwargs)
+        return self.convert_state(state)
+
+    def step(self, action):
+        next_state, reward, done, info = self.env.step([action])
+        return self.convert_state(next_state), reward, done, info
+
+    @staticmethod
+    def convert_state(state):
+        y, x, theta_dot = state
+        state = {
+            'x': x,
+            'y': y,
+            'theta': np.arctan2(y, x)/np.pi,
+            'theta_dot': theta_dot,
+        }
+        if state['theta'] > 1/2:
+            state['theta'] -= 2
+        mass = 1.0
+        gravity = 9.81
+        radius = 1.0
+        velocity = theta_dot * radius
+        state['potential_energy'] = 2 * mass * gravity * (y + 1)
+        state['kinetic_energy'] = 0.5 * mass * (velocity)**2
+        state['energy'] = state['potential_energy'] + state['kinetic_energy']
+        return state
+
 def wrap_env(env, feature_type='visual', size=(84, 84), action_repeat=1, frame_stack=3):
     env = wrap.FixedDurationHack(env)
     env = wrap.ObservationDictToInfo(env, "observations")
@@ -134,9 +170,10 @@ plt.imshow(img)
 plt.ion()
 plt.show()
 
-env = gym.make('dm2gym:PendulumSwingup-v0')#, environment_kwargs={'flat_observation': True})
-env = env.env
-env = DMCPendulumAnnotated(env)
+#%%
+env = gym.make('Pendulum-v0')#, environment_kwargs={'flat_observation': True})
+# env = env.env
+env = Annotate(env)
 state = env.reset()
 
 plt.show()
