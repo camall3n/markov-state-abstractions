@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -97,3 +99,64 @@ class SnakeWorld(GridWorld):
         #|  _|_  |
         #| |   | |
         #|___|___|
+
+class MazeWorld(GridWorld):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        walls = []
+        for row in range(0, self._rows):
+            for col in range(0, self._cols):
+                #add vertical walls
+                self._grid[row * 2 + 2, col * 2 + 1] = 1
+                walls.append((row * 2 + 2, col * 2 + 1))
+
+                #add horizontal walls
+                self._grid[row * 2 + 1, col * 2 + 2] = 1
+                walls.append((row * 2 + 1, col * 2 + 2))
+
+        random.shuffle(walls)
+
+        cells = []
+        #add each cell as a set_text
+        for row in range(0, self._rows):
+            for col in range(0, self._cols):
+                cells.append({(row * 2 + 1, col * 2 + 1)})
+
+        #Randomized Kruskal's Algorithm
+        for wall in walls:
+            if (wall[0] % 2 == 0):
+
+                def neighbor(set):
+                    for x in set:
+                        if (x[0] == wall[0] + 1 and x[1] == wall[1]):
+                            return True
+                        if (x[0] == wall[0] - 1 and x[1] == wall[1]):
+                            return True
+                    return False
+
+                neighbors = list(filter(neighbor, cells))
+                if (len(neighbors) == 1):
+                    continue
+                cellSet = neighbors[0].union(neighbors[1])
+                cells.remove(neighbors[0])
+                cells.remove(neighbors[1])
+                cells.append(cellSet)
+                self._grid[wall[0], wall[1]] = 0
+            else:
+
+                def neighbor(set):
+                    for x in set:
+                        if (x[0] == wall[0] and x[1] == wall[1] + 1):
+                            return True
+                        if (x[0] == wall[0] and x[1] == wall[1] - 1):
+                            return True
+                    return False
+
+                neighbors = list(filter(neighbor, cells))
+                if (len(neighbors) == 1):
+                    continue
+                cellSet = neighbors[0].union(neighbors[1])
+                cells.remove(neighbors[0])
+                cells.remove(neighbors[1])
+                cells.append(cellSet)
+                self._grid[wall[0], wall[1]] = 0
