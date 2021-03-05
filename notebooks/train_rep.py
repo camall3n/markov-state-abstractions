@@ -9,7 +9,7 @@ from tqdm import tqdm
 from gridworlds.nn.featurenet import FeatureNet
 from gridworlds.nn.autoencoder import AutoEncoder
 from notebooks.repvis import RepVisualization, CleanVisualization
-from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
+from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld
 from gridworlds.utils import reset_seeds, get_parser, MI
 from gridworlds.sensors import *
 
@@ -52,8 +52,17 @@ parser.add_argument('--save', action='store_true',
                     help='Save final network weights')
 parser.add_argument('--cleanvis', action='store_true',
                     help='Switch to representation-only visualization')
+parser.add_argument('--no_sigma', action='store_true',
+                    help='Turn off sensors and just use true state; i.e. x=s')
+parser.add_argument('--rearrange_xy', action='store_true',
+                    help='Rearrange discrete x-y positions to break smoothness')
+parser.add_argument('--maze', action='store_true',
+                    help='Add walls to the gridworld to turn it into a maze')
+
 # yapf: enable
-args = parser.parse_args()
+arglist = ['--maze', '--tag', 'test-maze', '-r', '6', '-c', '6', '--no_sigma', '--rearrange_xy']
+args = parser.parse_args(arglist)
+# args = parser.parse_args()
 
 if args.no_graphics:
     import matplotlib
@@ -74,17 +83,20 @@ with open(log_dir + '/args-{}.txt'.format(args.seed), 'w') as arg_file:
 
 reset_seeds(args.seed)
 
-#%% ------------------ Define MDP ------------------
-env = GridWorld(rows=args.rows, cols=args.cols)
+#% ------------------ Define MDP ------------------
+if not args.maze:
+    env = GridWorld(rows=args.rows, cols=args.cols)
+else:
+    env = MazeWorld(rows=args.rows, cols=args.cols)
 # env = RingWorld(2,4)
 # env = TestWorld()
 # env.add_random_walls(10)
-# env.plot()
+env.plot()
 
 # cmap = 'Set3'
 cmap = None
 
-#%% ------------------ Generate experiences ------------------
+#% ------------------ Generate experiences ------------------
 n_samples = 20000
 states = [env.get_state()]
 actions = []
@@ -101,20 +113,29 @@ a = np.asarray(actions)
 
 MI_max = MI(s0, s0)
 
-#%% ------------------ Define sensor ------------------
-sensor = SensorChain([
-    OffsetSensor(offset=(0.5, 0.5)),
-    NoisySensor(sigma=0.05),
-    ImageSensor(range=((0, env._rows), (0, env._cols)), pixel_density=3),
-    # ResampleSensor(scale=2.0),
-    BlurSensor(sigma=0.6, truncate=1.),
-    NoisySensor(sigma=0.01)
-])
+# Confirm that we're covering the state space relatively evenly
+# np.histogram2d(states[:,0], states[:,1], bins=6)
+
+#% ------------------ Define sensor ------------------
+sensor_list = []
+if args.rearrange_xy:
+    sensor_list.append(RearrangeXYPositionsSensor((env._rows, env._cols)))
+if not args.no_sigma:
+    sensor_list += [
+        OffsetSensor(offset=(0.5, 0.5)),
+        NoisySensor(sigma=0.05),
+        ImageSensor(range=((0, env._rows), (0, env._cols)), pixel_density=3),
+        # ResampleSensor(scale=2.0),
+        BlurSensor(sigma=0.6, truncate=1.),
+        NoisySensor(sigma=0.01)
+    ]
+sensor = SensorChain(sensor_list)
 
 x0 = sensor.observe(s0)
+print(x0)
 x1 = sensor.observe(s1)
 
-#%% ------------------ Setup experiment ------------------
+#% ------------------ Setup experiment ------------------
 n_updates_per_frame = 100
 n_frames = args.n_updates // n_updates_per_frame
 
@@ -225,7 +246,7 @@ def test_rep(fnet, step):
     results = [z0, z1, z1, test_a, test_a]
     return [r.numpy() for r in results] + [text]
 
-#%% ------------------ Run Experiment ------------------
+#% ------------------ Run Experiment ------------------
 data = []
 for frame_idx in tqdm(range(n_frames + 1)):
     for _ in range(n_updates_per_frame):
@@ -241,6 +262,6 @@ if args.video:
     imageio.mimwrite(filename, data, fps=15)
 
 if args.save:
-    fnet.phi.save(args.tag, 'phi-{}'.format(args.seed))
+    fnet.phi.save('phi-{}'.format(args.seed), 'models/{}'.format(args.tag))
 
 log.close()

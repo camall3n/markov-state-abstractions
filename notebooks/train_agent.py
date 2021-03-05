@@ -10,7 +10,7 @@ from tqdm import tqdm
 from gridworlds.nn.nnutils import Reshape
 from gridworlds.nn.nullabstraction import NullAbstraction
 from gridworlds.nn.phinet import PhiNet
-from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
+from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld
 from gridworlds.agents.randomagent import RandomAgent
 from gridworlds.agents.dqnagent import DQNAgent, FactoredDQNAgent
 from gridworlds.utils import reset_seeds, get_parser
@@ -53,6 +53,8 @@ parser.add_argument('-v','--video', action='store_true',
                     help='Show video of agent training')
 parser.add_argument('--rearrange_xy', action='store_true',
                     help='Rearrange discrete x-y positions to break smoothness')
+parser.add_argument('--maze', action='store_true',
+                    help='Add walls to the gridworld to turn it into a maze')
 # yapf: enable
 args = parser.parse_args()
 if args.train_phi and args.no_phi:
@@ -66,7 +68,10 @@ os.makedirs(log_dir, exist_ok=True)
 log = open(log_dir + '/scores-{}-{}.txt'.format(args.agent, args.seed), 'w')
 
 #%% ------------------ Define MDP ------------------
-env = GridWorld(rows=args.rows, cols=args.cols)
+if not args.maze:
+    env = GridWorld(rows=args.rows, cols=args.cols)
+else:
+    env = MazeWorld(rows=args.rows, cols=args.cols)
 gamma = 0.9
 
 #%% ------------------ Define sensor ------------------
@@ -94,7 +99,7 @@ else:
                     n_hidden_layers=1,
                     n_units_per_layer=32)
     if args.phi_path:
-        modelfile = 'models/{}/phi-{}.pytorch'.format(args.phi_path, args.seed)
+        modelfile = 'models/{}/phi-{}_latest.pytorch'.format(args.phi_path, args.seed)
         phinet.load(modelfile)
 
 reset_seeds(args.seed)
