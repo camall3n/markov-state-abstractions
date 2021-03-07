@@ -64,15 +64,14 @@ class FeatureNet(Network):
         fakes = self.discriminator(z0_extended, z1_pos_neg)
         return self.bce_loss(input=fakes, target=is_fake.float())
 
-    def distance_loss(self, z0, z1, i):
+    def distance_loss(self, z0, z1):
         if self.coefs['L_dis'] == 0.0:
             return torch.tensor(0.0)
-        dz = torch.norm(z0[:, None] - z1, dim=-1, p=2)
+        dz = torch.norm(z1 - z0, dim=-1, p=2)
         with torch.no_grad():
-            idx = i.float()
-            max_dz = torch.abs(idx.unsqueeze(-1) - (idx + 1).unsqueeze(-2)) / 50
+            max_dz = 0.1
         excess = torch.nn.functional.relu(dz - max_dz)
-        return self.mse(excess, torch.tensor(0.))
+        return self.mse(excess, torch.zeros_like(excess))
 
     def forward(self, *args, **kwargs):
         raise NotImplementedError
@@ -81,7 +80,7 @@ class FeatureNet(Network):
         a_logits = self.inv_model(z0, z1)
         return torch.argmax(a_logits, dim=-1)
 
-    def compute_loss(self, z0, z1, a, i, model='all'):
+    def compute_loss(self, z0, z1, a, model='all'):
         loss = 0
         if model in ['L_inv', 'all']:
             loss += self.coefs['L_inv'] * self.inverse_loss(z0, z1, a)
@@ -91,16 +90,16 @@ class FeatureNet(Network):
             loss += self.coefs['L_rat'] * self.ratio_loss(z0, z1)
         if model in ['L_dis', 'all']:
             if self.coefs['L_dis'] > 0.0:
-                loss += self.coefs['L_dis'] * self.distance_loss(z0, z1, i)
+                loss += self.coefs['L_dis'] * self.distance_loss(z0, z1)
         return loss
 
-    def train_batch(self, x0, x1, a, i, model='inv'):
+    def train_batch(self, x0, x1, a, model='inv'):
         self.train()
         self.optimizer.zero_grad()
         z0 = self.phi(x0)
         z1 = self.phi(x1)
         # z1_hat = self.fwd_model(z0, a)
-        loss = self.compute_loss(z0, z1, a, i, model=model)
+        loss = self.compute_loss(z0, z1, a, model=model)
         loss.backward()
         self.optimizer.step()
         return loss

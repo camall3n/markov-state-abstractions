@@ -9,7 +9,7 @@ from tqdm import tqdm
 from gridworlds.nn.featurenet import FeatureNet
 from gridworlds.nn.autoencoder import AutoEncoder
 from notebooks.repvis import RepVisualization, CleanVisualization
-from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld
+from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld
 from gridworlds.utils import reset_seeds, get_parser, MI
 from gridworlds.sensors import *
 
@@ -58,24 +58,30 @@ parser.add_argument('--rearrange_xy', action='store_true',
                     help='Rearrange discrete x-y positions to break smoothness')
 parser.add_argument('--maze', action='store_true',
                     help='Add walls to the gridworld to turn it into a maze')
+parser.add_argument('--spiral', action='store_true',
+                    help='Add walls to the gridworld to turn it into a spiral')
 
 # yapf: enable
-arglist = ['--maze', '--tag', 'test-maze', '-r', '6', '-c', '6', '--no_sigma', '--rearrange_xy']
+arglist = ['--spiral', '--tag', 'test-maze', '-r', '6', '-c', '6', '--no_sigma']
 args = parser.parse_args(arglist)
-# args = parser.parse_args()
+args = parser.parse_args()
 
 if args.no_graphics:
     import matplotlib
     # Force matplotlib to not use any Xwindows backend.
     matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 log_dir = 'logs/' + str(args.tag)
 vid_dir = 'videos/' + str(args.tag)
+maze_dir = 'mazes/' + str(args.tag)
 os.makedirs(log_dir, exist_ok=True)
 
 if args.video:
     os.makedirs(vid_dir, exist_ok=True)
+    os.makedirs(maze_dir, exist_ok=True)
     filename = vid_dir + '/video-{}.mp4'.format(args.seed)
+    maze_file = maze_dir + '/maze-{}.png'.format(args.seed)
 
 log = open(log_dir + '/train-{}.txt'.format(args.seed), 'w')
 with open(log_dir + '/args-{}.txt'.format(args.seed), 'w') as arg_file:
@@ -84,14 +90,15 @@ with open(log_dir + '/args-{}.txt'.format(args.seed), 'w') as arg_file:
 reset_seeds(args.seed)
 
 #% ------------------ Define MDP ------------------
-if not args.maze:
-    env = GridWorld(rows=args.rows, cols=args.cols)
-else:
+if args.maze:
     env = MazeWorld(rows=args.rows, cols=args.cols)
+elif args.spiral:
+    env = SpiralWorld(rows=args.rows, cols=args.cols)
+else:
+    env = GridWorld(rows=args.rows, cols=args.cols)
 # env = RingWorld(2,4)
 # env = TestWorld()
 # env.add_random_walls(10)
-env.plot()
 
 # cmap = 'Set3'
 cmap = None
@@ -113,6 +120,11 @@ a = np.asarray(actions)
 
 MI_max = MI(s0, s0)
 
+ax = env.plot()
+ax.scatter(s0[:, 0] + 0.5, s0[:, 1] + 0.5, c=c0)
+if args.video:
+    plt.savefig(maze_file)
+
 # Confirm that we're covering the state space relatively evenly
 # np.histogram2d(states[:,0], states[:,1], bins=6)
 
@@ -132,7 +144,6 @@ if not args.no_sigma:
 sensor = SensorChain(sensor_list)
 
 x0 = sensor.observe(s0)
-print(x0)
 x1 = sensor.observe(s1)
 
 #% ------------------ Setup experiment ------------------
@@ -203,7 +214,7 @@ def get_batch(x0, x1, a, batch_size=batch_size):
     tx1 = torch.as_tensor(x1[idx]).float()
     ta = torch.as_tensor(a[idx]).long()
     ti = torch.as_tensor(idx).long()
-    return tx0, tx1, ta, ti
+    return tx0, tx1, ta
 
 get_next_batch = (
     lambda: get_batch(x0[:n_samples // 2, :], x1[:n_samples // 2, :], a[:n_samples // 2]))
@@ -222,10 +233,10 @@ def test_rep(fnet, step):
                 'L_inv': fnet.inverse_loss(z0, z1, test_a).numpy().tolist(),
                 'L_fwd': 'NaN',  #fnet.compute_fwd_loss(z0, z1, z1_hat).numpy().tolist(),
                 'L_rat': fnet.ratio_loss(z0, z1).numpy().tolist(),
-                'L_dis': fnet.distance_loss(z0, z1, test_i).numpy().tolist(),
+                'L_dis': fnet.distance_loss(z0, z1).numpy().tolist(),
                 'L_fac': 'NaN',  #fnet.compute_factored_loss(z0, z1).numpy().tolist(),
                 # 'L_ent': 'NaN',#fnet.compute_entropy_loss(z0, z1, test_a).numpy().tolist(),
-                'L': fnet.compute_loss(z0, z1, test_a, test_i, 'all').numpy().tolist(),
+                'L': fnet.compute_loss(z0, z1, test_a, 'all').numpy().tolist(),
                 'MI': MI(test_s0, z0.numpy()) / MI_max
             }
         elif args.type == 'autoencoder':
@@ -250,8 +261,8 @@ def test_rep(fnet, step):
 data = []
 for frame_idx in tqdm(range(n_frames + 1)):
     for _ in range(n_updates_per_frame):
-        tx0, tx1, ta, ti = get_next_batch()
-        fnet.train_batch(tx0, tx1, ta, ti, model='all')
+        tx0, tx1, ta = get_next_batch()
+        fnet.train_batch(tx0, tx1, ta, model='all')
 
     test_results = test_rep(fnet, frame_idx * n_updates_per_frame)
     if args.video:
