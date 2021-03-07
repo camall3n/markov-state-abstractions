@@ -160,3 +160,41 @@ class MazeWorld(GridWorld):
                 cells.remove(neighbors[1])
                 cells.append(cellSet)
                 self._grid[wall[0], wall[1]] = 0
+
+class SpiralWorld(GridWorld):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Add all walls
+        for row in range(0, self._rows):
+            for col in range(0, self._cols):
+                #add vertical walls
+                self._grid[row * 2 + 2, col * 2 + 1] = 1
+
+                #add horizontal walls
+                self._grid[row * 2 + 1, col * 2 + 2] = 1
+
+        # Check dimensions to decide on appropriate spiral direction
+        if self._cols > self._rows:
+            direction = 'cw'
+        else:
+            direction = 'ccw'
+
+        # Remove walls to build spiral
+        for i in range(0, min(self._rows, self._cols)):
+            # Create concentric hooks, and connect them after the first to build spiral
+            if direction == 'ccw':
+                self._grid[(2 * i + 1):-(2 * i + 1), (2 * i + 1)] = 0
+                self._grid[-(2 * i + 2), (2 * i + 1):-(2 * i + 1)] = 0
+                self._grid[(2 * i + 1):-(2 * i + 1), -(2 * i + 2)] = 0
+                self._grid[(2 * i + 1), (2 * i + 3):-(2 * i + 1)] = 0
+                if i > 0:
+                    self._grid[2 * i, 2 * i + 1] = 0
+
+            else:
+                self._grid[(2 * i + 1), (2 * i + 1):-(2 * i + 1)] = 0
+                self._grid[(2 * i + 1):-(2 * i + 1), -(2 * i + 2)] = 0
+                self._grid[-(2 * i + 2), (2 * i + 1):-(2 * i + 1)] = 0
+                self._grid[(2 * i + 3):-(2 * i + 1), (2 * i + 1)] = 0
+                if i > 0:
+                    self._grid[2 * i + 1, 2 * i] = 0
