@@ -20,91 +20,36 @@ def load_experiment(tag):
     results = [read_log(log) for log in logs]
     keys = list(zip(agents, seeds))
     data = pd.concat(results, join='outer', keys=keys, names=['agent','seed']).sort_values(by='seed', kind='mergesort').reset_index(level=[0,1])
-    return data[data['episode']<=100]
+    return smooth(data, 5)#[data['episode']<=100]
 
-# labels = ['tag','name','factored']
-# experiments = [
-    # ('test-6x6-random', 'random', True),
-    # ('test-6x6-random', 'random', False),
-    # 'test-6x6-dqn-true-state',
-    # ('test-6x6-dqn-phi-train', 'DQN (end-to-end)'),
-    # ('test-6x6-dqn-phi-factored', '2-D factored'),
-    # ('test-6x6-dqn-phi-nofac', '2-D unfactored'),
-    # 'exp11-3d-rep',
-    # ('exp12-10d-rep', '10-D pre-trained'),
-    # 'exp13joint10d',
-    # ('exp14_true_state', '2-D true state'),
-    # 'exp15_pre_2d',
-    # ('exp16-onehot36-joint', '36-D one-hot true state'),
-    # ('exp17-factored-phi', 'DQN (pre-trained abstraction)'),
-    # ('exp18-unfactored-phi', 'DQN (unfactored)'),
-# ]
-# labels = ['tag','name','factored','lr']
-# experiments = [
-# #     # ('dqn_fqn/dqn1', 'dqn', True),
-# #     # ('dqn_fqn/fqn1', 'fqn', True),
-# #     # ('dqn_fqn/bigdqn', 'big dqn', True),
-#     ('dqn_fqn/lr-dqn-0.0001', 'dqn', False, 0.0001),
-#     ('dqn_fqn/lr-dqn-0.0003', 'dqn', False, 0.0003),
-#     ('dqn_fqn/lr-dqn-0.001', 'dqn', False, 0.001),
-#     ('dqn_fqn/lr-dqn-0.003', 'dqn', False, 0.003),
-#     ('dqn_fqn/lr-dqn-0.01', 'dqn', False, 0.01),
-#     ('dqn_fqn/lr-dqn-0.03', 'dqn', False, 0.03),
-#     ('dqn_fqn/lr-dqn-0.1', 'dqn', False, 0.1),
-#     ('dqn_fqn/lr-fqn-0.0001', 'fqn', True, 0.0001),
-#     ('dqn_fqn/lr-fqn-0.0003', 'fqn', True, 0.0003),
-#     ('dqn_fqn/lr-fqn-0.001', 'fqn', True, 0.001),
-#     ('dqn_fqn/lr-fqn-0.003', 'fqn', True, 0.003),
-#     ('dqn_fqn/lr-fqn-0.01', 'fqn', True, 0.01),
-#     ('dqn_fqn/lr-fqn-0.03', 'fqn', True, 0.03),
-#     ('dqn_fqn/lr-fqn-0.1', 'fqn', True, 0.1),
-#     ('dqn_fqn/lr-fqni-0.0001', 'fqni', True, 0.0001),
-#     ('dqn_fqn/lr-fqni-0.0003', 'fqni', True, 0.0003),
-#     ('dqn_fqn/lr-fqni-0.001', 'fqni', True, 0.001),
-#     ('dqn_fqn/lr-fqni-0.003', 'fqni', True, 0.003),
-#     ('dqn_fqn/lr-fqni-0.01', 'fqni', True, 0.01),
-#     ('dqn_fqn/lr-fqni-0.03', 'fqni', True, 0.03),
-#     ('dqn_fqn/lr-fqni-0.1', 'fqni', True, 0.1),
-# ]
-labels = ['tag','name','factored','size']
+def smooth(data, n):
+    numeric_dtypes = data.dtypes.apply(pd.api.types.is_numeric_dtype)
+    numeric_cols = numeric_dtypes.index[numeric_dtypes]
+    data[numeric_cols] = data[numeric_cols].rolling(n).mean()
+    return data
+
+
+labels = ['tag', 'features', 'grid_type']
 experiments = [
-#     # ('dqn_fqn/dqn1', 'dqn', True),
-#     # ('dqn_fqn/fqn1', 'fqn', True),
-#     # ('dqn_fqn/bigdqn', 'big dqn', True),
-    ('dqn_fqn/lr-dqn-0.003', 'dqn', False, '6x6'),
-    ('dqn_fqn/lr-fqn-0.003', 'fqn', True, '6x6'),
-    ('dqn_fqn/lr-fqni-0.003', 'fqni', True, '6x6'),
-    ('dqn_fqn/dqn-size10x10', 'dqn', False, '10x10'),
-    ('dqn_fqn/fqn-size10x10', 'fqn', True, '10x10'),
-    ('dqn_fqn/fqni-size10x10', 'fqni', True, '10x10'),
-#     ('dqn_fqn/dqn-size20x20', 'dqn', False, 20),
-#     ('dqn_fqn/fqn-size20x20', 'fqn', True, 20),
-#     ('dqn_fqn/dqn-size40x40', 'dqn', False, 40),
-#     ('dqn_fqn/fqn-size40x40', 'fqn', True, 40),
+    ('dqn-spiral-markov', 'markov', 'spiral'),
+    ('dqn-spiral-smooth', 'markov+smooth', 'spiral'),
+    ('dqn-spiral-expert', 'expert', 'spiral'),
+    ('dqn-maze-markov', 'markov', 'maze'),
+    ('dqn-maze-smooth', 'markov+smooth', 'maze'),
+    ('dqn-maze-expert', 'expert', 'maze'),
 ]
-# labels = ['tag', 'name', 'lr']
-# experiments = [
-#     ('dqn_fqn/fqn-isolate-lr0.003', 'fqn-isolate', 0.003),
-#     ('dqn_fqn/lr-dqn-0.003', 'dqn', 0.003),
-#     ('dqn_fqn/lr-fqn-0.003', 'fqn', 0.003),
-#     # ('dqn_fqn/lr-fqni-0.03', 'fqn-isolate', 0.03),
-#     # ('dqn_fqn/lr-fqn-0.03', 'fqn', 0.03),
-#     # ('dqn_fqn/lr-dqn-0.03', 'dqn', 0.03),
-#     ('dqn_fqn/fqn-isolate-lr0.001', 'fqn-isolate', 0.001),
-#     ('dqn_fqn/lr-fqn-0.001', 'fqn', 0.001),
-#     ('dqn_fqn/lr-dqn-0.001', 'dqn', 0.001),
-# ]
 data = pd.concat([load_experiment(e[0]) for e in experiments], join='outer', keys=experiments, names=labels).reset_index(level=list(range(len(labels))))
 
 # plt.rcParams.update({'font.size': 10})
-g = sns.relplot(x='episode', y='total_reward', kind='line', data=data, height=4, alpha=0.2,
-    hue='name',
-    # style='lr',
+g = sns.relplot(x='episode', y='reward', kind='line', data=data, height=4, alpha=0.2,
+    hue='features',
+    style='features',
     # units='trial', estimator=None,
-    col='size', #col_wrap=2,
+    col='grid_type', #col_wrap=2,
     # legend=False
 )
-plt.subplots_adjust(top=0.85)
+# plt.tight_layout()
+plt.subplots_adjust(top=0.85, bottom=0.15)
 g.fig.suptitle('Reward vs. Time')
 # plt.rcParams.update({'font.size': 22})
 plt.savefig('results/foo.png')
