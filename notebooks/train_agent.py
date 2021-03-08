@@ -51,6 +51,8 @@ parser.add_argument('--no_sigma', action='store_true',
                     help='Turn off sensors and just use true state; i.e. x=s')
 parser.add_argument('--one_hot', action='store_true',
                     help='Bypass sensor and use one-hot representation instead')
+parser.add_argument('--save', action='store_true',
+                    help='Save final network weights')
 parser.add_argument('-v','--video', action='store_true',
                     help='Show video of agent training')
 parser.add_argument('--rearrange_xy', action='store_true',
@@ -67,8 +69,8 @@ if args.train_phi and args.no_phi:
 if args.one_hot and args.no_sigma:
     assert False, '--one_hot and --no_sigma are mutually exclusive'
 
-if args.video:
-    import matplotlib.pyplot as plt
+if args.video:pass
+import matplotlib.pyplot as plt
 
 log_dir = 'scores/' + str(args.tag)
 os.makedirs(log_dir, exist_ok=True)
@@ -189,6 +191,8 @@ if args.video:
 for trial in tqdm(range(args.n_trials), desc='trials'):
     env.reset_goal()
     agent.reset()
+    env.plot()
+    plt.show()
     total_reward = 0
     total_steps = 0
     losses = []
@@ -241,3 +245,6 @@ for trial in tqdm(range(args.n_trials), desc='trials'):
         log.write(json_str + '\n')
         log.flush()
 print('\n\n')
+
+if args.save:
+    agent.q.save('qnet-{}'.format(args.seed), 'models/{}'.format(args.tag))

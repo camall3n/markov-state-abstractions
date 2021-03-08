@@ -15,12 +15,12 @@ def load_experiment(tag):
     logs = [open(f,'r').read().splitlines() for f in logfiles]
     def read_log(log):
         results = [json.loads(item) for item in log]
-        data = pd.DataFrame(results)
+        data = smooth(pd.DataFrame(results), 10)[::10]
         return data
     results = [read_log(log) for log in logs]
     keys = list(zip(agents, seeds))
     data = pd.concat(results, join='outer', keys=keys, names=['agent','seed']).sort_values(by='seed', kind='mergesort').reset_index(level=[0,1])
-    return smooth(data, 5)#[data['episode']<=100]
+    return data#[data['episode']<=100]
 
 def smooth(data, n):
     numeric_dtypes = data.dtypes.apply(pd.api.types.is_numeric_dtype)
@@ -34,9 +34,11 @@ experiments = [
     ('dqn-spiral-markov', 'markov', 'spiral'),
     ('dqn-spiral-smooth', 'markov+smooth', 'spiral'),
     ('dqn-spiral-expert', 'expert', 'spiral'),
+    # ('dqn-spiral-onehot', 'onehot', 'spiral'),
     ('dqn-maze-markov', 'markov', 'maze'),
     ('dqn-maze-smooth', 'markov+smooth', 'maze'),
     ('dqn-maze-expert', 'expert', 'maze'),
+    # ('dqn-maze-onehot', 'onehot', 'maze'),
 ]
 data = pd.concat([load_experiment(e[0]) for e in experiments], join='outer', keys=experiments, names=labels).reset_index(level=list(range(len(labels))))
 
@@ -44,7 +46,7 @@ data = pd.concat([load_experiment(e[0]) for e in experiments], join='outer', key
 g = sns.relplot(x='episode', y='reward', kind='line', data=data, height=4, alpha=0.2,
     hue='features',
     style='features',
-    # units='trial', estimator=None,
+    # units='seed', estimator=None,
     col='grid_type', #col_wrap=2,
     # legend=False
 )
