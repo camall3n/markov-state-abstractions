@@ -49,6 +49,8 @@ parser.add_argument('--train_phi', action='store_true',
                     help='Allow simultaneous training of abstraction')
 parser.add_argument('--no_sigma', action='store_true',
                     help='Turn off sensors and just use true state; i.e. x=s')
+parser.add_argument('--one_hot', action='store_true',
+                    help='Bypass sensor and use one-hot representation instead')
 parser.add_argument('-v','--video', action='store_true',
                     help='Show video of agent training')
 parser.add_argument('--rearrange_xy', action='store_true',
@@ -61,6 +63,9 @@ parser.add_argument('--spiral', action='store_true',
 args = parser.parse_args()
 if args.train_phi and args.no_phi:
     assert False, '--no_phi and --train_phi are mutually exclusive'
+
+if args.one_hot and args.no_sigma:
+    assert False, '--one_hot and --no_sigma are mutually exclusive'
 
 if args.video:
     import matplotlib.pyplot as plt
@@ -83,14 +88,20 @@ sensor_list = []
 if args.rearrange_xy:
     sensor_list.append(RearrangeXYPositionsSensor((env._rows, env._cols)))
 if not args.no_sigma:
-    sensor_list += [
-        OffsetSensor(offset=(0.5, 0.5)),
-        NoisySensor(sigma=0.05),
-        ImageSensor(range=((0, env._rows), (0, env._cols)), pixel_density=3),
-        # ResampleSensor(scale=2.0),
-        BlurSensor(sigma=0.6, truncate=1.),
-        NoisySensor(sigma=0.01)
-    ]
+    if args.one_hot:
+        sensor_list += [
+            OffsetSensor(offset=(0.5, 0.5)),
+            ImageSensor(range=((0, env._rows), (0, env._cols)), pixel_density=1),
+        ]
+    else:
+        sensor_list += [
+            OffsetSensor(offset=(0.5, 0.5)),
+            NoisySensor(sigma=0.05),
+            ImageSensor(range=((0, env._rows), (0, env._cols)), pixel_density=3),
+            # ResampleSensor(scale=2.0),
+            BlurSensor(sigma=0.6, truncate=1.),
+            NoisySensor(sigma=0.01)
+        ]
 sensor = SensorChain(sensor_list)
 
 #%% ------------------ Define abstraction ------------------
