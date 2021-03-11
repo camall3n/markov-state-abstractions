@@ -12,7 +12,7 @@ class GridWorld(grid.BaseGrid):
         super().__init__(*args, **kwargs)
         self.agent = Agent()
         self.actions = [i for i in range(4)]
-        self.action_map = {0: grid.LEFT, 1: grid.RIGHT, 2: grid.UP, 3: grid.DOWN}
+        self.action_map = grid.directions
         self.agent.position = np.asarray((0, 0), dtype=int)
         self.goal = None
 
