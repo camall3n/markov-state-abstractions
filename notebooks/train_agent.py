@@ -69,8 +69,8 @@ if args.train_phi and args.no_phi:
 if args.one_hot and args.no_sigma:
     assert False, '--one_hot and --no_sigma are mutually exclusive'
 
-if args.video:pass
-import matplotlib.pyplot as plt
+if args.video:
+    import matplotlib.pyplot as plt
 
 log_dir = 'scores/' + str(args.tag)
 os.makedirs(log_dir, exist_ok=True)
@@ -191,8 +191,6 @@ if args.video:
 for trial in tqdm(range(args.n_trials), desc='trials'):
     env.reset_goal()
     agent.reset()
-    env.plot()
-    plt.show()
     total_reward = 0
     total_steps = 0
     losses = []

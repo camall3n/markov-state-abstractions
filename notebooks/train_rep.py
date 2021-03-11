@@ -3,6 +3,7 @@ import json
 #!! do not import matplotlib until you check input arguments
 import numpy as np
 import os
+import sys
 import torch
 from tqdm import tqdm
 
@@ -65,9 +66,11 @@ parser.add_argument('--spiral', action='store_true',
                     help='Add walls to the gridworld to turn it into a spiral')
 
 # yapf: enable
-arglist = ['--spiral', '--tag', 'test-maze', '-r', '6', '-c', '6', '--no_sigma']
-args = parser.parse_args(arglist)
-args = parser.parse_args()
+if 'ipykernel' in sys.argv[0]:
+    arglist = ['--spiral', '--tag', 'test-spiral', '-r', '6', '-c', '6', '--L_ora', '1.0']
+    args = parser.parse_args(arglist)
+else:
+    args = parser.parse_args()
 
 if args.no_graphics:
     import matplotlib
