@@ -30,7 +30,7 @@ def skill_policy(w, skill_name):
 
 def GoToDepot(gridworld, start, depotname):
     depot = gridworld.depot_locs[depotname]
-    return GoToGridPosition(gridworld, start=start, target=depot)
+    return GoToGridPosition(gridworld, start=start, target=depot)[0]
 
 def Interact(gridworld):
     # Check relevant state variables to see if skill can run
