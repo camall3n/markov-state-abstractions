@@ -12,6 +12,7 @@ from notebooks.repvis import RepVisualization, CleanVisualization
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld
 from gridworlds.utils import reset_seeds, get_parser, MI
 from gridworlds.sensors import *
+from gridworlds.distance_oracle import DistanceOracle
 
 parser = get_parser()
 # parser.add_argument('-d','--dims', help='Number of latent dimensions', type=int, default=2)
@@ -36,6 +37,8 @@ parser.add_argument('--L_rat', type=float, default=1.0,
 #                     help='Coefficient for factorization loss')
 parser.add_argument('--L_dis', type=float, default=0.0,
                     help='Coefficient for planning-distance loss')
+parser.add_argument('--L_ora', type=float, default=0.0,
+                    help='Coefficient for oracle distance loss')
 parser.add_argument('-lr','--learning_rate', type=float, default=0.003,
                     help='Learning rate for Adam optimizer')
 parser.add_argument('--batch_size', type=int, default=2048,
@@ -158,6 +161,7 @@ coefs = {
     'L_rat': args.L_rat,
     # 'L_fac': args.L_fac,
     'L_dis': args.L_dis,
+    'L_ora': args.L_ora,
 }
 
 if args.type == 'markov':
@@ -188,6 +192,8 @@ test_a = torch.as_tensor(a[-n_test_samples:]).long()
 test_i = torch.arange(n_test_samples).long()
 test_c = c0[-n_test_samples:]
 
+oracle = DistanceOracle(env)
+
 env.reset_agent()
 state = env.get_state()
 obs = sensor.observe(state)
@@ -214,7 +220,7 @@ def get_batch(x0, x1, a, batch_size=batch_size):
     tx1 = torch.as_tensor(x1[idx]).float()
     ta = torch.as_tensor(a[idx]).long()
     ti = torch.as_tensor(idx).long()
-    return tx0, tx1, ta
+    return tx0, tx1, ta, idx
 
 get_next_batch = (
     lambda: get_batch(x0[:n_samples // 2, :], x1[:n_samples // 2, :], a[:n_samples // 2]))
@@ -236,7 +242,8 @@ def test_rep(fnet, step):
                 'L_dis': fnet.distance_loss(z0, z1).numpy().tolist(),
                 'L_fac': 'NaN',  #fnet.compute_factored_loss(z0, z1).numpy().tolist(),
                 # 'L_ent': 'NaN',#fnet.compute_entropy_loss(z0, z1, test_a).numpy().tolist(),
-                'L': fnet.compute_loss(z0, z1, test_a, 'all').numpy().tolist(),
+                'L': fnet.compute_loss(z0, z1, test_a, torch.zeros((2*len(z0))),
+                                       'all').numpy().tolist(),
                 'MI': MI(test_s0, z0.numpy()) / MI_max
             }
         elif args.type == 'autoencoder':
@@ -261,8 +268,14 @@ def test_rep(fnet, step):
 data = []
 for frame_idx in tqdm(range(n_frames + 1)):
     for _ in range(n_updates_per_frame):
-        tx0, tx1, ta = get_next_batch()
-        fnet.train_batch(tx0, tx1, ta, model='all')
+        tx0, tx1, ta, idx = get_next_batch()
+        tdist = torch.cat([
+                torch.as_tensor(oracle.pairwise_distances(idx, s0, s1)).squeeze().float(),
+                torch.as_tensor(oracle.pairwise_distances(idx, s0, np.flip(s1))).squeeze().float()
+        ], dim=0)
+        h = np.histogram(tdist, bins=36)[0]
+
+        fnet.train_batch(tx0, tx1, ta, tdist, model='all')
 
     test_results = test_rep(fnet, frame_idx * n_updates_per_frame)
     if args.video:

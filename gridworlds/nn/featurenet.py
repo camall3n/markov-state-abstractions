@@ -73,6 +73,25 @@ class FeatureNet(Network):
         excess = torch.nn.functional.relu(dz - max_dz)
         return self.mse(excess, torch.zeros_like(excess))
 
+    def oracle_loss(self, z0, z1, d):
+        if self.coefs['L_ora'] == 0.0:
+            return torch.tensor(0.0)
+
+        dz = torch.cat(
+            [torch.norm(z1 - z0, dim=-1, p=2),
+             torch.norm(z1.flip(0) - z0, dim=-1, p=2)], dim=0)
+
+        with torch.no_grad():
+            counts = 1 + torch.histc(d, bins=36, min=0, max=35)
+            inverse_counts = counts.sum() / counts
+            weights = inverse_counts[d.long()]
+            weights = weights / weights.sum()
+
+        loss = self.mse(dz, d / 10.0)
+        # loss += torch.sum(weights * (dz - d / 20.0)**2) # weighted MSE
+        # loss = -torch.nn.functional.cosine_similarity(dz, d, 0)
+        return loss
+
     def forward(self, *args, **kwargs):
         raise NotImplementedError
 
@@ -80,7 +99,7 @@ class FeatureNet(Network):
         a_logits = self.inv_model(z0, z1)
         return torch.argmax(a_logits, dim=-1)
 
-    def compute_loss(self, z0, z1, a, model='all'):
+    def compute_loss(self, z0, z1, a, d, model='all'):
         loss = 0
         if model in ['L_inv', 'all']:
             loss += self.coefs['L_inv'] * self.inverse_loss(z0, z1, a)
@@ -91,15 +110,18 @@ class FeatureNet(Network):
         if model in ['L_dis', 'all']:
             if self.coefs['L_dis'] > 0.0:
                 loss += self.coefs['L_dis'] * self.distance_loss(z0, z1)
+        if model in ['L_ora', 'all']:
+            if self.coefs['L_ora'] > 0.0:
+                loss += self.coefs['L_ora'] * self.oracle_loss(z0, z1, d)
         return loss
 
-    def train_batch(self, x0, x1, a, model='inv'):
+    def train_batch(self, x0, x1, a, d, model='all'):
         self.train()
         self.optimizer.zero_grad()
         z0 = self.phi(x0)
         z1 = self.phi(x1)
         # z1_hat = self.fwd_model(z0, a)
-        loss = self.compute_loss(z0, z1, a, model=model)
+        loss = self.compute_loss(z0, z1, a, d, model=model)
         loss.backward()
         self.optimizer.step()
         return loss
