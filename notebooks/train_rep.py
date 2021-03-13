@@ -67,7 +67,7 @@ parser.add_argument('--spiral', action='store_true',
 
 # yapf: enable
 if 'ipykernel' in sys.argv[0]:
-    arglist = ['--spiral', '--tag', 'test-spiral', '-r', '6', '-c', '6', '--L_ora', '1.0']
+    arglist = ['--spiral', '--tag', 'test-spiral', '-r', '6', '-c', '6', '--L_ora', '1.0', '--video']
     args = parser.parse_args(arglist)
 else:
     args = parser.parse_args()
@@ -127,7 +127,9 @@ a = np.asarray(actions)
 MI_max = MI(s0, s0)
 
 ax = env.plot()
-ax.scatter(s0[:, 0] + 0.5, s0[:, 1] + 0.5, c=c0)
+xx = s0[:, 1] + 0.5
+yy = s0[:, 0] + 0.5
+ax.scatter(xx, yy, c=c0)
 if args.video:
     plt.savefig(maze_file)
 
