@@ -198,3 +198,18 @@ class SpiralWorld(GridWorld):
                 self._grid[(2 * i + 3):-(2 * i + 1), (2 * i + 1)] = 0
                 if i > 0:
                     self._grid[2 * i + 1, 2 * i] = 0
+
+class LoopWorld(SpiralWorld):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Check dimensions to decide on appropriate spiral direction
+        if self._cols > self._rows:
+            direction = 'cw'
+        else:
+            direction = 'ccw'
+
+        if direction == 'ccw':
+            self._grid[-3, -4] = 0
+        else:
+            self._grid[-4, -3] = 0
