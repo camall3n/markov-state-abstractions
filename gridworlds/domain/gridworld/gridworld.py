@@ -161,6 +161,13 @@ class MazeWorld(GridWorld):
                 cells.append(cellSet)
                 self._grid[wall[0], wall[1]] = 0
 
+    @classmethod
+    def load_maze(cls, rows, cols, seed):
+        env = GridWorld(rows=rows, cols=cols)
+        maze_file = 'gridworlds/domain/gridworld/mazes/mazes_{rows}x{cols}/seed-{seed:03d}/maze-{seed}.txt'.format(rows=rows, cols=cols, seed=seed)
+        env.load(maze_file)
+        return env
+
 class SpiralWorld(GridWorld):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
