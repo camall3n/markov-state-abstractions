@@ -97,7 +97,7 @@ reset_seeds(args.seed)
 
 #% ------------------ Define MDP ------------------
 if args.maze:
-    env = MazeWorld(rows=args.rows, cols=args.cols)
+    env = MazeWorld.load_maze(rows=args.rows, cols=args.cols, seed=args.seed)
 elif args.spiral:
     env = SpiralWorld(rows=args.rows, cols=args.cols)
 else:

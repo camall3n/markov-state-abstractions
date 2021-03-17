@@ -165,7 +165,13 @@ class MazeWorld(GridWorld):
     def load_maze(cls, rows, cols, seed):
         env = GridWorld(rows=rows, cols=cols)
         maze_file = 'gridworlds/domain/gridworld/mazes/mazes_{rows}x{cols}/seed-{seed:03d}/maze-{seed}.txt'.format(rows=rows, cols=cols, seed=seed)
-        env.load(maze_file)
+        try:
+            env.load(maze_file)
+        except IOError as e:
+            print()
+            print('Could not find standardized {rows}x{cols} maze file for seed {seed}. Maybe it needs to be generated?'.format(rows=rows, cols=cols, seed=seed))
+            print()
+            raise e
         return env
 
 class SpiralWorld(GridWorld):

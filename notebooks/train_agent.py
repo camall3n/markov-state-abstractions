@@ -78,7 +78,7 @@ log = open(log_dir + '/scores-{}-{}.txt'.format(args.agent, args.seed), 'w')
 
 #%% ------------------ Define MDP ------------------
 if args.maze:
-    env = MazeWorld(rows=args.rows, cols=args.cols)
+    env = MazeWorld.load_maze(rows=args.rows, cols=args.cols, seed=args.seed)
 elif args.spiral:
     env = SpiralWorld(rows=args.rows, cols=args.cols)
 else:
