@@ -4,6 +4,9 @@ import scipy.ndimage
 import scipy.stats
 import torch
 
+def get_truncated_normal(mean=0, sd=1.0, low=-1, upp=1):
+    return scipy.stats.truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
+
 class NullSensor:
     def observe(self, s):
         return s
@@ -31,16 +34,27 @@ class OffsetSensor:
         return s + self.offset
 
 class NoisySensor:
-    def __init__(self, sigma=0.1):
+    def __init__(self, sigma=0.1, truncation=None):
         self.sigma = sigma
+        if truncation is not None:
+            assert truncation > 0
+        self.truncation = truncation
 
     def observe(self, s):
-        if s.ndim == 0:
-            x = s + self.sigma * np.random.randn()
-        elif s.ndim == 1:
-            x = s + self.sigma * np.random.randn(len(s))
+        if self.truncation is None:
+            distribution = scipy.stats.norm(0, self.sigma)
         else:
-            x = s + self.sigma * np.random.randn(s.shape[0], *s.shape[1:])
+            tr = self.truncation
+            distribution = get_truncated_normal(0, self.sigma, low=-tr, upp=tr)
+
+        if s.ndim == 0:
+            n = distribution.rvs()
+        elif s.ndim == 1:
+            n = distribution.rvs(size=len(s))
+        else:
+            n = distribution.rvs(size=(s.shape[0], *s.shape[1:]))
+
+        x = s + n
         return x
 
 class ImageSensor:
