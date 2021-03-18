@@ -55,6 +55,8 @@ parser.add_argument('--save', action='store_true',
                     help='Save final network weights')
 parser.add_argument('-v','--video', action='store_true',
                     help='Show video of agent training')
+parser.add_argument('--xy_noise', action='store_true',
+                    help='Add truncated gaussian noise to x-y positions')
 parser.add_argument('--rearrange_xy', action='store_true',
                     help='Rearrange discrete x-y positions to break smoothness')
 parser.add_argument('--maze', action='store_true',
@@ -87,6 +89,8 @@ gamma = 0.9
 
 #%% ------------------ Define sensor ------------------
 sensor_list = []
+if args.xy_noise:
+    sensor_list.append(NoisySensor(sigma=0.2, truncation=0.4))
 if args.rearrange_xy:
     sensor_list.append(RearrangeXYPositionsSensor((env._rows, env._cols)))
 if not args.no_sigma:
