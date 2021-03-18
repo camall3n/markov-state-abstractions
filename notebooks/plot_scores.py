@@ -32,11 +32,13 @@ def smooth(data, n):
 labels = ['tag', 'features', 'grid_type']
 experiments = [
     ('dqn-spiral-markov', 'markov', 'spiral'),
-    ('dqn-spiral-smooth', 'markov+smooth', 'spiral'),
+    # ('dqn-spiral-smooth', 'markov+smooth', 'spiral'),
+    ('spiral-relu-no-inv', 'markov-inv+relu', 'spiral'),
     ('dqn-spiral-expert', 'expert', 'spiral'),
     # ('dqn-spiral-onehot', 'onehot', 'spiral'),
-    ('dqn-maze-markov', 'markov', 'maze'),
-    ('dqn-maze-smooth', 'markov+smooth', 'maze'),
+    ('dqn-maze-markov-5k', 'markov', 'maze'),
+    # ('dqn-maze-smooth', 'markov+smooth', 'maze'),
+    ('maze-relu-no-inv', 'markov-inv+relu', 'maze'),
     ('dqn-maze-expert', 'expert', 'maze'),
     # ('dqn-maze-onehot', 'onehot', 'maze'),
 ]
@@ -48,7 +50,8 @@ g = sns.relplot(x='episode', y='reward', kind='line', data=data, height=4, alpha
     style='features',
     # units='seed', estimator=None,
     col='grid_type', #col_wrap=2,
-    # legend=False
+    # legend=False,
+    facet_kws={'sharey': True, 'sharex': False}
 )
 # plt.tight_layout()
 plt.subplots_adjust(top=0.85, bottom=0.15)
