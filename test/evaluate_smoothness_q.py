@@ -1,6 +1,7 @@
 import imageio
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
 import torch
 import torch.nn.functional as F
 from tqdm import tqdm
@@ -9,28 +10,54 @@ from gridworlds.domain.gridworld.gridworld import GridWorld, MazeWorld, SpiralWo
 from gridworlds.nn.phinet import PhiNet
 from gridworlds.agents.dqnagent import DQNAgent
 from gridworlds.nn.qnet import FactoredQNet
-from gridworlds.utils import reset_seeds
+from gridworlds.utils import reset_seeds, get_parser
 from gridworlds.sensors import *
 
-class Args: pass
-args = Args()
+parser = get_parser()
+# parser.add_argument('-d','--dims', help='Number of latent dimensions', type=int, default=2)
+# yapf: disable
+parser.add_argument('-b','--batch_size', type=int, default=32,
+                    help='Number of experiences to sample per batch')
+parser.add_argument('-lr','--learning_rate', type=float, default=0.0001,
+                    help='Learning rate for Adam optimizer')
+parser.add_argument('-s','--seed', type=int, default=1,
+                    help='Random seed')
+parser.add_argument('--phi_path', type=str,
+                    help='Load an existing abstraction network by tag')
+
+parser.add_argument('--save', action='store_true',
+                    help='Save final network weights')
+parser.add_argument('-v','--video', action='store_true',
+                    help='Show video of agent training')
+parser.add_argument('--rearrange_xy', action='store_true',
+                    help='Rearrange discrete x-y positions to break smoothness')
+parser.add_argument('--maze', action='store_true',
+                    help='Add walls to the gridworld to turn it into a maze')
+parser.add_argument('--spiral', action='store_true',
+                    help='Add walls to the gridworld to turn it into a spiral')
+
+if 'ipykernel' in sys.argv[0]:
+    arglist = ['--maze', '--phi_path', 'test-maze-relu-no-inv']
+    args = parser.parse_args(arglist)
+else:
+    args = parser.parse_args()
+
 args.rows = 6
 args.cols = 6
-args.maze = False
-args.spiral = True
 args.rearrange_xy = False
 args.no_sigma = False
 args.one_hot = False
-args.phi_path = 'test-spiral-distloss-10'
 args.train_phi = False
-args.seed = 1
 args.latent_dims = 2
-args.learning_rate = 0.0001
-args.batch_size = 32
 
+if args.train_phi and args.no_phi:
+    assert False, '--no_phi and --train_phi are mutually exclusive'
+
+if args.one_hot and args.no_sigma:
+    assert False, '--one_hot and --no_sigma are mutually exclusive'
 
 if args.maze:
-    env = MazeWorld(rows=args.rows, cols=args.cols)
+    env = MazeWorld.load_maze(rows=args.rows, cols=args.cols, seed=args.seed)
 elif args.spiral:
     env = SpiralWorld(rows=args.rows, cols=args.cols)
 else:
@@ -143,8 +170,10 @@ plt.show()
 
 
 qnet.eval()
-z = phinet(torch.tensor(sensor.observe(s), dtype=torch.float32))
-q_values = qnet(z).max(dim=-1)[0]
+n_sensor_samples = 20
+zz = [phinet(torch.tensor(sensor.observe(s), dtype=torch.float32)) for _ in range(n_sensor_samples)]
+q_values = torch.stack([qnet(z).max(dim=-1)[0] for z in zz]).mean(dim=0)
+
 
 ax[1].clear()
 ax[1].set_title('Learned Q')
@@ -172,6 +201,10 @@ for step in tqdm(range(400)):
     loss.backward()
     optimizer.step()
 
+    with torch.no_grad():
+        zz = [phinet(torch.tensor(sensor.observe(s), dtype=torch.float32)) for _ in range(n_sensor_samples)]
+        q_values = torch.stack([qnet(z).max(dim=-1)[0] for z in zz]).mean(dim=0)
+
     ax[2].clear()
     ax[2].set_title('Oracle-trained NN')
     plot_value_function(q_values.detach().numpy().reshape(6,6), ax[2], v.min(), v.max())
@@ -181,4 +214,4 @@ for step in tqdm(range(400)):
     frame = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8).reshape(fig.canvas.get_width_height()[::-1] + (3,))
 
     frames.append(frame)
-imageio.mimwrite('test_qnet.mp4', frames, fps=30)
+imageio.mimwrite('test_maze_no_inv_qnet-{}.mp4'.format(args.seed), frames, fps=30)
