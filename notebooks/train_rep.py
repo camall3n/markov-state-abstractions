@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 from gridworlds.nn.featurenet import FeatureNet
 from gridworlds.nn.autoencoder import AutoEncoder
+from gridworlds.nn.pixelpredictor import PixelPredictor
 from notebooks.repvis import RepVisualization, CleanVisualization
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld
 from gridworlds.utils import reset_seeds, get_parser, MI
@@ -18,7 +19,7 @@ from gridworlds.distance_oracle import DistanceOracle
 parser = get_parser()
 # parser.add_argument('-d','--dims', help='Number of latent dimensions', type=int, default=2)
 # yapf: disable
-parser.add_argument('--type', type=str, default='markov', choices=['markov', 'autoencoder'],
+parser.add_argument('--type', type=str, default='markov', choices=['markov', 'autoencoder', 'pixel-predictor'],
                     help='Which type of representation learning method')
 parser.add_argument('-n','--n_updates', type=int, default=3000,
                     help='Number of training updates')
@@ -67,7 +68,9 @@ parser.add_argument('--spiral', action='store_true',
 
 # yapf: enable
 if 'ipykernel' in sys.argv[0]:
-    arglist = ['--spiral', '--tag', 'test-spiral', '-r', '6', '-c', '6', '--L_ora', '1.0', '--video']
+    arglist = [
+        '--spiral', '--tag', 'test-spiral', '-r', '6', '-c', '6', '--L_ora', '1.0', '--video'
+    ]
     args = parser.parse_args(arglist)
 else:
     args = parser.parse_args()
@@ -185,6 +188,14 @@ elif args.type == 'autoencoder':
                        n_units_per_layer=32,
                        lr=args.learning_rate,
                        coefs=coefs)
+elif args.type == 'pixel-predictor':
+    fnet = PixelPredictor(n_actions=4,
+                          input_shape=x0.shape[1:],
+                          n_latent_dims=args.latent_dims,
+                          n_hidden_layers=1,
+                          n_units_per_layer=32,
+                          lr=args.learning_rate,
+                          coefs=coefs)
 
 fnet.print_summary()
 
@@ -240,16 +251,24 @@ def test_rep(fnet, step):
             # a_hat = fnet.inv_model(z0, z1)
 
             loss_info = {
-                'step': step,
-                'L_inv': fnet.inverse_loss(z0, z1, test_a).numpy().tolist(),
-                'L_fwd': 'NaN',  #fnet.compute_fwd_loss(z0, z1, z1_hat).numpy().tolist(),
-                'L_rat': fnet.ratio_loss(z0, z1).numpy().tolist(),
-                'L_dis': fnet.distance_loss(z0, z1).numpy().tolist(),
-                'L_fac': 'NaN',  #fnet.compute_factored_loss(z0, z1).numpy().tolist(),
+                'step':
+                step,
+                'L_inv':
+                fnet.inverse_loss(z0, z1, test_a).numpy().tolist(),
+                'L_fwd':
+                'NaN',  #fnet.compute_fwd_loss(z0, z1, z1_hat).numpy().tolist(),
+                'L_rat':
+                fnet.ratio_loss(z0, z1).numpy().tolist(),
+                'L_dis':
+                fnet.distance_loss(z0, z1).numpy().tolist(),
+                'L_fac':
+                'NaN',  #fnet.compute_factored_loss(z0, z1).numpy().tolist(),
                 # 'L_ent': 'NaN',#fnet.compute_entropy_loss(z0, z1, test_a).numpy().tolist(),
-                'L': fnet.compute_loss(z0, z1, test_a, torch.zeros((2*len(z0))),
-                                       'all').numpy().tolist(),
-                'MI': MI(test_s0, z0.numpy()) / MI_max
+                'L':
+                fnet.compute_loss(z0, z1, test_a, torch.zeros((2 * len(z0))),
+                                  'all').numpy().tolist(),
+                'MI':
+                MI(test_s0, z0.numpy()) / MI_max
             }
         elif args.type == 'autoencoder':
             z0 = fnet.encode(test_x0)
@@ -258,6 +277,15 @@ def test_rep(fnet, step):
             loss_info = {
                 'step': step,
                 'L': fnet.compute_loss(test_x0).numpy().tolist(),
+            }
+
+        elif args.type == 'pixel-predictor':
+            z0 = fnet.encode(test_x0)
+            z1 = fnet.encode(test_x1)
+
+            loss_info = {
+                'step': step,
+                'L': fnet.compute_loss(test_x0, test_a, test_x1).numpy().tolist(),
             }
 
     json_str = json.dumps(loss_info)
@@ -275,10 +303,11 @@ for frame_idx in tqdm(range(n_frames + 1)):
     for _ in range(n_updates_per_frame):
         tx0, tx1, ta, idx = get_next_batch()
         tdist = torch.cat([
-                torch.as_tensor(oracle.pairwise_distances(idx, s0, s1)).squeeze().float(),
-                torch.as_tensor(oracle.pairwise_distances(idx, s0, np.flip(s1))).squeeze().float()
-        ], dim=0)
-        h = np.histogram(tdist, bins=36)[0]
+            torch.as_tensor(oracle.pairwise_distances(idx, s0, s1)).squeeze().float(),
+            torch.as_tensor(oracle.pairwise_distances(idx, s0, np.flip(s1))).squeeze().float()
+        ],
+                          dim=0)
+        # h = np.histogram(tdist, bins=36)[0]
 
         fnet.train_batch(tx0, tx1, ta, tdist, model='all')
 
