@@ -30,6 +30,9 @@ def parse_filepath(fp, filename, bin_size, window_size):
     except FileNotFoundError as e:
         print("Error in parsing filepath {fp}: {e}".format(fp=fp, e=e))
         return None
+    except NotADirectoryError as e:
+        print("{fp} is not a directory: {e}".format(fp=fp, e=e))
+        return None
 
 def collate_results(results_dirs, filename, bin_size, window_size):
     dfs = []
@@ -72,6 +75,7 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
         'autoenc': (2, 2, 1, 2),
         'visual': (5, 2, 5, 2),
         'xy-position': (7, 2, 3, 2),
+        'pixel-pred': (7, 1, 1, 1),
         'random': (1, 2, 3, 2),
     }
     labels = [
@@ -82,6 +86,7 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
         'contr-only',
         'random',
         'autoenc',
+        'pixel-pred',
     ]
     colormap = [
         'Markov',
@@ -90,6 +95,7 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
         'visual',
         'contr-only',
         'xy-position',
+        'pixel-pred',
     ]
     palette = sns.color_palette('Set1', n_colors=len(data[hue].unique()), desat=0.5)
     # palette = {
@@ -156,7 +162,8 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
     g.axes.flat[0].set_ylim((-100, 0))
     g.axes.flat[0].set_xlim((0, 99))
     g.axes.flat[0].axhline(-84.8, dashes=dashes['random'], color=palette['random'])
-    g.axes.flat[0].legend(labels, bbox_to_anchor=(0.5, -0.3), loc='center right', ncol=1)
+    leg = g.axes.flat[0].legend(labels, bbox_to_anchor=(0.5, -0.3), loc='center right', ncol=1)
+    leg.set_draggable(True)
     plt.tight_layout()
 
     if savepath is not None:
