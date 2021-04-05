@@ -80,13 +80,13 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
     }
     labels = [
         'Markov',
+        'autoenc',
         'inv-only',
+        'pixel-pred',
+        'contr-only',
         'visual',
         'xy-position',
-        'contr-only',
         'random',
-        'autoenc',
-        'pixel-pred',
     ]
     colormap = [
         'Markov',
@@ -162,7 +162,7 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
     g.axes.flat[0].set_ylim((-100, 0))
     g.axes.flat[0].set_xlim((0, 99))
     g.axes.flat[0].axhline(-84.8, dashes=dashes['random'], color=palette['random'])
-    leg = g.axes.flat[0].legend(labels, bbox_to_anchor=(0.5, -0.3), loc='center right', ncol=1)
+    leg = g.axes.flat[0].legend(labels, bbox_to_anchor=(0.5, -0.3), loc='center right', ncol=4)
     leg.set_draggable(True)
     plt.tight_layout()
 
