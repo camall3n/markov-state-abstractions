@@ -15,7 +15,7 @@ def load_experiment(tag):
     logs = [open(f,'r').read().splitlines() for f in logfiles]
     def read_log(log):
         results = [json.loads(item) for item in log]
-        data = smooth(pd.DataFrame(results), 10)[::10]
+        data = smooth(pd.DataFrame(results), 25)[::25]
         return data
     results = [read_log(log) for log in logs]
     keys = list(zip(agents, seeds))
@@ -36,10 +36,11 @@ experiments = [
     # ('dqn-spiral-expert', 'expert', 'spiral'),
     # ('dqn-spiral-smooth', 'markov+smooth', 'spiral'),
     # ('dqn-spiral-onehot', 'onehot', 'spiral'),
-    ('dqn-maze-markov-5k', 'markov', 'maze'),
-    ('maze-relu-no-inv', 'markov-inv+relu', 'maze'),
+    ('dqn-maze-markov-10k-retrain', 'markov', 'maze'),
+    ('maze-relu-no-inv-retrain', 'markov_-inv_+relu', 'maze'),
     ('dqn-maze-expert', 'true-xy', 'maze'),
-    ('dqn-maze-xy-noise', 'noisy-xy', 'maze'),
+    # ('dqn-maze-xy-noise', 'noisy-xy', 'maze'),
+    ('dqn-maze-smooth-retrain', 'markov_+relu', 'maze'),
     ('dqn-maze-visual', 'visual', 'maze'),
     # ('dqn-maze-smooth', 'markov+smooth', 'maze'),
     # ('dqn-maze-onehot', 'onehot', 'maze'),
