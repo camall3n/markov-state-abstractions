@@ -10,7 +10,7 @@ from tqdm import tqdm
 from gridworlds.nn.featurenet import FeatureNet
 from gridworlds.nn.autoencoder import AutoEncoder
 from notebooks.repvis import RepVisualization, CleanVisualization
-from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld
+from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld, LoopWorld
 from gridworlds.utils import reset_seeds, get_parser, MI
 from gridworlds.sensors import *
 from gridworlds.distance_oracle import DistanceOracle
@@ -26,6 +26,8 @@ parser.add_argument('-r','--rows', type=int, default=6,
                     help='Number of gridworld rows')
 parser.add_argument('-c','--cols', type=int, default=6,
                     help='Number of gridworld columns')
+parser.add_argument('-w', '--walls', type=str, default='empty', choices=['empty', 'maze', 'spiral', 'loop'],
+                    help='The wall configuration mode of gridworld')
 parser.add_argument('-l','--latent_dims', type=int, default=2,
                     help='Number of latent dimensions to use for representation')
 parser.add_argument('--L_inv', type=float, default=1.0,
@@ -67,7 +69,9 @@ parser.add_argument('--spiral', action='store_true',
 
 # yapf: enable
 if 'ipykernel' in sys.argv[0]:
-    arglist = ['--spiral', '--tag', 'test-spiral', '-r', '6', '-c', '6', '--L_ora', '1.0', '--video']
+    arglist = [
+        '--spiral', '--tag', 'test-spiral', '-r', '6', '-c', '6', '--L_ora', '1.0', '--video'
+    ]
     args = parser.parse_args(arglist)
 else:
     args = parser.parse_args()
@@ -96,9 +100,11 @@ with open(log_dir + '/args-{}.txt'.format(args.seed), 'w') as arg_file:
 reset_seeds(args.seed)
 
 #% ------------------ Define MDP ------------------
-if args.maze:
+if args.walls == 'maze':
     env = MazeWorld.load_maze(rows=args.rows, cols=args.cols, seed=args.seed)
-elif args.spiral:
+elif args.walls == 'spiral':
+    env = SpiralWorld(rows=args.rows, cols=args.cols)
+elif args.walls == 'loop':
     env = SpiralWorld(rows=args.rows, cols=args.cols)
 else:
     env = GridWorld(rows=args.rows, cols=args.cols)
@@ -239,6 +245,7 @@ def test_rep(fnet, step):
             # z1_hat = fnet.fwd_model(z0, test_a)
             # a_hat = fnet.inv_model(z0, z1)
 
+            # yapf: disable
             loss_info = {
                 'step': step,
                 'L_inv': fnet.inverse_loss(z0, z1, test_a).numpy().tolist(),
@@ -247,10 +254,11 @@ def test_rep(fnet, step):
                 'L_dis': fnet.distance_loss(z0, z1).numpy().tolist(),
                 'L_fac': 'NaN',  #fnet.compute_factored_loss(z0, z1).numpy().tolist(),
                 # 'L_ent': 'NaN',#fnet.compute_entropy_loss(z0, z1, test_a).numpy().tolist(),
-                'L': fnet.compute_loss(z0, z1, test_a, torch.zeros((2*len(z0))),
+                'L': fnet.compute_loss(z0, z1, test_a, torch.zeros((2 * len(z0))),
                                        'all').numpy().tolist(),
                 'MI': MI(test_s0, z0.numpy()) / MI_max
             }
+            # yapf: enable
         elif args.type == 'autoencoder':
             z0 = fnet.encode(test_x0)
             z1 = fnet.encode(test_x1)
@@ -275,9 +283,9 @@ for frame_idx in tqdm(range(n_frames + 1)):
     for _ in range(n_updates_per_frame):
         tx0, tx1, ta, idx = get_next_batch()
         tdist = torch.cat([
-                torch.as_tensor(oracle.pairwise_distances(idx, s0, s1)).squeeze().float(),
-                torch.as_tensor(oracle.pairwise_distances(idx, s0, np.flip(s1))).squeeze().float()
-        ], dim=0)
+            torch.as_tensor(oracle.pairwise_distances(idx, s0, s1)).squeeze().float(),
+            torch.as_tensor(oracle.pairwise_distances(idx, s0, np.flip(s1))).squeeze().float()
+        ], dim=0) # yapf: disable
         h = np.histogram(tdist, bins=36)[0]
 
         fnet.train_batch(tx0, tx1, ta, tdist, model='all')

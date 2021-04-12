@@ -10,7 +10,7 @@ from tqdm import tqdm
 from gridworlds.nn.nnutils import Reshape
 from gridworlds.nn.nullabstraction import NullAbstraction
 from gridworlds.nn.phinet import PhiNet
-from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld
+from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld, LoopWorld
 from gridworlds.agents.randomagent import RandomAgent
 from gridworlds.agents.dqnagent import DQNAgent, FactoredDQNAgent
 from gridworlds.utils import reset_seeds, get_parser
@@ -31,6 +31,8 @@ parser.add_argument('-r','--rows', type=int, default=6,
                     help='Number of gridworld rows')
 parser.add_argument('-c','--cols', type=int, default=6,
                     help='Number of gridworld columns')
+parser.add_argument('-w', '--walls', type=str, default='empty', choices=['empty', 'maze', 'spiral', 'loop'],
+                    help='The wall configuration mode of gridworld')
 parser.add_argument('-b','--batch_size', type=int, default=16,
                     help='Number of experiences to sample per batch')
 parser.add_argument('-l','--latent_dims', type=int, default=2,
@@ -59,10 +61,6 @@ parser.add_argument('--xy_noise', action='store_true',
                     help='Add truncated gaussian noise to x-y positions')
 parser.add_argument('--rearrange_xy', action='store_true',
                     help='Rearrange discrete x-y positions to break smoothness')
-parser.add_argument('--maze', action='store_true',
-                    help='Add walls to the gridworld to turn it into a maze')
-parser.add_argument('--spiral', action='store_true',
-                    help='Add walls to the gridworld to turn it into a spiral')
 # yapf: enable
 args = parser.parse_args()
 if args.train_phi and args.no_phi:
@@ -79,10 +77,12 @@ os.makedirs(log_dir, exist_ok=True)
 log = open(log_dir + '/scores-{}-{}.txt'.format(args.agent, args.seed), 'w')
 
 #%% ------------------ Define MDP ------------------
-if args.maze:
+if args.walls == 'maze':
     env = MazeWorld.load_maze(rows=args.rows, cols=args.cols, seed=args.seed)
-elif args.spiral:
+elif args.walls == 'spiral':
     env = SpiralWorld(rows=args.rows, cols=args.cols)
+elif args.walls == 'loop':
+    env = LoopWorld(rows=args.rows, cols=args.cols)
 else:
     env = GridWorld(rows=args.rows, cols=args.cols)
 gamma = 0.9
