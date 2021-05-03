@@ -202,6 +202,45 @@ def test_non_markov_B():
     # since its conditions (while sufficient) are stricter than necessary
     assert not is_markov(mdp_abs)
 
+def test_non_I_possibly_markov():
+    T1 = np.array([
+        #0  1   2   3  4
+        [0, .5, 0, .5, 0],# 0
+        [0,  0, 1,  0, 0],# 1 (action 1)
+        [1,  0, 0,  0, 0],# 2
+        [0, .5, 0, .5, 0],# 3 (action 1)
+        [1,  0, 0,  0, 0],# 4
+    ])
+    T2 = np.array([
+        #0  1   2   3  4
+        [0, .5, 0, .5, 0],# 0
+        [0, .5, 0, .5, 0],# 1 (action 2)
+        [1,  0, 0,  0, 0],# 2
+        [0,  0, 0,  0, 1],# 3 (action 2)
+        [1,  0, 0,  0, 0],# 4
+    ])
+    T = (.2*T1 + .8*T2)
+    R = ((T1 + T2) > 0).astype(float)
+    # mdp_gnd = MDP([T1, T2], [R, R], gamma=0.9)
+    mdp_gnd = MDP([T, T], [R, R], gamma=0.9)
+    phi = np.array([
+        [1, 0, 0],# 0
+        [0, 1, 0],# 1
+        [0, 0, 1],# 2
+        [0, 1, 0],# 3
+        [0, 0, 1],# 4
+    ])
+    p0 = np.array([1/3, 1/6, 1/6, 1/6, 1/6])
+    mdp_abs = AbstractMDP(mdp_gnd, phi, p0=p0)
+    matching_I(mdp_abs)
+
+    pi = mdp_gnd.get_policy(0)
+    mdp_gnd.stationary_distribution(p0=p0, max_steps=200).round(4)
+    p0_abs = np.array([1/3, 1/3, 1/3])
+    mdp_abs.stationary_distribution(p0=p0_abs, max_steps=100).round(3)
+    mdp_gnd.get_N(pi=pi)
+
+
 if __name__ == '__main__':
     test()
     test_non_markov_B()

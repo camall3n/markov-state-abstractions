@@ -3,7 +3,7 @@ import itertools
 
 from graphviz import Digraph
 import numpy as np
-from toposort import toposort
+# from toposort import toposort
 
 from mdpgen.mdp import MDP
 from mdpgen.vi import vi
