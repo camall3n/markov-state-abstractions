@@ -32,6 +32,8 @@ parser.add_argument('-l','--latent_dims', type=int, default=2,
                     help='Number of latent dimensions to use for representation')
 parser.add_argument('--L_inv', type=float, default=1.0,
                     help='Coefficient for inverse-model-matching loss')
+parser.add_argument('--L_coinv', type=float, default=0.0,
+                    help='Coefficient for *contrastive* inverse-model-matching loss')
 # parser.add_argument('--L_fwd', type=float, default=0.0,
 #                     help='Coefficient for forward dynamics loss')
 parser.add_argument('--L_rat', type=float, default=1.0,
@@ -90,7 +92,8 @@ os.makedirs(log_dir, exist_ok=True)
 if args.video:
     os.makedirs(vid_dir, exist_ok=True)
     os.makedirs(maze_dir, exist_ok=True)
-    filename = vid_dir + '/video-{}.mp4'.format(args.seed)
+    video_filename = vid_dir + '/video-{}.mp4'.format(args.seed)
+    image_filename = vid_dir + '/final-{}.png'.format(args.seed)
     maze_file = maze_dir + '/maze-{}.png'.format(args.seed)
 
 log = open(log_dir + '/train-{}.txt'.format(args.seed), 'w')
@@ -105,7 +108,7 @@ if args.walls == 'maze':
 elif args.walls == 'spiral':
     env = SpiralWorld(rows=args.rows, cols=args.cols)
 elif args.walls == 'loop':
-    env = SpiralWorld(rows=args.rows, cols=args.cols)
+    env = LoopWorld(rows=args.rows, cols=args.cols)
 else:
     env = GridWorld(rows=args.rows, cols=args.cols)
 # env = RingWorld(2,4)
@@ -168,6 +171,7 @@ batch_size = args.batch_size
 
 coefs = {
     'L_inv': args.L_inv,
+    'L_coinv': args.L_coinv,
     # 'L_fwd': args.L_fwd,
     'L_rat': args.L_rat,
     # 'L_fac': args.L_fac,
@@ -249,13 +253,13 @@ def test_rep(fnet, step):
             loss_info = {
                 'step': step,
                 'L_inv': fnet.inverse_loss(z0, z1, test_a).numpy().tolist(),
+                'L_coinv': fnet.contrastive_inverse_loss(z0, z1, test_a).numpy().tolist(),
                 'L_fwd': 'NaN',  #fnet.compute_fwd_loss(z0, z1, z1_hat).numpy().tolist(),
                 'L_rat': fnet.ratio_loss(z0, z1).numpy().tolist(),
                 'L_dis': fnet.distance_loss(z0, z1).numpy().tolist(),
                 'L_fac': 'NaN',  #fnet.compute_factored_loss(z0, z1).numpy().tolist(),
                 # 'L_ent': 'NaN',#fnet.compute_entropy_loss(z0, z1, test_a).numpy().tolist(),
-                'L': fnet.compute_loss(z0, z1, test_a, torch.zeros((2 * len(z0))),
-                                       'all').numpy().tolist(),
+                'L': fnet.compute_loss(z0, z1, test_a, torch.zeros((2 * len(z0)))).numpy().tolist(),
                 'MI': MI(test_s0, z0.numpy()) / MI_max
             }
             # yapf: enable
@@ -286,9 +290,9 @@ for frame_idx in tqdm(range(n_frames + 1)):
             torch.as_tensor(oracle.pairwise_distances(idx, s0, s1)).squeeze().float(),
             torch.as_tensor(oracle.pairwise_distances(idx, s0, np.flip(s1))).squeeze().float()
         ], dim=0) # yapf: disable
-        h = np.histogram(tdist, bins=36)[0]
+        # h = np.histogram(tdist, bins=36)[0]
 
-        fnet.train_batch(tx0, tx1, ta, tdist, model='all')
+        fnet.train_batch(tx0, tx1, ta, tdist)
 
     test_results = test_rep(fnet, frame_idx * n_updates_per_frame)
     if args.video:
@@ -296,7 +300,8 @@ for frame_idx in tqdm(range(n_frames + 1)):
         data.append(frame)
 
 if args.video:
-    imageio.mimwrite(filename, data, fps=15)
+    imageio.mimwrite(video_filename, data, fps=15)
+    imageio.imwrite(image_filename, data[-1])
 
 if args.save:
     fnet.phi.save('phi-{}'.format(args.seed), 'models/{}'.format(args.tag))
