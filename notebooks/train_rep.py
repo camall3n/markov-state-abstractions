@@ -64,10 +64,6 @@ parser.add_argument('--no_sigma', action='store_true',
                     help='Turn off sensors and just use true state; i.e. x=s')
 parser.add_argument('--rearrange_xy', action='store_true',
                     help='Rearrange discrete x-y positions to break smoothness')
-parser.add_argument('--maze', action='store_true',
-                    help='Add walls to the gridworld to turn it into a maze')
-parser.add_argument('--spiral', action='store_true',
-                    help='Add walls to the gridworld to turn it into a spiral')
 
 # yapf: enable
 if 'ipykernel' in sys.argv[0]:

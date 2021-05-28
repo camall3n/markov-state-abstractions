@@ -17,7 +17,9 @@ from dmcontrol import rad
 
 #%%
 
-env = gym.make('dm2gym:WalkerWalk-v0', environment_kwargs={'flat_observation': True})
+env = gym.make('dm2gym:CheetahRun-v0', environment_kwargs={'flat_observation': True})
+env.action_space.shape
+#%%
 
 def wrap_env(env, feature_type='markov', size=(84, 84), action_repeat=1, frame_stack=3):
     env = wrap.FixedDurationHack(env)
@@ -39,16 +41,24 @@ weights = np.expand_dims(np.expand_dims(np.asarray([1, 2, 3]), -1), -1) / 6
 state = env.reset()
 state = env.step(env.action_space.sample())[0]
 plt.imshow((state * weights).sum(axis=0))
-plt.imshow(state.std(axis=0))
+# plt.imshow(state.std(axis=0))
 
+#%%
+# env.reset();
+env.action_space
+# policy = 75*[-1] + 100*[1] + 75*[-1]
 n_steps = 100
+policy = np.repeat((1,0,0,0,0,0), n_steps)
 imgs = []
 for i in tqdm(range(n_steps)):
     state, _, done, _ = env.step(env.action_space.sample())
+    # state, _, done, _ = env.step(policy[i])
     img = env.render(mode='rgb_array', use_opencv_renderer=True)
     imgs.append(img)
     if done:
         break
+plt.imshow((state * weights).sum(axis=0))
+#%%
 
 #%% CURL testing
 env = gym.make('dm2gym:WalkerWalk-v0', environment_kwargs={'flat_observation': True})

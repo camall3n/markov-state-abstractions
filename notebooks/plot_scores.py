@@ -40,7 +40,23 @@ experiments = [
     ('maze-relu-no-inv-retrain', 'markov_-inv_+relu', 'maze'),
     ('dqn-maze-expert', 'true-xy', 'maze'),
     # ('dqn-maze-xy-noise', 'noisy-xy', 'maze'),
-    ('dqn-maze-smooth-retrain', 'markov_+relu', 'maze'),
+    # ('dqn-maze-smooth-retrain', 'markov_+relu', 'maze'),
+    ('dqn-maze-visual', 'visual', 'maze'),
+    # ('dqn-maze-smooth', 'markov+smooth', 'maze'),
+    # ('dqn-maze-onehot', 'onehot', 'maze'),
+]
+experiments = [
+    # ('dqn-spiral-markov', 'markov', 'spiral'),
+    # ('spiral-relu-no-inv', 'markov-inv+relu', 'spiral'),
+    # ('dqn-spiral-expert', 'expert', 'spiral'),
+    # ('dqn-spiral-smooth', 'markov+smooth', 'spiral'),
+    # ('dqn-spiral-onehot', 'onehot', 'spiral'),
+    ('dqn-fixed-maze-coinv1.0-10k', 'markov_coinv+relu', 'maze'),
+    ('dqn-retrain-maze-coinv1.0-10k', 'markov_coinv+relu_retrain', 'maze'),
+    ('maze-relu-no-inv-retrain', 'markov_-inv_+relu', 'maze'),
+    ('dqn-maze-expert', 'true-xy', 'maze'),
+    # ('dqn-maze-xy-noise', 'noisy-xy', 'maze'),
+    # ('dqn-maze-smooth-retrain', 'markov_+relu', 'maze'),
     ('dqn-maze-visual', 'visual', 'maze'),
     # ('dqn-maze-smooth', 'markov+smooth', 'maze'),
     # ('dqn-maze-onehot', 'onehot', 'maze'),
@@ -49,6 +65,9 @@ data = pd.concat([load_experiment(e[0]) for e in experiments], join='outer', key
 
 # plt.rcParams.update({'font.size': 10})
 p = sns.color_palette(n_colors=len(data['features'].unique()))
+p = sns.color_palette('Set1', n_colors=9, desat=0.5)
+red, blue, green, purple, orange, yellow, brown, pink, gray = p
+p = [pink, red, orange, yellow, purple]
 g = sns.relplot(x='episode', y='reward', kind='line', data=data, height=4, alpha=0.2,
     hue='features',
     style='features',
