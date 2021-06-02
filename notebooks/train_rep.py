@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 from gridworlds.nn.featurenet import FeatureNet
 from gridworlds.nn.autoencoder import AutoEncoder
+from gridworlds.nn.pixelpredictor import PixelPredictor
 from notebooks.repvis import RepVisualization, CleanVisualization
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld, LoopWorld
 from gridworlds.utils import reset_seeds, get_parser, MI
@@ -18,7 +19,7 @@ from gridworlds.distance_oracle import DistanceOracle
 parser = get_parser()
 # parser.add_argument('-d','--dims', help='Number of latent dimensions', type=int, default=2)
 # yapf: disable
-parser.add_argument('--type', type=str, default='markov', choices=['markov', 'autoencoder'],
+parser.add_argument('--type', type=str, default='markov', choices=['markov', 'autoencoder', 'pixel-predictor'],
                     help='Which type of representation learning method')
 parser.add_argument('-n','--n_updates', type=int, default=3000,
                     help='Number of training updates')
@@ -191,6 +192,14 @@ elif args.type == 'autoencoder':
                        n_units_per_layer=32,
                        lr=args.learning_rate,
                        coefs=coefs)
+elif args.type == 'pixel-predictor':
+    fnet = PixelPredictor(n_actions=4,
+                          input_shape=x0.shape[1:],
+                          n_latent_dims=args.latent_dims,
+                          n_hidden_layers=1,
+                          n_units_per_layer=32,
+                          lr=args.learning_rate,
+                          coefs=coefs)
 
 fnet.print_summary()
 
@@ -266,6 +275,15 @@ def test_rep(fnet, step):
             loss_info = {
                 'step': step,
                 'L': fnet.compute_loss(test_x0).numpy().tolist(),
+            }
+
+        elif args.type == 'pixel-predictor':
+            z0 = fnet.encode(test_x0)
+            z1 = fnet.encode(test_x1)
+
+            loss_info = {
+                'step': step,
+                'L': fnet.compute_loss(test_x0, test_a, test_x1).numpy().tolist(),
             }
 
     json_str = json.dumps(loss_info)
