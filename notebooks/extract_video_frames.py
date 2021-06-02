@@ -26,13 +26,14 @@ def extract_frames(video, frames):
 frames = [0, 1, 2, 7, 30, 100, 300]
 padding = 20
 
-output_dir = 'images/contact-sheets/'
+output_dir = 'results/paper/contact-sheets/'
 os.makedirs(output_dir, exist_ok=True)
 
 for seed in range(1, 7):
     rows = []
-    for row, rep in enumerate(['markov', 'inv-only', 'contr-only', 'autoenc']):
-        for filename in glob.glob('images/selected-videos/{}/video-{}.mp4'.format(rep, seed)):
+    for row, rep in enumerate(['markov', 'inv-only', 'contr-only', 'autoenc', 'pixel-pred']):
+        for filename in glob.glob('results/paper/selected-videos/{}/video-{}.mp4'.format(
+                rep, seed)):
             video = imageio.mimread(filename, memtest=False)
             stills = extract_frames(video, frames)
             rows.append(np.hstack(stills))
