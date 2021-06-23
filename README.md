@@ -1,8 +1,8 @@
 # Markov State Abstractions
 
-Image-based gridworld experiment for learning Markov state abstractions.
+Presented at the 2020 NeurIPS workshop on Deep Reinforcement Learning -- paper available [here](http://irl.cs.brown.edu/pubs/markov_state_abstractions_ws.pdf). This repo currently contains the code for reproducing the image-based gridworld experiment.
 
-Presented at the 2020 NeurIPS workshop on Deep Reinforcement Learning -- paper available [here](http://irl.cs.brown.edu/pubs/markov_state_abstractions_ws.pdf).
+An updated preprint is available [here](https://arxiv.org/abs/2106.04379); updated code release forthcoming.
 
 ### Installation
 
