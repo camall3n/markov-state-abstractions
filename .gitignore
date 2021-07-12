@@ -9,7 +9,7 @@ cluster/logs/
 cluster/scripts/
 logs/
 models/
-notebooks/unversioned/*
+scripts/unversioned/*
 videos/
 results/
 scores/

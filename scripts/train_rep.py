@@ -10,7 +10,7 @@ from tqdm import tqdm
 from gridworlds.nn.featurenet import FeatureNet
 from gridworlds.nn.autoencoder import AutoEncoder
 from gridworlds.nn.pixelpredictor import PixelPredictor
-from notebooks.repvis import RepVisualization, CleanVisualization
+from scripts.repvis import RepVisualization, CleanVisualization
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld, LoopWorld
 from gridworlds.utils import reset_seeds, get_parser, MI
 from gridworlds.sensors import *
