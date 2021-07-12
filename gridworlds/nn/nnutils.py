@@ -1,3 +1,6 @@
+import logging
+import shutil
+
 import numpy as np
 import os
 import torch
@@ -42,15 +45,18 @@ class Network(torch.nn.Module):
         s = str(self)
         print(s)
 
-    def save(self, tag, name):
-        model_dir = 'models/{}'.format(tag)
+    def save(self, name, model_dir, is_best=False):
         os.makedirs(model_dir, exist_ok=True)
-        model_file = model_dir + '/{}.pytorch'.format(name)
+        model_file = os.path.join(model_dir, '{}_latest.pytorch'.format(name))
         torch.save(self.state_dict(), model_file)
-        print('Model saved to {}'.format(model_file))
+        logging.info('Model saved to {}'.format(model_file))
+        if is_best:
+            best_file = os.path.join(model_dir, '{}_best.pytorch'.format(name))
+            shutil.copyfile(model_file, best_file)
+            logging.info('New best model! Model copied to {}'.format(best_file))
 
     def load(self, model_file, force_cpu=False):
-        print('Loading model from {}...'.format(model_file))
+        logging.info('Loading model from {}...'.format(model_file))
         map_loc = 'cpu' if force_cpu else None
         state_dict = torch.load(model_file, map_location=map_loc)
         self.load_state_dict(state_dict)
@@ -66,6 +72,9 @@ class Network(torch.nn.Module):
             for param in self.parameters():
                 param.requires_grad = True
             self.frozen = False
+
+class Sequential(torch.nn.Sequential, Network):
+    pass
 
 def one_hot(x, depth, dtype=torch.float32):
     """Convert a batch of indices to a batch of one-hot vectors

@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -10,7 +12,7 @@ class GridWorld(grid.BaseGrid):
         super().__init__(*args, **kwargs)
         self.agent = Agent()
         self.actions = [i for i in range(4)]
-        self.action_map = {0: grid.LEFT, 1: grid.RIGHT, 2: grid.UP, 3: grid.DOWN}
+        self.action_map = grid.directions
         self.agent.position = np.asarray((0, 0), dtype=int)
         self.goal = None
 
@@ -97,3 +99,130 @@ class SnakeWorld(GridWorld):
         #|  _|_  |
         #| |   | |
         #|___|___|
+
+class MazeWorld(GridWorld):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        walls = []
+        for row in range(0, self._rows):
+            for col in range(0, self._cols):
+                #add vertical walls
+                self._grid[row * 2 + 2, col * 2 + 1] = 1
+                walls.append((row * 2 + 2, col * 2 + 1))
+
+                #add horizontal walls
+                self._grid[row * 2 + 1, col * 2 + 2] = 1
+                walls.append((row * 2 + 1, col * 2 + 2))
+
+        random.shuffle(walls)
+
+        cells = []
+        #add each cell as a set_text
+        for row in range(0, self._rows):
+            for col in range(0, self._cols):
+                cells.append({(row * 2 + 1, col * 2 + 1)})
+
+        #Randomized Kruskal's Algorithm
+        for wall in walls:
+            if (wall[0] % 2 == 0):
+
+                def neighbor(set):
+                    for x in set:
+                        if (x[0] == wall[0] + 1 and x[1] == wall[1]):
+                            return True
+                        if (x[0] == wall[0] - 1 and x[1] == wall[1]):
+                            return True
+                    return False
+
+                neighbors = list(filter(neighbor, cells))
+                if (len(neighbors) == 1):
+                    continue
+                cellSet = neighbors[0].union(neighbors[1])
+                cells.remove(neighbors[0])
+                cells.remove(neighbors[1])
+                cells.append(cellSet)
+                self._grid[wall[0], wall[1]] = 0
+            else:
+
+                def neighbor(set):
+                    for x in set:
+                        if (x[0] == wall[0] and x[1] == wall[1] + 1):
+                            return True
+                        if (x[0] == wall[0] and x[1] == wall[1] - 1):
+                            return True
+                    return False
+
+                neighbors = list(filter(neighbor, cells))
+                if (len(neighbors) == 1):
+                    continue
+                cellSet = neighbors[0].union(neighbors[1])
+                cells.remove(neighbors[0])
+                cells.remove(neighbors[1])
+                cells.append(cellSet)
+                self._grid[wall[0], wall[1]] = 0
+
+    @classmethod
+    def load_maze(cls, rows, cols, seed):
+        env = GridWorld(rows=rows, cols=cols)
+        maze_file = 'gridworlds/domain/gridworld/mazes/mazes_{rows}x{cols}/seed-{seed:03d}/maze-{seed}.txt'.format(rows=rows, cols=cols, seed=seed)
+        try:
+            env.load(maze_file)
+        except IOError as e:
+            print()
+            print('Could not find standardized {rows}x{cols} maze file for seed {seed}. Maybe it needs to be generated?'.format(rows=rows, cols=cols, seed=seed))
+            print()
+            raise e
+        return env
+
+class SpiralWorld(GridWorld):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Add all walls
+        for row in range(0, self._rows):
+            for col in range(0, self._cols):
+                #add vertical walls
+                self._grid[row * 2 + 2, col * 2 + 1] = 1
+
+                #add horizontal walls
+                self._grid[row * 2 + 1, col * 2 + 2] = 1
+
+        # Check dimensions to decide on appropriate spiral direction
+        if self._cols > self._rows:
+            direction = 'cw'
+        else:
+            direction = 'ccw'
+
+        # Remove walls to build spiral
+        for i in range(0, min(self._rows, self._cols)):
+            # Create concentric hooks, and connect them after the first to build spiral
+            if direction == 'ccw':
+                self._grid[(2 * i + 1):-(2 * i + 1), (2 * i + 1)] = 0
+                self._grid[-(2 * i + 2), (2 * i + 1):-(2 * i + 1)] = 0
+                self._grid[(2 * i + 1):-(2 * i + 1), -(2 * i + 2)] = 0
+                self._grid[(2 * i + 1), (2 * i + 3):-(2 * i + 1)] = 0
+                if i > 0:
+                    self._grid[2 * i, 2 * i + 1] = 0
+
+            else:
+                self._grid[(2 * i + 1), (2 * i + 1):-(2 * i + 1)] = 0
+                self._grid[(2 * i + 1):-(2 * i + 1), -(2 * i + 2)] = 0
+                self._grid[-(2 * i + 2), (2 * i + 1):-(2 * i + 1)] = 0
+                self._grid[(2 * i + 3):-(2 * i + 1), (2 * i + 1)] = 0
+                if i > 0:
+                    self._grid[2 * i + 1, 2 * i] = 0
+
+class LoopWorld(SpiralWorld):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Check dimensions to decide on appropriate spiral direction
+        if self._cols > self._rows:
+            direction = 'cw'
+        else:
+            direction = 'ccw'
+
+        if direction == 'ccw':
+            self._grid[-3, -4] = 0
+        else:
+            self._grid[-4, -3] = 0

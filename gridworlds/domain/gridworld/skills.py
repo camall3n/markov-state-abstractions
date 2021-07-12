@@ -9,17 +9,22 @@ def GoToGridPosition(gridworld, start, target):
     # Cache results to save on repeated calls
     if (start, target) not in gridworld.saved_directions:
         path = _GridAStarPath(gridworld, start, target)
-        if path:
-            for next, current in zip(path[:-1], path[1:]):
-                direction = tuple(np.asarray(next)-current)
-                gridworld.saved_directions[(current, target)] = direction
-    direction = gridworld.saved_directions.get((start, target), None)
+        if path is not None:
+            if path:
+                for i, (next_, current) in enumerate(reversed(list(zip(path[:-1], path[1:])))):
+                    direction = tuple(np.asarray(next_) - current)
+                    gridworld.saved_directions[(current, target)] = direction, len(path)-1-i
+            else:
+                gridworld.saved_directions[(start, target)] = None, 0
+    direction, distance = gridworld.saved_directions.get((start, target), (None, None))
     action = actions[direction] if direction else None
     can_run = True if action is not None else False
     terminate = True if (start == target) else False
-    return (can_run, action, terminate)
+    return (can_run, action, terminate), distance
 
 def _GridAStarPath(gridworld, start, target):
+    if all(np.asarray(start) == target):
+        return []
     # Use A* to search for a path in gridworld from start to target
     closed_set = set()
     open_set = set()
@@ -58,9 +63,9 @@ def _GridAStarPath(gridworld, start, target):
 
 def _get_neighbors(gridworld, pos):
     neighbors = []
-    for _, dir in directions.items():
-        if not gridworld.has_wall(pos, dir):
-            neighbor = tuple(np.asarray(pos)+dir)
+    for _, direction in directions.items():
+        if not gridworld.has_wall(pos, direction):
+            neighbor = tuple(np.asarray(pos) + direction)
             neighbors.append(neighbor)
     return neighbors
 

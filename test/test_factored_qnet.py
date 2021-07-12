@@ -46,11 +46,19 @@ for i in range(1000):
         v_prev = v.copy()
 
 def plot_value_function(v, ax):
-    s = np.asarray([[np.asarray([x,y]) for x in range(env._cols)] for y in range(env._rows)])
-    xy = OffsetSensor(offset=(0.5,0.5)).observe(s).reshape(env._cols, env._rows, -1)
-    ax.contourf(np.arange(0.5,env._cols+0.5), np.arange(0.5,env._rows+0.5), v, vmin=-10, vmax=0)
+    x = np.arange(0, env._cols)
+    xx = np.concatenate([x, x+.98])
+    xx.sort()
+    y = np.arange(0, env._rows)
+    yy = np.concatenate([y, y+.98])
+    yy.sort()
+    xx, yy = np.meshgrid(xx, yy)
+    vv = np.round(v)
+    vv = np.repeat(np.repeat(vv, 2, 1), 2, 0)
+    ax.contourf(xx, yy, vv, vmin=v.min(), vmax=v.max(), cmap='plasma')
 
 fig, ax = plt.subplots(1,2, figsize=(6,3))
+plt.ion()
 fig.show()
 
 plot_value_function(v, ax[0])
