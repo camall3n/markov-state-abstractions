@@ -11,8 +11,8 @@ from gridworlds.nn.nnutils import Reshape
 from gridworlds.nn.nullabstraction import NullAbstraction
 from gridworlds.nn.phinet import PhiNet
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld, LoopWorld
-from gridworlds.agents.randomagent import RandomAgent
-from gridworlds.agents.dqnagent import DQNAgent, FactoredDQNAgent
+from markov_abstr.agents.randomagent import RandomAgent
+from markov_abstr.agents.dqnagent import DQNAgent, FactoredDQNAgent
 from gridworlds.utils import reset_seeds, get_parser
 from gridworlds.sensors import *
 

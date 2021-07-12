@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from gridworlds.domain.gridworld.gridworld import GridWorld, MazeWorld, SpiralWorld
 from gridworlds.nn.phinet import PhiNet
-from gridworlds.agents.dqnagent import DQNAgent
+from markov_abstr.agents.dqnagent import DQNAgent
 from gridworlds.nn.qnet import FactoredQNet
 from gridworlds.utils import reset_seeds, get_parser
 from gridworlds.sensors import *

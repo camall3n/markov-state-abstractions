@@ -1,6 +1,6 @@
 import random
 from gridworlds.domain.taxi.taxi import Taxi5x5, BusyTaxi5x5
-from gridworlds.agents.qlearningagent import SkilledQLearningAgent
+from markov_abstr.agents.qlearningagent import SkilledQLearningAgent
 from gridworlds.domain.taxi.skills import skills5x5, skill_policy
 from gridworlds.sensors import IdentitySensor
 
