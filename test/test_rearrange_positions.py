@@ -9,8 +9,8 @@ import time
 import torch
 from tqdm import tqdm
 
-from gridworlds.nn.featurenet import FeatureNet
-from gridworlds.nn.autoencoder import AutoEncoder
+from markov_abstr.models.featurenet import FeatureNet
+from markov_abstr.models.autoencoder import AutoEncoder
 from scripts.repvis import RepVisualization, CleanVisualization
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
 from gridworlds.utils import reset_seeds, get_parser, MI

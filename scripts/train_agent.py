@@ -7,9 +7,9 @@ import seaborn as sns
 import time
 from tqdm import tqdm
 
-from gridworlds.nn.nnutils import Reshape
-from gridworlds.nn.nullabstraction import NullAbstraction
-from gridworlds.nn.phinet import PhiNet
+from markov_abstr.models.nnutils import Reshape
+from markov_abstr.models.nullabstraction import NullAbstraction
+from markov_abstr.models.phinet import PhiNet
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld, LoopWorld
 from markov_abstr.agents.randomagent import RandomAgent
 from markov_abstr.agents.dqnagent import DQNAgent, FactoredDQNAgent

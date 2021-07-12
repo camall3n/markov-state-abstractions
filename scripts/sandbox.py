@@ -9,8 +9,8 @@ from tqdm import tqdm
 
 from gridworlds.domain.gridworld.gridworld import GridWorld, MazeWorld, SpiralWorld, LoopWorld
 from gridworlds import sensors
-# from gridworlds.nn.nnutils import BilinearOuterProduct
-# from gridworlds.nn.contrastivenet import FullPairwiseContrastiveNet
+# from markov_abstr.models.nnutils import BilinearOuterProduct
+# from markov_abstr.models.contrastivenet import FullPairwiseContrastiveNet
 from gridworlds.sensors import *
 from gridworlds.utils import reset_seeds
 

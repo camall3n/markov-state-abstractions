@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import torch
 
-from gridworlds.nn.nullabstraction import NullAbstraction
-from gridworlds.nn.factornet import FactorNet
+from markov_abstr.models.nullabstraction import NullAbstraction
+from markov_abstr.models.factornet import FactorNet
 from gridworlds.domain.gridworld.gridworld import GridWorld
 from gridworlds.utils import reset_seeds, get_parser, MI
 from gridworlds.sensors import *

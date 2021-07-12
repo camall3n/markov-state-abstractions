@@ -6,7 +6,7 @@ env/
 venv/
 images/
 logs/
-models/
+./models/
 scripts/unversioned/*
 videos/
 results/
