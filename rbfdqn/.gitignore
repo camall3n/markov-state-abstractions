@@ -1,7 +1,0 @@
-*DS_Store*
-*pycache*
-*.txt
-*.out
-.onager/ 
-.style.yapf
-.idea/
