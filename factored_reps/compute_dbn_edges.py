@@ -3,7 +3,7 @@ import seeding
 from sklearn.neighbors import KernelDensity
 import sys
 
-import gridworlds.domain.vigorito as vigorito
+from factored_reps import vigorito
 import gridworlds.sensors as sensors
 
 def fit_kde(x, bw=0.03):
