@@ -1,19 +1,19 @@
 import imageio
 import numpy as np
 import matplotlib.pyplot as plt
+import seeding
 from tqdm import tqdm
-import torch
 
 from markov_abstr.models.nullabstraction import NullAbstraction
 from markov_abstr.models.factornet import FactorNet
 from gridworlds.domain.gridworld.gridworld import GridWorld
-from gridworlds.utils import reset_seeds, get_parser, MI
+from gridworlds.utils import MI
 from gridworlds.sensors import *
 
 #%% ------------------ Define MDP ------------------
-reset_seeds(0)
+seeding.seed(0, np)
 
-env = GridWorld(rows=6,cols=6)
+env = GridWorld(rows=6, cols=6)
 env.reset_agent()
 
 sensor = SensorChain([
@@ -40,12 +40,12 @@ for t in range(n_samples):
     states.append(s)
     actions.append(a)
 states = np.stack(states)
-s0 = np.asarray(states[:-1,:])
-s1 = np.asarray(states[1:,:])
-c0 = s0[:,0]*env._cols+s0[:,1]
+s0 = np.asarray(states[:-1, :])
+s1 = np.asarray(states[1:, :])
+c0 = s0[:, 0] * env._cols + s0[:, 1]
 a = np.asarray(actions)
 
-MI_max = MI(s0,s0)
+MI_max = MI(s0, s0)
 
 z0 = phi(sensor.observe(s0))
 z1 = phi(sensor.observe(s1))
@@ -65,11 +65,12 @@ noise_machine = SensorChain([
 
 e0n = noise_machine.observe(e0.detach().numpy())
 e1n = noise_machine.observe(e1.detach().numpy())
+
 #%%
 def get_frame(ax, rep, title, save=''):
     rep = rep.detach().numpy()
     ax.clear()
-    ax.scatter(rep[:,0], rep[:,1], c=c0)
+    ax.scatter(rep[:, 0], rep[:, 1], c=c0)
     ax.set_title(title)
     ax.set_xticks([])
     ax.set_yticks([])
@@ -80,13 +81,13 @@ def get_frame(ax, rep, title, save=''):
     fig.canvas.draw()
     fig.canvas.flush_events()
     frame = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-    frame = frame.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    frame = frame.reshape(fig.canvas.get_width_height()[::-1] + (3, ))
     return frame
 
 #%% ------------------ Train disentangler ------------------
-reset_seeds(1)
+seeding.seed(1, np)
 disentangler = FactorNet(lr=0.03, coefs={'L_fac': 0.1})
-fig, ax = plt.subplots(figsize=(8,8))
+fig, ax = plt.subplots(figsize=(8, 8))
 frames = []
 e0no = sensor.observe(e0n)
 e1no = sensor.observe(e1n)
@@ -101,8 +102,8 @@ imageio.mimwrite('results/factornet/disentangling.mp4', frames, fps=15)
 
 #%%
 def plot2d(rep, title, save=''):
-    rep = rep#.detach().numpy()
-    plt.scatter(rep[:,0], rep[:,1], c=c0)
+    rep = rep  #.detach().numpy()
+    plt.scatter(rep[:, 0], rep[:, 1], c=c0)
     plt.xticks([])
     plt.yticks([])
     plt.xlabel(r'$z_F^{(0)}$')
@@ -113,9 +114,9 @@ def plot2d(rep, title, save=''):
     plt.show()
 
 plot2d(z0, title='True state (MI=1.0)', save='results/factornet/img1-true_state.png')
-e_title = r'$z$'#.format(MI(s0, e0.detach().numpy())/MI_max)
-plt.figure(figsize=(8,8))
+e_title = r'$z$'  #.format(MI(s0, e0.detach().numpy())/MI_max)
+plt.figure(figsize=(8, 8))
 plot2d(e0n, title=e_title, save='results/factornet/img2-entangled.png')
-d_title = r'$z_F$'#.format(MI(s0, d0.detach().numpy())/MI_max)
-plt.figure(figsize=(8,8))
+d_title = r'$z_F$'  #.format(MI(s0, d0.detach().numpy())/MI_max)
+plt.figure(figsize=(8, 8))
 plot2d(d0.detach().numpy(), title=d_title, save='results/factornet/img3-disentangled.png')

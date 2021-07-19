@@ -1,11 +1,11 @@
 import imageio
 import numpy as np
 import matplotlib.pyplot as plt
+import seeding
 from tqdm import tqdm
 
 from gridworlds.domain.gridworld.gridworld import GridWorld
 from gridworlds.sensors import *
-from gridworlds.utils import reset_seeds
 
 env = GridWorld(rows=6,cols=6)
 env.reset_agent()
@@ -21,7 +21,7 @@ sensor = SensorChain([
 
 #%%
 %matplotlib agg
-reset_seeds(0)
+seeding.seed(0, np)
 env.reset_agent()
 fig, ax = plt.subplots(figsize=(16,16))
 jointfig, jointax = plt.subplots(1,2,figsize=(32,16))

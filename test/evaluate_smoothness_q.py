@@ -1,6 +1,7 @@
 import imageio
 import matplotlib.pyplot as plt
 import numpy as np
+import seeding
 import sys
 import torch
 import torch.nn.functional as F
@@ -10,7 +11,7 @@ from gridworlds.domain.gridworld.gridworld import GridWorld, MazeWorld, SpiralWo
 from markov_abstr.models.phinet import PhiNet
 from markov_abstr.agents.dqnagent import DQNAgent
 from markov_abstr.models.qnet import FactoredQNet
-from gridworlds.utils import reset_seeds, get_parser
+from gridworlds.utils import get_parser
 from gridworlds.sensors import *
 
 parser = get_parser()
@@ -97,7 +98,7 @@ if args.phi_path:
     phinet.load(modelfile)
     phinet.eval()
 
-reset_seeds(args.seed)
+seeding.seed(args.seed, np, torch)
 
 n_actions = 4
 gamma = 0.9

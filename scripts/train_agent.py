@@ -4,7 +4,7 @@ import numpy as np
 import os
 import pandas as pd
 import seaborn as sns
-import time
+import seeding
 from tqdm import tqdm
 
 from markov_abstr.models.nnutils import Reshape
@@ -13,7 +13,7 @@ from markov_abstr.models.phinet import PhiNet
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld, LoopWorld
 from markov_abstr.agents.randomagent import RandomAgent
 from markov_abstr.agents.dqnagent import DQNAgent, FactoredDQNAgent
-from gridworlds.utils import reset_seeds, get_parser
+from gridworlds.utils import get_parser
 from gridworlds.sensors import *
 
 parser = get_parser()
@@ -123,7 +123,7 @@ else:
         modelfile = 'models/{}/phi-{}_latest.pytorch'.format(args.phi_path, args.seed)
         phinet.load(modelfile)
 
-reset_seeds(args.seed)
+seeding.seed(args.seed, np)
 
 #%% ------------------ Load agent ------------------
 n_actions = 4

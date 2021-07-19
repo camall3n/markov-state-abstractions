@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
-from ...utils import reset_seeds
+import seeding
 
 grid_type = int
 
@@ -39,7 +38,7 @@ class BaseGrid:
 
     def get_random_position(self, seed=None):
         if seed is not None:
-            reset_seeds(seed)
+            seeding.seed(seed, np)
         return np.asarray((np.random.randint(0, self._rows), np.random.randint(0, self._cols)))
 
     def contents(self, row, col):

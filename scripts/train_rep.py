@@ -3,6 +3,7 @@ import json
 #!! do not import matplotlib until you check input arguments
 import numpy as np
 import os
+import seeding
 import sys
 import torch
 from tqdm import tqdm
@@ -12,7 +13,7 @@ from markov_abstr.models.autoencoder import AutoEncoder
 from markov_abstr.models.pixelpredictor import PixelPredictor
 from markov_abstr.repvis import RepVisualization, CleanVisualization
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld, LoopWorld
-from gridworlds.utils import reset_seeds, get_parser, MI
+from gridworlds.utils import get_parser, MI
 from gridworlds.sensors import *
 from gridworlds.distance_oracle import DistanceOracle
 
@@ -97,7 +98,7 @@ log = open(log_dir + '/train-{}.txt'.format(args.seed), 'w')
 with open(log_dir + '/args-{}.txt'.format(args.seed), 'w') as arg_file:
     arg_file.write(repr(args))
 
-reset_seeds(args.seed)
+seeding.seed(args.seed)
 
 #% ------------------ Define MDP ------------------
 if args.walls == 'maze':

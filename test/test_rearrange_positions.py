@@ -4,6 +4,7 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import seeding
 import sys
 import time
 import torch
@@ -13,7 +14,7 @@ from markov_abstr.models.featurenet import FeatureNet
 from markov_abstr.models.autoencoder import AutoEncoder
 from markov_abstr.repvis import RepVisualization, CleanVisualization
 from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
-from gridworlds.utils import reset_seeds, get_parser, MI
+from gridworlds.utils import get_parser, MI
 from gridworlds.sensors import *
 
 parser = get_parser()
@@ -28,7 +29,7 @@ parser.add_argument('-s', '--seed', type=int, default=0, help='Random seed')
 # yapf: enable
 args = parser.parse_args()
 
-reset_seeds(args.seed)
+seeding.seed(args.seed, np, torch)
 
 #%% ------------------ Define MDP ------------------
 env = GridWorld(rows=args.rows, cols=args.cols)

@@ -12,17 +12,14 @@ from gridworlds import sensors
 # from markov_abstr.models.nnutils import BilinearOuterProduct
 # from markov_abstr.models.contrastivenet import FullPairwiseContrastiveNet
 from gridworlds.sensors import *
-from gridworlds.utils import reset_seeds
 
 p = sns.color_palette(n_colors=6)
 p[-2]
 
-seeding.seed(1, np, random)
+seeding.seed(1, np, random, torch)
 env = MazeWorld.load_maze(rows=6, cols=6, seed=1)
 
-sensor_list = [
-    NoisySensor(sigma=0.2, truncation=0.4)
-]
+sensor_list = [NoisySensor(sigma=0.2, truncation=0.4)]
 sensor = SensorChain(sensor_list)
 
 n_samples = 20000
@@ -54,7 +51,7 @@ sensor_list = [
     NoisySensor(sigma=0.01)
 ]
 sensor = SensorChain(sensor_list)
-reset_seeds(0)
+seeding.seed(0, np, random, torch)
 
 env.reset_agent()
 env.reset_goal()
@@ -71,7 +68,7 @@ for i in range(20):
     fig.tight_layout()
     fig.canvas.draw()
     img = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
-    img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    img = img.reshape(fig.canvas.get_width_height()[::-1] + (3, ))
     imgs.append(img)
 import imageio
 imageio.mimwrite('x1-above-corner-distribution.mp4', imgs)
