@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from markov_abstr.models.nullabstraction import NullAbstraction
 from factored_reps.models.factornet import FactorNet
-from gridworlds.domain.gridworld.gridworld import GridWorld
+from gridworlds.gridworld.gridworld import GridWorld
 from gridworlds.utils import MI
 from gridworlds.sensors import *
 

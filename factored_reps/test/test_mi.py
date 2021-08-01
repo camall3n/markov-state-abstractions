@@ -3,7 +3,7 @@ import numpy as np
 import seeding
 from sklearn.neighbors import KernelDensity
 
-from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
+from gridworlds.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
 from gridworlds.sensors import *
 
 seeding.seed(0, np)

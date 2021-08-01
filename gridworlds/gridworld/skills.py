@@ -1,6 +1,6 @@
 from collections import defaultdict
 import numpy as np
-from ...utils import manhattan_dist
+from ..utils import manhattan_dist
 from .grid import directions, actions
 
 def GoToGridPosition(gridworld, start, target):
@@ -13,7 +13,7 @@ def GoToGridPosition(gridworld, start, target):
             if path:
                 for i, (next_, current) in enumerate(reversed(list(zip(path[:-1], path[1:])))):
                     direction = tuple(np.asarray(next_) - current)
-                    gridworld.saved_directions[(current, target)] = direction, len(path)-1-i
+                    gridworld.saved_directions[(current, target)] = direction, len(path) - 1 - i
             else:
                 gridworld.saved_directions[(start, target)] = None, 0
     direction, distance = gridworld.saved_directions.get((start, target), (None, None))

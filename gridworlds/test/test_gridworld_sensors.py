@@ -1,16 +1,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from gridworlds.domain.gridworld.gridworld import GridWorld
+from gridworlds.gridworld.gridworld import GridWorld
 from gridworlds.sensors import *
 
-env = GridWorld(rows=6,cols=6)
+env = GridWorld(rows=6, cols=6)
 env.reset_agent()
 
 sensor = SensorChain([
-    OffsetSensor(offset=(0.5,0.5)),
+    OffsetSensor(offset=(0.5, 0.5)),
     NoisySensor(sigma=0.05),
-    ImageSensor(range=((0,env._rows), (0,env._cols)), pixel_density=3),
+    ImageSensor(range=((0, env._rows), (0, env._cols)), pixel_density=3),
     # ResampleSensor(scale=2.0),
     BlurSensor(sigma=0.6, truncate=1.),
     NoisySensor(sigma=0.01)

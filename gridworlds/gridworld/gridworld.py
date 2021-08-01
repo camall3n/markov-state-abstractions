@@ -164,7 +164,8 @@ class MazeWorld(GridWorld):
     @classmethod
     def load_maze(cls, rows, cols, seed):
         env = GridWorld(rows=rows, cols=cols)
-        maze_file = 'gridworlds/domain/gridworld/mazes/mazes_{rows}x{cols}/seed-{seed:03d}/maze-{seed}.txt'.format(rows=rows, cols=cols, seed=seed)
+        maze_file = 'gridworlds/gridworld/mazes/mazes_{rows}x{cols}/seed-{seed:03d}/maze-{seed}.txt'.format(
+            rows=rows, cols=cols, seed=seed)
         try:
             env.load(maze_file)
         except IOError as e:

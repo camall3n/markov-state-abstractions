@@ -7,7 +7,7 @@ import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 
-from gridworlds.domain.gridworld.gridworld import GridWorld, MazeWorld, SpiralWorld
+from gridworlds.gridworld.gridworld import GridWorld, MazeWorld, SpiralWorld
 from markov_abstr.models.phinet import PhiNet
 from markov_abstr.agents.dqnagent import DQNAgent
 from markov_abstr.models.qnet import FactoredQNet

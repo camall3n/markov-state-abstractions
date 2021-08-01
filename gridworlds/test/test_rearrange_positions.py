@@ -13,7 +13,7 @@ from tqdm import tqdm
 from markov_abstr.models.featurenet import FeatureNet
 from markov_abstr.models.autoencoder import AutoEncoder
 from markov_abstr.repvis import RepVisualization, CleanVisualization
-from gridworlds.domain.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
+from gridworlds.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
 from gridworlds.utils import get_parser, MI
 from gridworlds.sensors import *
 
