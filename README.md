@@ -15,6 +15,6 @@ pip install -r requirements.txt
 ### Running
 Running one experiment:
 ```
-python -m scripts.train_rep [args]
-python -m scripts.train_agent [args]
+python -m markov_abstr.train_rep [args]
+python -m markov_abstr.train_agent [args]
 ```
