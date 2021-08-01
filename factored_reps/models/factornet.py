@@ -3,21 +3,25 @@ import numpy as np
 import torch
 import torch.nn
 
-from .nnutils import Network
-from .simplenet import SimpleNet
+from markov_abstr.models.nnutils import Network
+from markov_abstr.models.simplenet import SimpleNet
 
 class FactorNet(Network):
     def __init__(self, n_latent_dims=2, lr=0.001, coefs=None):
         super().__init__()
         self.n_latent_dims = n_latent_dims
         self.lr = lr
-        self.coefs = defaultdict(lambda:1.0)
+        self.coefs = defaultdict(lambda: 1.0)
         self.set_coefs(coefs)
 
-        self.encoder = SimpleNet(n_inputs=n_latent_dims, n_outputs=n_latent_dims,
-             n_hidden_layers=1, n_units_per_layer=32)
-        self.decoder = SimpleNet(n_inputs=n_latent_dims, n_outputs=n_latent_dims,
-             n_hidden_layers=1, n_units_per_layer=32)
+        self.encoder = SimpleNet(n_inputs=n_latent_dims,
+                                 n_outputs=n_latent_dims,
+                                 n_hidden_layers=1,
+                                 n_units_per_layer=32)
+        self.decoder = SimpleNet(n_inputs=n_latent_dims,
+                                 n_outputs=n_latent_dims,
+                                 n_hidden_layers=1,
+                                 n_units_per_layer=32)
         self.mse = torch.nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
 
@@ -31,7 +35,7 @@ class FactorNet(Network):
 
     def compute_factored_loss(self, z0, z1):
         eps = 1e-6
-        dz = z1-z0
+        dz = z1 - z0
         l1 = torch.sum(torch.abs(dz), dim=-1)
         lmax = torch.max(torch.abs(dz), dim=-1)[0]
         return torch.mean(l1 / lmax)
