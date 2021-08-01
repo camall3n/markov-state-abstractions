@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seeding
 from tqdm import tqdm
 
-from gridworlds.gridworld.gridworld import GridWorld
+from gridworlds.gridworld import GridWorld
 from gridworlds.sensors import *
 
 env = GridWorld(rows=6,cols=6)

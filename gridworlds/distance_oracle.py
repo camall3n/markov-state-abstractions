@@ -27,7 +27,7 @@ if __name__ == '__main__':
     import numpy as np
     import random
 
-    from gridworlds.gridworld.gridworld import GridWorld, MazeWorld, SpiralWorld
+    from gridworlds.gridworld import GridWorld, MazeWorld, SpiralWorld
     from gridworlds.gridworld import grid
     import matplotlib.pyplot as plt
 

@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from gridworlds.gridworld.gridworld import GridWorld
+from gridworlds.gridworld import GridWorld
 from gridworlds.sensors import *
 
 env = GridWorld(rows=6, cols=6)

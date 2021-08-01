@@ -6,7 +6,7 @@ import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 
-from gridworlds.gridworld.gridworld import GridWorld
+from gridworlds.gridworld import GridWorld
 from markov_abstr.models.qnet import QNet
 from gridworlds.sensors import *
 

@@ -7,7 +7,7 @@ import seeding
 import torch
 from tqdm import tqdm
 
-from gridworlds.gridworld.gridworld import GridWorld, MazeWorld, SpiralWorld, LoopWorld
+from gridworlds.gridworld import GridWorld, MazeWorld, SpiralWorld, LoopWorld
 from gridworlds import sensors
 # from markov_abstr.models.nnutils import BilinearOuterProduct
 # from markov_abstr.models.contrastivenet import FullPairwiseContrastiveNet

@@ -12,7 +12,7 @@ from markov_abstr.models.featurenet import FeatureNet
 from markov_abstr.models.autoencoder import AutoEncoder
 from markov_abstr.models.pixelpredictor import PixelPredictor
 from markov_abstr.repvis import RepVisualization, CleanVisualization
-from gridworlds.gridworld.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld, LoopWorld
+from gridworlds.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld, LoopWorld
 from gridworlds.utils import get_parser, MI
 from gridworlds.sensors import *
 from gridworlds.distance_oracle import DistanceOracle
