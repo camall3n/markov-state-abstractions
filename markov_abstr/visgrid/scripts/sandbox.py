@@ -9,8 +9,8 @@ from tqdm import tqdm
 
 from gridworlds.gridworld import GridWorld, MazeWorld, SpiralWorld, LoopWorld
 from gridworlds import sensors
-# from markov_abstr.models.nnutils import BilinearOuterProduct
-# from markov_abstr.models.contrastivenet import FullPairwiseContrastiveNet
+# from markov_abstr.visgrid.models.nnutils import BilinearOuterProduct
+# from markov_abstr.visgrid.models.contrastivenet import FullPairwiseContrastiveNet
 from gridworlds.sensors import *
 
 p = sns.color_palette(n_colors=6)

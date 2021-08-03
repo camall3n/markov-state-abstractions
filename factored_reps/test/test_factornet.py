@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seeding
 from tqdm import tqdm
 
-from markov_abstr.models.nullabstraction import NullAbstraction
+from markov_abstr.visgrid.models.nullabstraction import NullAbstraction
 from factored_reps.models.factornet import FactorNet
 from gridworlds.gridworld import GridWorld
 from gridworlds.utils import MI

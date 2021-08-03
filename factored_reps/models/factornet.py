@@ -3,8 +3,8 @@ import numpy as np
 import torch
 import torch.nn
 
-from markov_abstr.models.nnutils import Network
-from markov_abstr.models.simplenet import SimpleNet
+from markov_abstr.visgrid.models.nnutils import Network
+from markov_abstr.visgrid.models.simplenet import SimpleNet
 
 class FactorNet(Network):
     def __init__(self, n_latent_dims=2, lr=0.001, coefs=None):

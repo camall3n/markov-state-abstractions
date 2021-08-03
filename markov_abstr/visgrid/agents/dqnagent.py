@@ -2,8 +2,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from ..models.qnet import QNet, FactoredQNet
-from ..models.nnutils import one_hot, extract
+from ...models.qnet import QNet, FactoredQNet
+from ...models.nnutils import one_hot, extract
 from .replaymemory import ReplayMemory, Experience
 
 class DQNAgent():

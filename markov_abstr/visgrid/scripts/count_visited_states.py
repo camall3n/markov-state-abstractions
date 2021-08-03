@@ -9,9 +9,9 @@ import sys
 import torch
 from tqdm import tqdm
 
-from markov_abstr.models.featurenet import FeatureNet
-from markov_abstr.models.autoencoder import AutoEncoder
-from markov_abstr.repvis import RepVisualization, CleanVisualization
+from markov_abstr.visgrid.models.featurenet import FeatureNet
+from markov_abstr.visgrid.models.autoencoder import AutoEncoder
+from markov_abstr.visgrid.repvis import RepVisualization, CleanVisualization
 from gridworlds.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld, LoopWorld
 from gridworlds.utils import reset_seeds, get_parser, MI
 from gridworlds.sensors import *
