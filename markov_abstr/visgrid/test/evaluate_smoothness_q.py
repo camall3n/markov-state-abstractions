@@ -7,11 +7,11 @@ import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 
-from gridworlds.gridworld import GridWorld, MazeWorld, SpiralWorld
+from visgrid.gridworld import GridWorld, MazeWorld, SpiralWorld
+from visgrid.utils import get_parser
+from visgrid.sensors import *
 from markov_abstr.visgrid.models.phinet import PhiNet
 from markov_abstr.visgrid.agents.dqnagent import DQNAgent
-from gridworlds.utils import get_parser
-from gridworlds.sensors import *
 
 parser = get_parser()
 # parser.add_argument('-d','--dims', help='Number of latent dimensions', type=int, default=2)

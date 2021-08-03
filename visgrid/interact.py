@@ -1,8 +1,8 @@
 import random
-from gridworlds.taxi.taxi import Taxi5x5, BusyTaxi5x5
-from gridworlds.agents.qlearningagent import SkilledQLearningAgent
-from gridworlds.taxi.skills import skills5x5, skill_policy
-from gridworlds.sensors import IdentitySensor
+from visgrid.taxi.taxi import Taxi5x5, BusyTaxi5x5
+from visgrid.agents.qlearningagent import SkilledQLearningAgent
+from visgrid.taxi.skills import skills5x5, skill_policy
+from visgrid.sensors import IdentitySensor
 
 total_timesteps = 50000
 episode_timeout = 2000

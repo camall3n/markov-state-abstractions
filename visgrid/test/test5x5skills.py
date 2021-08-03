@@ -1,7 +1,7 @@
 %matplotlib inline
 import random
-from gridworlds.taxi.taxi import *
-from gridworlds.taxi.skills import *
+from visgrid.taxi.taxi import *
+from visgrid.taxi.skills import *
 
 random.seed(0)
 w = BusyTaxi5x5()

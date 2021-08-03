@@ -6,9 +6,9 @@ import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 
-from gridworlds.gridworld import GridWorld
+from visgrid.gridworld import GridWorld
+from visgrid.sensors import *
 from markov_abstr.visgrid.models.qnet import QNet
-from gridworlds.sensors import *
 
 seeding.seed(0, np, torch)
 

@@ -12,9 +12,9 @@ from markov_abstr.visgrid.models.nullabstraction import NullAbstraction
 from markov_abstr.visgrid.models.phinet import PhiNet
 from markov_abstr.visgrid.agents.randomagent import RandomAgent
 from markov_abstr.visgrid.agents.dqnagent import DQNAgent
-from gridworlds.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld, LoopWorld
-from gridworlds.utils import get_parser
-from gridworlds.sensors import *
+from visgrid.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld, LoopWorld
+from visgrid.utils import get_parser
+from visgrid.sensors import *
 
 parser = get_parser()
 # parser.add_argument('-d','--dims', help='Number of latent dimensions', type=int, default=2)

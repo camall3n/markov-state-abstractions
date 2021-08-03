@@ -13,9 +13,9 @@ from tqdm import tqdm
 from markov_abstr.visgrid.models.featurenet import FeatureNet
 from markov_abstr.visgrid.models.autoencoder import AutoEncoder
 from markov_abstr.visgrid.repvis import RepVisualization, CleanVisualization
-from gridworlds.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
-from gridworlds.utils import get_parser, MI
-from gridworlds.sensors import *
+from visgrid.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld
+from visgrid.utils import get_parser, MI
+from visgrid.sensors import *
 
 parser = get_parser()
 if 'ipykernel' in sys.argv[0]:

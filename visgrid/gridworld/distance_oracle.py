@@ -1,6 +1,6 @@
 import numpy as np
 
-from gridworlds.gridworld import skills
+from visgrid.gridworld import skills
 
 class DistanceOracle:
     def __init__(self, env):
@@ -27,8 +27,8 @@ if __name__ == '__main__':
     import numpy as np
     import random
 
-    from gridworlds.gridworld import GridWorld, MazeWorld, SpiralWorld
-    from gridworlds.gridworld import grid
+    from visgrid.gridworld import GridWorld, MazeWorld, SpiralWorld
+    from visgrid.gridworld import grid
     import matplotlib.pyplot as plt
 
     grid.directions[3]

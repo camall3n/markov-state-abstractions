@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import seeding
 from tqdm import tqdm
 
-from gridworlds.gridworld import GridWorld
-from gridworlds.sensors import *
+from visgrid.gridworld import GridWorld
+from visgrid.sensors import *
 
 env = GridWorld(rows=6,cols=6)
 env.reset_agent()

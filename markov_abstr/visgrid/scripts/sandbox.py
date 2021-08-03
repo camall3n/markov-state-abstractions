@@ -7,11 +7,11 @@ import seeding
 import torch
 from tqdm import tqdm
 
-from gridworlds.gridworld import GridWorld, MazeWorld, SpiralWorld, LoopWorld
-from gridworlds import sensors
+from visgrid.gridworld import GridWorld, MazeWorld, SpiralWorld, LoopWorld
+from visgrid import sensors
+from visgrid.sensors import *
 # from markov_abstr.visgrid.models.nnutils import BilinearOuterProduct
 # from markov_abstr.visgrid.models.contrastivenet import FullPairwiseContrastiveNet
-from gridworlds.sensors import *
 
 p = sns.color_palette(n_colors=6)
 p[-2]
