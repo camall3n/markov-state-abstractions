@@ -15,7 +15,7 @@ from markov_abstr.repvis import RepVisualization, CleanVisualization
 from gridworlds.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld, LoopWorld
 from gridworlds.utils import get_parser, MI
 from gridworlds.sensors import *
-from gridworlds.distance_oracle import DistanceOracle
+from gridworlds.gridworld.distance_oracle import DistanceOracle
 
 parser = get_parser()
 # parser.add_argument('-d','--dims', help='Number of latent dimensions', type=int, default=2)
