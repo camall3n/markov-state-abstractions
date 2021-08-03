@@ -10,7 +10,6 @@ from tqdm import tqdm
 from gridworlds.gridworld import GridWorld, MazeWorld, SpiralWorld
 from markov_abstr.visgrid.models.phinet import PhiNet
 from markov_abstr.visgrid.agents.dqnagent import DQNAgent
-from markov_abstr.visgrid.models.qnet import FactoredQNet
 from gridworlds.utils import get_parser
 from gridworlds.sensors import *
 

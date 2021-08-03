@@ -11,7 +11,7 @@ from markov_abstr.visgrid.models.nnutils import Reshape
 from markov_abstr.visgrid.models.nullabstraction import NullAbstraction
 from markov_abstr.visgrid.models.phinet import PhiNet
 from markov_abstr.visgrid.agents.randomagent import RandomAgent
-from markov_abstr.visgrid.agents.dqnagent import DQNAgent, FactoredDQNAgent
+from markov_abstr.visgrid.agents.dqnagent import DQNAgent
 from gridworlds.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld, LoopWorld
 from gridworlds.utils import get_parser
 from gridworlds.sensors import *
@@ -20,7 +20,7 @@ parser = get_parser()
 # parser.add_argument('-d','--dims', help='Number of latent dimensions', type=int, default=2)
 # yapf: disable
 parser.add_argument('-a','--agent', type=str, required=True,
-                    choices=['random','dqn','fqn'], help='Type of agent to train')
+                    choices=['random','dqn'], help='Type of agent to train')
 parser.add_argument('-n','--n_trials', type=int, default=1,
                     help='Number of trials')
 parser.add_argument('-e','--n_episodes', type=int, default=10,
@@ -138,24 +138,6 @@ elif args.agent == 'dqn':
                      train_phi=args.train_phi,
                      gamma=gamma,
                      factored=False)
-elif args.agent == 'fqn':
-    agent = DQNAgent(n_features=args.latent_dims,
-                     n_actions=n_actions,
-                     phi=phinet,
-                     lr=args.learning_rate,
-                     batch_size=args.batch_size,
-                     train_phi=args.train_phi,
-                     gamma=gamma,
-                     factored=True)
-elif args.agent == 'fqni':
-    agent = FactoredDQNAgent(n_features=args.latent_dims,
-                             n_actions=n_actions,
-                             phi=phinet,
-                             lr=args.learning_rate,
-                             batch_size=args.batch_size,
-                             train_phi=args.train_phi,
-                             gamma=gamma,
-                             factored=True)
 else:
     assert False, 'Invalid agent type: {}'.format(args.agent)
 
