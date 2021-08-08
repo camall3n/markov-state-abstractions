@@ -82,9 +82,9 @@ if args.no_graphics:
     matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-log_dir = 'logs/' + str(args.tag)
-vid_dir = 'videos/' + str(args.tag)
-maze_dir = 'mazes/' + str(args.tag)
+log_dir = 'results/logs/' + str(args.tag)
+vid_dir = 'results/videos/' + str(args.tag)
+maze_dir = 'results/mazes/' + str(args.tag)
 os.makedirs(log_dir, exist_ok=True)
 
 if args.video:
@@ -319,6 +319,6 @@ if args.video:
     imageio.imwrite(image_filename, data[-1])
 
 if args.save:
-    fnet.phi.save('phi-{}'.format(args.seed), 'models/{}'.format(args.tag))
+    fnet.phi.save('phi-{}'.format(args.seed), 'results/models/{}'.format(args.tag))
 
 log.close()

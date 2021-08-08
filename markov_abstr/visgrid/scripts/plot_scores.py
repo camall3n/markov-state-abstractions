@@ -9,7 +9,7 @@ import seaborn as sns
 from visgrid.utils import load_experiment
 
 def load_experiment(tag):
-    logfiles = sorted(glob.glob(os.path.join('scores', tag + '*', 'scores-*.txt')))
+    logfiles = sorted(glob.glob(os.path.join('results/scores', tag + '*', 'scores-*.txt')))
     agents = [f.split('-')[-2] for f in logfiles]
     seeds = [int(f.split('-')[-1].split('.')[0]) for f in logfiles]
     logs = [open(f, 'r').read().splitlines() for f in logfiles]

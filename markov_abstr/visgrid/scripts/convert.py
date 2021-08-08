@@ -4,7 +4,7 @@ import os
 import pandas as pd
 
 for experiment in ['train_0k', 'train_30k']:
-    root = 'scores/{}/'.format(experiment)
+    root = 'results/scores/{}/'.format(experiment)
     for agent in [
             'markov',
             'inv-only',

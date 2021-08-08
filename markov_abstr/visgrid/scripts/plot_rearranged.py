@@ -13,7 +13,7 @@ algs = ['truestate', 'rearrange_xy']
 
 dfs = []
 for alg in algs:
-    for filepath in glob.glob('scores/train_0k/{}/*/*.txt'.format(alg)):
+    for filepath in glob.glob('results/scores/train_0k/{}/*/*.txt'.format(alg)):
         data = pd.read_json(filepath, lines=True)
         data['alg'] = 'true-xy' if alg == 'truestate' else 'rearranged-xy'
         seed = int(filepath.split('/')[-2].split('_seed_')[-1])

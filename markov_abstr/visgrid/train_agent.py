@@ -72,7 +72,7 @@ if args.one_hot and args.no_sigma:
 if args.video:
     import matplotlib.pyplot as plt
 
-log_dir = 'scores/' + str(args.tag)
+log_dir = 'results/scores/' + str(args.tag)
 os.makedirs(log_dir, exist_ok=True)
 log = open(log_dir + '/scores-{}-{}.txt'.format(args.agent, args.seed), 'w')
 
@@ -120,7 +120,7 @@ else:
                     n_hidden_layers=1,
                     n_units_per_layer=32)
     if args.phi_path:
-        modelfile = 'models/{}/phi-{}_latest.pytorch'.format(args.phi_path, args.seed)
+        modelfile = 'results/models/{}/phi-{}_latest.pytorch'.format(args.phi_path, args.seed)
         phinet.load(modelfile)
 
 seeding.seed(args.seed, np)
@@ -231,4 +231,4 @@ for trial in tqdm(range(args.n_trials), desc='trials'):
 print('\n\n')
 
 if args.save:
-    agent.q.save('qnet-{}'.format(args.seed), 'models/{}'.format(args.tag))
+    agent.q.save('qnet-{}'.format(args.seed), 'results/models/{}'.format(args.tag))

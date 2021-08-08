@@ -93,7 +93,7 @@ phinet = PhiNet(input_shape=x0.shape,
                 n_hidden_layers=1,
                 n_units_per_layer=32)
 if args.phi_path:
-    modelfile = 'models/{}/phi-{}_latest.pytorch'.format(args.phi_path, args.seed)
+    modelfile = 'results/models/{}/phi-{}_latest.pytorch'.format(args.phi_path, args.seed)
     phinet.load(modelfile)
     phinet.eval()
 
@@ -110,7 +110,7 @@ agent = DQNAgent(n_features=args.latent_dims,
                  gamma=gamma,
                  factored=False)
 if args.phi_path:
-    modelfile = 'models/{}/qnet-{}_latest.pytorch'.format(args.phi_path, args.seed)
+    modelfile = 'results/models/{}/qnet-{}_latest.pytorch'.format(args.phi_path, args.seed)
     agent.q.load(modelfile)
 qnet = agent.q
 

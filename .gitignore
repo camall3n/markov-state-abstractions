@@ -5,12 +5,8 @@ data/
 env/
 venv/
 images/
-logs/
-./models/
-scripts/unversioned/*
 videos/
 results/
-scores/
 **__pycache__
 **.pyc
 .onager

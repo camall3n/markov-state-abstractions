@@ -34,7 +34,7 @@ def MI(x, y):
     return np.mean(log_ratio)
 
 def load_experiment(tag, coefs=None):
-    logfiles = sorted(glob.glob(os.path.join('logs', tag + '*', 'train-*.txt')))
+    logfiles = sorted(glob.glob(os.path.join('results/logs', tag + '*', 'train-*.txt')))
     seeds = [f.split('-')[-1].split('.')[0] for f in logfiles]
     logs = [open(f, 'r').read().splitlines() for f in logfiles]
 
