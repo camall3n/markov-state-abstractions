@@ -1,20 +1,26 @@
-# Gridworlds
+# Markov State Abstractions
 
-Scalable test domains for quickly running small- to large-scale grid-world experiments.
+Learning Markov State Abstractions for Deep Reinforcement Learning
+https://arxiv.org/abs/2106.04379
 
 ### Installation
 
-Download the repo and install the dependencies:
+Download the repo:
 ```
-cd gridworlds
+git clone github.com/camall3n/markov-state-abstractions.git
+```
+
+Install the dependencies:
+```
+cd markov-state-abstractions
+git submodule init
+git submodule update
 python3 -m venv venv
-source venv/bin/activate
+. venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Running
-Running one experiment:
-```
-python -m markov_abstr.visgrid.train_rep [args]
-python -m markov_abstr.visgrid.train_agent [args]
-```
+### Experiments
+
+- Visual gridworld: `markov_abstr/visgrid/`
+- DeepMind Control: `markov_abstr/dmcontrol/`
