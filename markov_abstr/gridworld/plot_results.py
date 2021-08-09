@@ -12,6 +12,8 @@ parser = get_parser()
 # yapf: disable
 parser.add_argument('--pretrain-steps', type=str, default='3k',
                     choices=['3k','30k'], help='Number of pretraining steps')
+parser.add_argument('--smoothing', type=int, default=5,
+                    help='Number of data points for sliding window average')
 # yapf: enable
 args = parser.parse_args()
 
@@ -23,7 +25,7 @@ def load_experiment(path):
 
     def read_log(log):
         results = [json.loads(item) for item in log]
-        data = smooth(pd.DataFrame(results), 5)
+        data = smooth(pd.DataFrame(results), args.smoothing)
         return data
 
     results = [read_log(log) for log in logs]
