@@ -9,13 +9,13 @@ import sys
 import torch
 from tqdm import tqdm
 
-from gridworld.models.featurenet import FeatureNet
-from gridworld.models.autoencoder import AutoEncoder
-from gridworld.repvis import RepVisualization, CleanVisualization
-from visgrid.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld, LoopWorld
-from visgrid.utils import reset_seeds, get_parser, MI
-from visgrid.sensors import *
-from visgrid.gridworld.distance_oracle import DistanceOracle
+from ..models.featurenet import FeatureNet
+from ..models.autoencoder import AutoEncoder
+from ..repvis import RepVisualization, CleanVisualization
+from ..visgrid.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld, LoopWorld
+from ..visgrid.utils import reset_seeds, get_parser, MI
+from ..visgrid.sensors import *
+from ..visgrid.gridworld.distance_oracle import DistanceOracle
 
 class Args:
     pass

@@ -6,7 +6,7 @@ import os
 import pandas as pd
 import seaborn as sns
 
-from visgrid.utils import load_experiment
+from ..visgrid.utils import load_experiment
 
 def load_experiment(tag):
     logfiles = sorted(glob.glob(os.path.join('results/scores', tag + '*', 'scores-*.txt')))
