@@ -1,6 +1,6 @@
 import torch
 
-from markov_abstr.visgrid.models.nnutils import extract
+from gridworld.models.nnutils import extract
 
 #%%
 src = torch.arange(24, dtype=torch.float32).view(3, 4, 2)

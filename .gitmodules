@@ -1,6 +1,6 @@
 [submodule "markov_abstr/dmcontrol"]
 	path = markov_abstr/dmcontrol
-	url = https://github.com/camall3n/rad.git
-[submodule "markov_abstr/visgrid/visgrid"]
-	path = markov_abstr/visgrid/visgrid
-	url = https://github.com/camall3n/visgrid.git
+	url = ../rad.git
+[submodule "markov_abstr/gridworld/visgrid"]
+	path = markov_abstr/gridworld/visgrid
+	url = ../visgrid.git
