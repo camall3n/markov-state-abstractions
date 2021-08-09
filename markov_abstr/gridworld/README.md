@@ -13,4 +13,5 @@ pip install -r requirements.txt
 cd markov_abstr/gridworld
 python -m train_rep [args]
 python -m train_agent [args]
+python -m plot_results
 ```
