@@ -10,7 +10,7 @@ from visgrid.utils import load_experiment, get_parser
 
 parser = get_parser()
 # yapf: disable
-parser.add_argument('--pretrain-steps', type=str, required=True,
+parser.add_argument('--pretrain-steps', type=str, default='3k',
                     choices=['3k','30k'], help='Number of pretraining steps')
 # yapf: enable
 args = parser.parse_args()
