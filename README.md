@@ -25,5 +25,5 @@ pip install -r requirements.txt
 
 ### Experiments
 
-- Visual gridworld: `markov_abstr/visgrid/`
-- DeepMind Control: `markov_abstr/dmcontrol/`
+- Visual gridworld: `visgrid/`
+- DeepMind Control: `dmcontrol/`
