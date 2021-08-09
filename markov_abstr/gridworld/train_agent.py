@@ -7,14 +7,14 @@ import seaborn as sns
 import seeding
 from tqdm import tqdm
 
-from .models.nnutils import Reshape
-from .models.nullabstraction import NullAbstraction
-from .models.phinet import PhiNet
-from .agents.randomagent import RandomAgent
-from .agents.dqnagent import DQNAgent
-from .visgrid.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld, LoopWorld
-from .visgrid.utils import get_parser
-from .visgrid.sensors import *
+from models.nnutils import Reshape
+from models.nullabstraction import NullAbstraction
+from models.phinet import PhiNet
+from agents.randomagent import RandomAgent
+from agents.dqnagent import DQNAgent
+from visgrid.gridworld import GridWorld, TestWorld, SnakeWorld, RingWorld, MazeWorld, SpiralWorld, LoopWorld
+from visgrid.utils import get_parser
+from visgrid.sensors import *
 
 parser = get_parser()
 # parser.add_argument('-d','--dims', help='Number of latent dimensions', type=int, default=2)
