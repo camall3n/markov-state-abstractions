@@ -7,9 +7,9 @@ import seeding
 import torch
 from tqdm import tqdm
 
-from ..visgrid.gridworld import GridWorld, MazeWorld, SpiralWorld, LoopWorld
-from ..visgrid import sensors
-from ..visgrid.sensors import *
+from visgrid.gridworld import GridWorld, MazeWorld, SpiralWorld, LoopWorld
+from visgrid import sensors
+from visgrid.sensors import *
 # from ..models.nnutils import BilinearOuterProduct
 # from ..models.contrastivenet import FullPairwiseContrastiveNet
 
@@ -18,6 +18,10 @@ p[-2]
 
 seeding.seed(1, np, random, torch)
 env = MazeWorld.load_maze(rows=6, cols=6, seed=1)
+env = GridWorld(rows=10, cols=10)
+env.plot()
+env.reset_goal(position=(3,3))
+env.reset_agent(position=(0,0))
 
 sensor_list = [NoisySensor(sigma=0.2, truncation=0.4)]
 sensor = SensorChain(sensor_list)
