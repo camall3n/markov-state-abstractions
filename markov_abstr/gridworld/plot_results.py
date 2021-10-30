@@ -157,6 +157,7 @@ def plot(data, x, y, hue, style, col=None):
         col_wrap=col_wrap,
         # col_order=col_order,
         palette=palette,
+        linewidth=2,
         facet_kws={
             'sharey': False,
             'sharex': False
@@ -165,14 +166,19 @@ def plot(data, x, y, hue, style, col=None):
     g.set_titles('{col_name}')
 
     ax = g.axes.flat[0]
-    ax.set_ylim((-100, 0))
+    ax.set_ylim((-90, 0))
     ax.set_xlim((0, 100))
-    ax.axhline(-84.8, dashes=dashes['random'], color=palette['random'])
-    leg = ax.legend(labels, loc='lower center', ncol=4)
+    ax.axhline(-84.8, dashes=dashes['random'], color=palette['random'], linewidth=2)
+    leg = ax.legend(labels, loc='upper center', ncol=4, bbox_to_anchor=(0.43, -0.17), fontsize=12, frameon=False)
     leg.set_draggable(True)
-    ax.set_ylabel('Reward')
-    ax.set_xlabel('Episode')
+    for axis in ['bottom','left']:
+        ax.spines[axis].set_linewidth(2)
+    ax.tick_params(width=2)
+    ax.tick_params(labelsize=16)
+    ax.set_ylabel('Reward',fontsize=18)
+    ax.set_xlabel('Episode',fontsize=18)
     plt.tight_layout()
+    plt.subplots_adjust(bottom=0.25)
     plt.show()
 
 plot(data, x='episode', y='reward', hue='agent', style='agent')
